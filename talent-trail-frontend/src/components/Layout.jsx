@@ -132,7 +132,7 @@ const Layout = () => {
                                 <li className="nav-item mx-md-3 mx-lg-4 mx-sm-2 mx-xs-1"><a className="nav-link" href="#iirxi">Features</a></li>
                                 <li className="nav-item mx-md-3 mx-lg-4 mx-sm-2 mx-xs-1"><a className="nav-link" href="#footer">Contact</a></li>
                                 <li className="nav-item mx-md-3 mx-lg-4 mx-sm-2 mx-xs-1"><Link className="nav-link" to="/login">Login</Link></li>
-                                <li className="nav-item mx-md-3 mx-lg-4 mx-sm-2 mx-xs-1"><Link className="nav-link" to="/signup">Signup</Link></li>
+                                <li className="nav-item mx-md-3 mx-lg-4 mx-sm-2 mx-xs-1"><Link className="nav-link" to="/register">Register</Link></li>
                             </>
                             : <>
                                 <li className="nav-item mx-1">

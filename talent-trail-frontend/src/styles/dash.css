@@ -1,0 +1,45 @@
+.box1 {
+    box-shadow: 0 0 5px 0 rgba(0, 0, 0, .25);
+    padding: 15px 15px 15px 15px;
+    height: auto;
+    width: auto;
+    background-color: #fff;
+    text-align: center;
+}
+
+.welcome {
+    background-color: #fff;
+    max-width: 81rem;
+    width: 81rem;
+}
+
+.welcome-container {
+    margin-top: 50px; /* Adjust margin as needed */
+}
+
+.welcome-content {
+    background: linear-gradient(135deg, #00d2ff, #3a47d5); /* Gradient background */
+    /* border-radius: 10px; Rounded corners */
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    width: 75%;
+    padding: 20px; /* Increase padding for better spacing */
+}
+
+.profile-container {
+    transition: transform 0.3s ease; /* Add hover effect */
+}
+
+.profile-container:hover {
+    transform: scale(1.1); /* Scale up on hover */
+}
+
+.profile-image {
+    border-radius: 50%; /* Circular profile image */
+}
+
+.welcome-title {
+    font-size: 24px; /* Increase font size */
+    color: #fff; /* Text color */
+    margin-left: 3px;
+}
