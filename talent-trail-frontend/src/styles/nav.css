@@ -1,0 +1,235 @@
+.nav-button {
+    background-color: transparent;
+    background-repeat: no-repeat;
+    border: none;
+    cursor: pointer;
+    overflow: hidden;
+    outline: none;
+    padding: 0;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #212529;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+.dropdown-content li {
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content li:hover {
+    background-color: #2b3035;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.notification-dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #212529;
+    min-width: 350px;
+    max-height: 500px;
+    overflow-y: auto;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+.notification-dropdown-content li {
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.notification-dropdown-content li:hover {
+    background-color: #2b3035;
+}
+
+.dropdown:hover .notification-dropdown-content {
+    display: block;
+}
+
+.profile {
+    border: 1px solid white;
+    border-radius: 50%;
+}
+
+.rounded-circle {
+    padding: 7px;
+}
+
+.outlet {
+    width: 100%;
+    max-height: 100vh;
+    overflow-y: auto;
+}
+
+::-webkit-scrollbar {
+    width: 0;
+    /* Remove scrollbar space */
+    /* background: transparent; */
+    /* Optional: just make scrollbar invisible */
+}
+
+.sidebar {
+    width: 20vw;
+    min-width: 15vw;
+    background: #2d2d2d;
+    color: #fff;
+    height: 100vh;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+.sidebar.active {
+    margin-left: -250px;
+}
+
+.sidebar .sidebar-header {
+    padding: 20px;
+    background: #222222;
+}
+
+.sidebar ul li {
+    color: #fff;
+    padding: 10px;
+}
+
+.sidebar ul li a {
+    padding: 10px;
+    font-size: 1.1em;
+    display: block;
+}
+
+.sidebar ul li a:hover {
+    color: #222222;
+    background: #fff;
+}
+
+.sidebar ul li.active>a,
+a[aria-expanded="true"] {
+    color: #fff;
+    background: #222222;
+}
+
+a[data-toggle="collapse"] {
+    position: relative;
+}
+
+ul ul a {
+    font-size: 0.9em !important;
+    padding-left: 30px !important;
+    background: #222222;
+}
+
+ul.CTAs {
+    padding: 20px;
+}
+
+ul.CTAs a {
+    text-align: center;
+    font-size: 0.9em !important;
+    display: block;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+a.download {
+    background: #fff;
+    color: #222222;
+}
+
+a.article,
+a.article:hover {
+    background: #222222 !important;
+    color: #fff !important;
+}
+
+#ibd6 {
+    min-height: auto;
+    background-color: #0F172A;
+}
+
+#iio8 {
+    background-color: #0F172A;
+}
+
+#iqrti {
+    max-width: 150px;
+}
+
+#ieek:hover {
+    background-color: none;
+}
+
+#i7439 {
+    width: 15%;
+    float: left;
+    display: block;
+    margin: 3px 0 0 0;
+}
+
+#ik6hd {
+    width: 15%;
+    float: left;
+    margin: 3px 0 0 0;
+}
+
+#icakt {
+    width: 15%;
+    float: left;
+    margin: 3px 0 0 0;
+}
+
+#it4ww {
+    width: 15%;
+    float: left;
+    margin: 3px 0 0 0;
+}
+
+#ivh2z {
+    width: 15%;
+    float: left;
+    margin: 3px 0 0 0;
+}
+
+#iqz3d {
+    width: 15%;
+    float: left;
+    margin: 3px 0 0 0;
+}
+
+#irb64 {
+    height: 100%
+}
+
+.navbar-brand{
+    display: inline-block;
+    padding-top: 0.3125rem;
+    padding-bottom: 0.3125rem;
+    margin-right: 1rem;
+    font-size: 1.25rem;
+    line-height: inherit;
+    white-space: nowrap;
+}
+
+.pacifico-regular {
+    font-family: "Pacifico", cursive;
+    font-weight: 400;
+    font-style: normal;
+  }
+  

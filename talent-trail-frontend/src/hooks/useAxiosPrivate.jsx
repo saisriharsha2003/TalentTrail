@@ -1,11 +1,11 @@
 import { axiosPrivate } from "../api/axios";
 import { useEffect } from "react";
-import useRefershToken from "./useRefershToken";
+import useRefreshToken from "./useRefreshToken";
 import { useNavigate } from "react-router-dom";
 
 const useAxiosPrivate = () => {
     const accessToken = localStorage.getItem('accessToken');
-    const refresh = useRefershToken();
+    const refresh = useRefreshToken();
     const navigate = useNavigate();
 
     useEffect(() => {

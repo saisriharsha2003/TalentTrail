@@ -1,7 +1,7 @@
 import axios from '../api/axios';
 import { jwtDecode } from "jwt-decode";
 
-const useRefershToken = () => {
+const useRefreshToken = () => {
     const refresh = async () => {
         const accessToken = localStorage.getItem('accessToken');
         const decoded = jwtDecode(accessToken);
@@ -15,4 +15,4 @@ const useRefershToken = () => {
     return refresh;
 }
 
-export default useRefershToken;
+export default useRefreshToken;

@@ -2,6 +2,10 @@ import React from 'react';
 import '../styles/home.css'
 
 import Footer from './Footer';
+import harsha from './images/harsha.jpeg'
+import joseph from './images/joseph.jpeg'
+import rajesh from './images/rajesh.jpeg'
+import vara from './images/vara.jpeg'
 
 
 
@@ -132,7 +136,7 @@ const Home = () => {
                             <div class="col">
                                 <div class="card procard h-55" >
                                     <div class="card-img-caption">
-                                        <img src={require('./images/rajesh.jpeg')} class="card-img-top" id="" height={325} />
+                                        <img src={rajesh} class="card-img-top" id="" height={325} />
                                         <p style={{ backgroundColor: "#493fe5", color: "#fff" }} className='card-text text-center'>Team Lead</p>
                                     </div>
                                     <div class="card-body">
@@ -144,7 +148,7 @@ const Home = () => {
                             <div class="col">
                                 <div class="card procard h-55" >
                                     <div class="card-img-caption">
-                                        <img src={require('./images/harsha.jpeg')} class="card-img-top" height={325}/>
+                                        <img src={harsha} class="card-img-top" height={325}/>
                                         <p style={{ backgroundColor: "#493fe5", color: "#fff" }} className='card-text text-center'>Team Member 1</p>
                                     </div>
                                     <div class="card-body">
@@ -156,7 +160,7 @@ const Home = () => {
                             <div class="col">
                                 <div class="card procard h-55" >
                                     <div class="card-img-caption">
-                                        <img src={require('./images/joseph.jpeg')} class="card-img-top" height={325}/>
+                                        <img src={joseph} class="card-img-top" height={325}/>
                                         <p style={{ backgroundColor: "#493fe5", color: "#fff" }} className='card-text text-center'>Team Member 2</p>
                                     </div>
                                     <div class="card-body">
@@ -168,11 +172,11 @@ const Home = () => {
                             <div class="col">
                                 <div class="card procard h-55" >
                                     <div class="card-img-caption">
-                                        <img src={require('./images/vara.jpeg')} class="card-img-top" height={325}/>
+                                        <img src={vara} class="card-img-top" height={325}/>
                                         <p style={{ backgroundColor: "#493fe5", color: "#fff" }} className='card-text text-center'>Team Member 3</p>
                                     </div>
                                     <div class="card-body">
-                                        <h5 class="card-title">Joseph</h5>
+                                        <h5 class="card-title">Vara</h5>
                                         <p class="card-text">20BQ1A4217</p>
                                     </div>
                                 </div>
