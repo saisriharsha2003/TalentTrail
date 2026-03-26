@@ -90,48 +90,39 @@ const handleLogin = async (req, res, next) => {
 
 const handleRefreshToken = async (req, res) => {
     const cookies = req.cookies;
-    const { role } = req.params;
-    if (!role) return res.status(400).json({ 'message': 'Bad request - role is required' });
-    if (!['student', 'college', 'recruiter', 'admin'].includes(role)) return res.status(400).json({ 'message': 'invalid role' });
-    if (!cookies?.jwt) return res.status(401).json({ 'message': 'Bad request' });
+    if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' });
 
     const refreshToken = cookies.jwt;
-    res.clearCookie('jwt', { httpOnly: true, sameSite: 'Lax', maxAge: 24 * 60 * 60 * 1000 });
-
-    const User = require('../models/' + role);
-    const foundUser = await User.findOne({ refreshToken }).exec();
-
-    if (!foundUser) {
-        jwt.verify(
-            refreshToken,
-            process.env.REFRESH_TOKEN_SECRET,
-            async (err, decoded) => {
-                if (err) return res.status(403).json({ 'message': 'Forbidden' });
-                const hackedUser = await User.findOne({ username: decoded.username }).exec();
-                hackedUser.refreshToken = [];
-                const query = await hackedUser.save();
-            }
-        )
-        return res.status(403).json({ 'message': 'Forbidden' });
-    }
-
-    const newRefreshTokenArray = foundUser.refreshToken.filter(rt => rt !== refreshToken);
 
     jwt.verify(
         refreshToken,
         process.env.REFRESH_TOKEN_SECRET,
         async (err, decoded) => {
-            if (err) {
-                foundUser.refreshToken = [...newRefreshTokenArray];
-                const query = await foundUser.save()
-            }
-            if (err || foundUser.username !== decoded.username) return res.status(403).json({ 'message': 'Forbidden' });
+
+            if (err) return res.status(403).json({ message: 'Forbidden' });
+
+            const role = decoded.role;
+
+            const allowedRoles = {
+                student: require('../models/student'),
+                college: require('../models/college'),
+                recruiter: require('../models/recruiter'),
+                admin: require('../models/admin')
+            };
+
+            const User = allowedRoles[role];
+            if (!User) return res.status(400).json({ message: 'Invalid role' });
+
+            const foundUser = await User.findOne({ username: decoded.username }).exec();
+
+            if (!foundUser) return res.status(403).json({ message: 'Forbidden' });
+
             const accessToken = jwt.sign(
                 {
-                    'userInfo': {
-                        'id': foundUser._id,
-                        'username': foundUser.username,
-                        'role': role
+                    userInfo: {
+                        id: foundUser._id,
+                        username: foundUser.username,
+                        role: role
                     }
                 },
                 process.env.ACCESS_TOKEN_SECRET,
@@ -139,19 +130,27 @@ const handleRefreshToken = async (req, res) => {
             );
 
             const newRefreshToken = jwt.sign(
-                { 'username': foundUser.username },
+                {
+                    username: foundUser.username,
+                    role: role
+                },
                 process.env.REFRESH_TOKEN_SECRET,
                 { expiresIn: '1d' }
             );
-            foundUser.refreshToken = [...newRefreshTokenArray, newRefreshToken];
-            const query = await foundUser.save();
 
-            res.cookie('jwt', newRefreshToken, { httpOnly: true, sameSite: 'Lax', maxAge: 24 * 60 * 60 * 1000 }); //put secure:true
+            foundUser.refreshToken = [newRefreshToken];
+            await foundUser.save();
+
+            res.cookie('jwt', newRefreshToken, {
+                httpOnly: true,
+                sameSite: 'Lax',
+                maxAge: 24 * 60 * 60 * 1000
+            });
 
             res.json({ accessToken });
         }
     );
-}
+};
 
 const handleLogout = async (req, res) => {
     console.log("in logout")

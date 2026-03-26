@@ -395,9 +395,6 @@ const parseResume = async (req, res, next) => {
             }
         );
 
-        console.log("✅ Flask Response:", response.data);
-
-        // delete temp file
         fs.unlinkSync(filePath);
 
         return res.status(201).json({

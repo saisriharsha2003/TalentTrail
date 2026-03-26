@@ -7,7 +7,7 @@ router.post('/register', userController.handleRegister);
 
 router.post('/login', userController.handleLogin);
 
-router.get('/refresh/:role', userController.handleRefreshToken);
+router.get('/refresh/', userController.handleRefreshToken);
 
 router.post('/logout', userController.handleLogout);
 
