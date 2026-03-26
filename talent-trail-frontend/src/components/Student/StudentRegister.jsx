@@ -41,11 +41,6 @@ const StudentRegister = () => {
         percentage: r?.previous_education?.percentage || "",
     };
 
-    const certificationDefault = r?.certifications?.[0] || {
-        name: "",
-        organization: "",
-    };
-
     const contactDefault = {
         email: r?.contact?.email || "",
         collegeEmail: r?.contact?.college_email || "",
@@ -69,7 +64,6 @@ const StudentRegister = () => {
 
     const [currentEducation, setCurrentEducation] = useState(currentDefault);
     const [previousEducation, setPreviousEducation] = useState(previousDefault);
-    const [certification, setCertification] = useState(certificationDefault);
     const [contact, setContact] = useState(contactDefault);
     const [personal, setPersonal] = useState(personalDefault);
     const [addcert, disableAddcert] = useState(true);
@@ -80,6 +74,8 @@ const StudentRegister = () => {
     const [currentProjectIndex, setCurrentProjectIndex] = useState(0);
     const [experiences, setExperiences] = useState(r?.experience || []);
     const [currentExpIndex, setCurrentExpIndex] = useState(0);
+    const [certifications, setCertifications] = useState(r?.certifications || []);
+    const [currentCertIndex, setCurrentCertIndex] = useState(0);
 
     const handleAcademic = async (e) => {
         e.preventDefault();
@@ -110,15 +106,19 @@ const StudentRegister = () => {
 
     const handleCertification = async (e) => {
         e.preventDefault();
+
         try {
-            const response = await axios.post("/student/certification", {
-                ...certification,
-            });
-            const success = response?.data?.success;
-            if (success) notify("success", success);
+            let successMsg = "";
+
+            for (let cert of certifications) {
+                const response = await axios.post("/student/certification", cert);
+                successMsg = response?.data?.success;
+            }
+
+            if (successMsg) notify("success", successMsg);
+
             setDisabled((prev) => ({ ...prev, certification: true }));
-            disableAddcert(false);
-           
+
         } catch (err) {
             notify("failed", err?.response?.data?.message);
         }
@@ -309,7 +309,7 @@ const StudentRegister = () => {
                 >
                     <div className="card-body">
                         <form>
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Personal</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Personal</h3>
                             <fieldset disabled={disabled.personal}>
                                 <div className="form-row row mb-4">
                                     <div className="form-group col-md-6">
@@ -416,7 +416,7 @@ const StudentRegister = () => {
                             </fieldset>
 
                             {/* contact */}
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Contact</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Contact</h3>
                             <fieldset disabled={disabled.contact}>
                                 <div className="form-row row mb-4">
                                     <div className="form-group col-md-6">
@@ -523,7 +523,7 @@ const StudentRegister = () => {
                                 </fieldset>
                                 <fieldset disabled={disabled.academic}>
                                 {/* current education */}
-                                <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Current Education</h3>
+                                <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Current Education</h3>
                                 <div className="form-row row mb-4">
                                     <div className="form-group col-md-6">
                                         <label htmlFor="cc">College name</label>
@@ -754,7 +754,7 @@ const StudentRegister = () => {
                                         />
                                     </div>
                                 </div>
-                                <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Previous Education</h3>
+                                <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Previous Education</h3>
                                 <div className="form-row row mb-4">
                                     <div className="form-group col-md-6">
                                         <label htmlFor="pc">College</label>
@@ -869,66 +869,86 @@ const StudentRegister = () => {
                     <div className="card-body">
                         <form>
                             <fieldset disabled={disabled.certification}>
-                                <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Certifications</h3>
-                                <div className="form-row row mb-4">
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="cen">Name</label>
-                                        <input
-                                            id="cen"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="Name"
-                                            autoComplete="off"
-                                            value={certification.name}
-                                            onChange={(e) =>
-                                                setCertification((prev) => ({
-                                                    ...prev,
-                                                    name: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="ceo">Organization</label>
-                                        <input
-                                            id="prn"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="Organization"
-                                            autoComplete="off"
-                                            value={certification.organization}
-                                            onChange={(e) =>
-                                                setCertification((prev) => ({
-                                                    ...prev,
-                                                    organization: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                                <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Certifications</h3>
+                                {certifications.length > 0 && (
+                                    <>
+                                        <div className="d-flex justify-content-between mb-3">
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                disabled={currentCertIndex === 0}
+                                                onClick={() => setCurrentCertIndex(prev => prev - 1)}
+                                            >
+                                                ⬅ Prev
+                                            </button>
 
+                                            <span>
+                                                {currentCertIndex + 1} / {certifications.length}
+                                            </span>
+
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                disabled={currentCertIndex === certifications.length - 1}
+                                                onClick={() => setCurrentCertIndex(prev => prev + 1)}
+                                            >
+                                                Next ➡
+                                            </button>
+                                        </div>
+
+                                        <input
+                                            className="form-control mb-3"
+                                            placeholder="Name"
+                                            value={certifications[currentCertIndex]?.name || ""}
+                                            onChange={(e) => {
+                                                const updated = [...certifications];
+                                                updated[currentCertIndex].name = e.target.value;
+                                                setCertifications(updated);
+                                            }}
+                                        />
+
+                                        <input
+                                            className="form-control mb-3"
+                                            placeholder="Organization"
+                                            value={certifications[currentCertIndex]?.organization || ""}
+                                            onChange={(e) => {
+                                                const updated = [...certifications];
+                                                updated[currentCertIndex].organization = e.target.value;
+                                                setCertifications(updated);
+                                            }}
+                                        />
+                                    </>
+                                )}
+
+                                <div className="d-grid gap-3 mt-3">
+
+                                    <button
+                                        type="button"
+                                        className="btn btn-dark"
+                                        onClick={() => {
+                                            setCertifications([
+                                                ...certifications,
+                                                { name: "", organization: "" }
+                                            ]);
+                                            setCurrentCertIndex(certifications.length);
+                                        }}
+                                    >
+                                        + Add Certification
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        onClick={handleCertification}
+                                        disabled={disabled.certification}
+                                    >
+                                        Submit All Certifications
+                                    </button>
+
+                                </div>
 
                             </fieldset>
 
-                            <div className="row">
-                                <div className="col-md-6">
-                                    <button
-                                        disabled={disabled.certification}
-                                        className="btn btn-primary"
-                                        onClick={handleCertification}
-                                    >
-                                        submit
-                                    </button>
-                                </div>
-
-                                <div className="col-md-6">
-                                    <button className="btn btn-dark" onClick={addCertification} disabled={addcert}>
-                                        add another
-                                    </button>
-                                </div>
-                            </div>
                         </form>
                     </div>
                 </div>
@@ -1045,130 +1065,154 @@ const StudentRegister = () => {
             </div>
             {/* Work */}
             <div className="d-flex justify-content-center m-3">
-                <div className="card container p-4 h-100 shadow-2-strong shadow-sm" style={{ backgroundColor: "#fff" }}>
+                <div
+                    className="card container p-4 h-100 shadow-2-strong shadow-sm"
+                    style={{ backgroundColor: "#fff" }}
+                >
                     <div className="card-body">
                         <form>
                             <fieldset disabled={disabled.work}>
-                                <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Work</h3>
+                                <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Work</h3>
+
                                 {experiences.length > 0 && (
                                     <div className="card p-3 shadow-sm mb-4">
 
                                         {/* NAVIGATION */}
                                         <div className="d-flex justify-content-between mb-3">
-                                        <button
-                                            className="btn btn-secondary"
-                                            disabled={currentExpIndex === 0}
-                                            onClick={() => setCurrentExpIndex((prev) => prev - 1)}
-                                        >
-                                            ⬅ Prev
-                                        </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                disabled={currentExpIndex === 0}
+                                                onClick={() =>
+                                                    setCurrentExpIndex((prev) => prev - 1)
+                                                }
+                                            >
+                                                ⬅ Prev
+                                            </button>
 
-                                        <span>
-                                            {currentExpIndex + 1} / {experiences.length}
-                                        </span>
+                                            <span>
+                                                {currentExpIndex + 1} / {experiences.length}
+                                            </span>
 
-                                        <button
-                                            className="btn btn-secondary"
-                                            disabled={currentExpIndex === experiences.length - 1}
-                                            onClick={() => setCurrentExpIndex((prev) => prev + 1)}
-                                        >
-                                            Next ➡
-                                        </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                disabled={
+                                                    currentExpIndex === experiences.length - 1
+                                                }
+                                                onClick={() =>
+                                                    setCurrentExpIndex((prev) => prev + 1)
+                                                }
+                                            >
+                                                Next ➡
+                                            </button>
                                         </div>
 
                                         {/* FORM */}
                                         <input
-                                        className="form-control mb-3"
-                                        placeholder="Organization"
-                                        value={experiences[currentExpIndex]?.company || ""}
-                                        onChange={(e) => {
-                                            const updated = [...experiences];
-                                            updated[currentExpIndex].company = e.target.value;
-                                            setExperiences(updated);
-                                        }}
+                                            className="form-control mb-3"
+                                            placeholder="Organization"
+                                            value={experiences[currentExpIndex]?.company || ""}
+                                            onChange={(e) => {
+                                                const updated = [...experiences];
+                                                updated[currentExpIndex].company = e.target.value;
+                                                setExperiences(updated);
+                                            }}
                                         />
 
                                         <input
-                                        className="form-control mb-3"
-                                        placeholder="Role"
-                                        value={experiences[currentExpIndex]?.role || ""}
-                                        onChange={(e) => {
-                                            const updated = [...experiences];
-                                            updated[currentExpIndex].role = e.target.value;
-                                            setExperiences(updated);
-                                        }}
+                                            className="form-control mb-3"
+                                            placeholder="Role"
+                                            value={experiences[currentExpIndex]?.role || ""}
+                                            onChange={(e) => {
+                                                const updated = [...experiences];
+                                                updated[currentExpIndex].role = e.target.value;
+                                                setExperiences(updated);
+                                            }}
                                         />
 
                                         <input
-                                        className="form-control mb-3"
-                                        placeholder="Start Date"
-                                        value={experiences[currentExpIndex]?.start_date || ""}
-                                        onChange={(e) => {
-                                            const updated = [...experiences];
-                                            updated[currentExpIndex].start_date = e.target.value;
-                                            setExperiences(updated);
-                                        }}
+                                            className="form-control mb-3"
+                                            placeholder="Start Date"
+                                            value={experiences[currentExpIndex]?.start_date || ""}
+                                            onChange={(e) => {
+                                                const updated = [...experiences];
+                                                updated[currentExpIndex].start_date =
+                                                    e.target.value;
+                                                setExperiences(updated);
+                                            }}
                                         />
 
                                         <input
-                                        className="form-control mb-3"
-                                        placeholder="End Date"
-                                        value={experiences[currentExpIndex]?.end_date || ""}
-                                        onChange={(e) => {
-                                            const updated = [...experiences];
-                                            updated[currentExpIndex].end_date = e.target.value;
-                                            setExperiences(updated);
-                                        }}
+                                            className="form-control mb-3"
+                                            placeholder="End Date"
+                                            value={experiences[currentExpIndex]?.end_date || ""}
+                                            onChange={(e) => {
+                                                const updated = [...experiences];
+                                                updated[currentExpIndex].end_date =
+                                                    e.target.value;
+                                                setExperiences(updated);
+                                            }}
                                         />
 
                                         <textarea
-                                        className="form-control mb-3"
-                                        placeholder="Description"
-                                        value={experiences[currentExpIndex]?.description || ""}
-                                        onChange={(e) => {
-                                            const updated = [...experiences];
-                                            updated[currentExpIndex].description = e.target.value;
-                                            setExperiences(updated);
-                                        }}
+                                            className="form-control mb-3"
+                                            placeholder="Description"
+                                            value={
+                                                experiences[currentExpIndex]?.description || ""
+                                            }
+                                            onChange={(e) => {
+                                                const updated = [...experiences];
+                                                updated[currentExpIndex].description =
+                                                    e.target.value;
+                                                setExperiences(updated);
+                                            }}
                                         />
                                     </div>
-                                    )}
+                                )}
+
+                                {/* BUTTONS */}
+                                <div className="d-grid gap-3 mt-3">
+                                    <button
+                                        type="button"
+                                        className="btn btn-dark"
+                                        onClick={() => {
+                                            setExperiences([
+                                                ...experiences,
+                                                {
+                                                    company: "",
+                                                    role: "",
+                                                    start_date: "",
+                                                    end_date: "",
+                                                    description: "",
+                                                },
+                                            ]);
+                                            setCurrentExpIndex(experiences.length);
+                                        }}
+                                    >
+                                        + Add Experience
+                                    </button>
 
                                     <button
-                                    className="btn btn-dark mb-5"
-                                    onClick={() => {
-                                        setExperiences([
-                                        ...experiences,
-                                        {
-                                            company: "",
-                                            role: "",
-                                            start_date: "",
-                                            end_date: "",
-                                            description: "",
-                                        },
-                                        ]);
-                                        setCurrentExpIndex(experiences.length);
-                                    }}
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        disabled={disabled.experience}
+                                        onClick={handleWork}
                                     >
-                                    + Add Experience
+                                        Submit All Experience
                                     </button>
-
-                                    <button className="btn btn-primary mb-5" onClick={handleWork}>
-                                    Submit All Experience
-                                    </button>
+                                </div>
                             </fieldset>
-
                         </form>
                     </div>
                 </div>
             </div>
-
             {/* Profile */}
             <div className="d-flex justify-content-center align-items-end mt-3 mb-5">
                 <div className="card container p-4 h-100 shadow-2-strong shadow-sm" style={{ backgroundColor: "#fff" }}>
                     <div className="card-body">
                         <form>
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Profile</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Profile</h3>
                             <div className="form-row row mb-4">
                                 <div className="form-group col-md-9">
                                     <label htmlFor="profile" className="form-label">

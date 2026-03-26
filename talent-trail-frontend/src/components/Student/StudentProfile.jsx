@@ -107,6 +107,9 @@ const StudentProfile = () => {
     const [username, setUsername] = useState('');
     const [prevPassword, setPrevPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [currentCertIndex, setCurrentCertIndex] = useState(0);
+    const [currentProjectIndex, setCurrentProjectIndex] = useState(0);
+    const [currentWorkIndex, setCurrentWorkIndex] = useState(0);
 
     const fetchStudent = async () => {
         try {
@@ -192,22 +195,25 @@ const StudentProfile = () => {
         }
     }
 
-    const handleCertification = async (e) => {
-        e.preventDefault();
+    const handleCertification = async (index) => {
         try {
+            const cert = certifications[index];
+
             const response = await axios.put('/student/certification', {
-                ...certifications[parseInt(e.target.id)],
-                certificationId: certifications[parseInt(e.target.id)]._id
+                ...cert,
+                certificationId: cert._id
             });
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+
+            if (response?.data?.success) {
+                notify('success', response.data.success);
+            }
 
             fetchStudent();
+
         } catch (err) {
             notify('failed', err?.response?.data?.message);
         }
-    }
+    };
 
     const handleNewCertification = async (e) => {
         e.preventDefault();
@@ -226,19 +232,22 @@ const StudentProfile = () => {
         }
     }
 
-    const deleteCertification = async (e) => {
-        e.preventDefault();
+    const deleteCertification = async (index) => {
         try {
-            const response = await axios.delete(`/student/certification/${certifications[parseInt(e.target.id)]._id}`);
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+            const id = certifications[index]._id;
+
+            const response = await axios.delete(`/student/certification/${id}`);
+
+            if (response?.data?.success) {
+                notify('success', response.data.success);
+            }
 
             fetchStudent();
+
         } catch (err) {
             notify('failed', err?.response?.data?.message);
         }
-    }
+    };
 
     const handleContact = async (e) => {
         e.preventDefault();
@@ -274,22 +283,25 @@ const StudentProfile = () => {
         }
     }
 
-    const handleProject = async (e) => {
-        e.preventDefault();
+    const handleProject = async (index) => {
         try {
+            const proj = projects[index];
+
             const response = await axios.put('/student/project', {
-                ...projects[parseInt(e.target.id)],
-                projectId: projects[parseInt(e.target.id)]._id
+                ...proj,
+                projectId: proj._id
             });
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+
+            if (response?.data?.success) {
+                notify('success', response.data.success);
+            }
 
             fetchStudent();
+
         } catch (err) {
             notify('failed', err?.response?.data?.message);
         }
-    }
+    };
 
     const handleNewProject = async (e) => {
         e.preventDefault();
@@ -308,36 +320,41 @@ const StudentProfile = () => {
         }
     }
 
-    const deleteProject = async (e) => {
-        e.preventDefault();
+    const deleteProject = async (index) => {
         try {
-            const response = await axios.delete(`/student/project/${projects[parseInt(e.target.id)]._id}`);
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+            const id = projects[index]._id;
+
+            const response = await axios.delete(`/student/project/${id}`);
+
+            if (response?.data?.success) {
+                notify('success', response.data.success);
+            }
 
             fetchStudent();
+
         } catch (err) {
             notify('failed', err?.response?.data?.message);
         }
-    }
-
-    const handleWork = async (e) => {
-        e.preventDefault();
+    };
+    const handleWork = async (index) => {
         try {
-            const response = await axios.post('/student/work', {
-                ...works[parseInt(e.target.id)],
-                workId: works[parseInt(e.target.id)]._id
+            const work = works[index];
+
+            const response = await axios.put('/student/work', {
+                ...work,
+                workId: work._id
             });
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+
+            if (response?.data?.success) {
+                notify('success', response.data.success);
+            }
 
             fetchStudent();
+
         } catch (err) {
             notify('failed', err?.response?.data?.message);
         }
-    }
+    };
 
     const handleNewWork = async (e) => {
         e.preventDefault();
@@ -356,19 +373,22 @@ const StudentProfile = () => {
         }
     }
 
-    const deleteWork = async (e) => {
-        e.preventDefault();
+    const deleteWork = async (index) => {
         try {
-            const response = await axios.delete(`/student/work/${works[parseInt(e.target.id)]._id}`);
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+            const id = works[index]._id;
+
+            const response = await axios.delete(`/student/work/${id}`);
+
+            if (response?.data?.success) {
+                notify('success', response.data.success);
+            }
 
             fetchStudent();
+
         } catch (err) {
             notify('failed', err?.response?.data?.message);
         }
-    }
+    };
 
     const handleProfile = async (e) => {
         e.preventDefault();
@@ -541,7 +561,7 @@ const StudentProfile = () => {
                         <form className="card-body">
 
                             <div className='d-flex justify-content-between'>
-                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Personal</h2>
+                            <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">Personal</h2>
 
                                 {disabled.personal && (
                                     <div >
@@ -656,7 +676,7 @@ const StudentProfile = () => {
                         <form className="card-body">
 
                             <div className='d-flex justify-content-between'>
-                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Contact</h2>
+                            <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">Contact</h2>
 
                                 {disabled.contact && (
                                     <div >
@@ -852,7 +872,7 @@ const StudentProfile = () => {
                         <form className="card-body">
 
                             <div className='d-flex justify-content-between'>
-                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Academic</h2>
+                            <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">Academic</h2>
 
                                 {disabled.academic && (
                                     <div >
@@ -866,7 +886,7 @@ const StudentProfile = () => {
                                 <div className="card m-2 p-3 mb-5 shadow" style={{ backgroundColor: '#fff' }}>
 
                                     <div className="card-body">
-                                    <h2 class="mb-4 pb-1 pb-md-0 mb-md-2">Current Education</h2>
+                                    <h2 className="mb-4 pb-1 pb-md-0 mb-md-2">Current Education</h2>
                                     </div>
 
                                     <div className='form-row row'>
@@ -1079,7 +1099,7 @@ const StudentProfile = () => {
                                 <div className="card m-2 p-3 mb-4 shadow" style={{ backgroundColor: '#fff' }}>
 
                                     <div className="card-body">
-                                    <h2 class="mb-4 pb-1 pb-md-0 mb-md-3">Previous Education</h2>
+                                    <h2 className="mb-4 pb-1 pb-md-0 mb-md-3">Previous Education</h2>
                                     </div>
 
                                     <div className='form-row row'>
@@ -1188,93 +1208,82 @@ const StudentProfile = () => {
             </div >
 
             {/* Certification */}
-            {
-                certifications.map((certification, index) => {
-                    return (
-                        <div key={index} className='d-flex justify-content-center m-3'>
-                            {/* <div className='d-inline-flex p-2'> */}
-                                <div className="card container h-100 shadow-2-strong p-4 shadow-sm" style={{ backgroundColor: '#fff' }}>
-                                    <form className="card-body">
+            {certifications.length > 0 && (
+                <div className="d-flex justify-content-center m-3">
+                    <div className="card container p-4 shadow-sm">
 
-                                        <div className='d-flex justify-content-between'>
-                                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Certification {index + 1}</h2>
+                        <h3 className="mb-4">Certifications</h3>
 
-                                            {/* <h2>Certification {index + 1}</h2> */}
+                        {/* NAV */}
+                        <div className="d-flex justify-content-between mb-3">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={currentCertIndex === 0}
+                                onClick={() => setCurrentCertIndex(prev => prev - 1)}
+                            >
+                                ⬅ Prev
+                            </button>
 
-                                            {disabled.certification && (
-                                                <div >
-                                                    <button onClick={(e) => setDisabled(prev => ({ ...prev, certification: false }))} className="btn btn-dark">Edit</button>
-                                                </div>
-                                            )}
-                                        </div>
+                            <span>
+                                {currentCertIndex + 1} / {certifications.length}
+                            </span>
 
-                                        <fieldset disabled={disabled.certification}>
-
-                                            <div className='form-row row'>
-                                                <div className='col-md-6'>
-                                                <div className="card-body">
-                                                    <div className="flex-nowrap form-floating">
-                                                        <input
-                                                            id={index + 'cen'}
-                                                            className="form-control"
-                                                            type="text"
-                                                            placeholder='Name'
-                                                            autoComplete='off'
-                                                            value={certification.name}
-                                                            onChange={(e) => setCertifications(prev => {
-                                                                prev[index].name = e.target.value
-                                                                return [...prev]
-                                                            })}
-                                                            required
-                                                        />
-                                                        <label htmlFor={index + 'cen'}>Name</label>
-                                                    </div>
-                                                </div>
-                                                </div>
-                                                
-                                                <div className='col-md-6'>
-                                                <div className="card-body">
-                                                    <div className="flex-nowrap form-floating">
-                                                        <input
-                                                            id={index + 'ceo'}
-                                                            className="form-control"
-                                                            type="text"
-                                                            placeholder='Organization'
-                                                            autoComplete='off'
-                                                            value={certification.organization}
-                                                            onChange={(e) => setCertifications(prev => {
-                                                                prev[index].organization = e.target.value
-                                                                return [...prev]
-                                                            })}
-                                                            required
-                                                        />
-                                                        <label htmlFor={index + 'ceo'}>Organization</label>
-                                                    </div>
-                                                </div>
-                                                </div>
-
-                                            </div>
-
-
-                                            <div className='d-inline-flex'>
-                                                <div className="card-body">
-                                                    <button id={index + 'cbs'} className="btn btn-primary" onClick={handleCertification}>Save</button>
-                                                </div>
-
-                                                <div className="card-body">
-                                                    <button id={index + 'cbd'} className="btn btn-dark" onClick={deleteCertification}>Remove</button>
-                                                </div>
-                                            </div>
-
-                                        </fieldset>
-
-                                    </form>
-                                </div>
-                            {/* </div> */}
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={currentCertIndex === certifications.length - 1}
+                                onClick={() => setCurrentCertIndex(prev => prev + 1)}
+                            >
+                                Next ➡
+                            </button>
                         </div>
-                    )
-                })
-            }
+
+                        {/* FORM */}
+                        <input
+                            className="form-control mb-3"
+                            value={certifications[currentCertIndex]?.name || ""}
+                            onChange={(e) => {
+                                const updated = [...certifications];
+                                updated[currentCertIndex].name = e.target.value;
+                                setCertifications(updated);
+                            }}
+                            placeholder="Name"
+                        />
+
+                        <input
+                            className="form-control mb-3"
+                            value={certifications[currentCertIndex]?.organization || ""}
+                            onChange={(e) => {
+                                const updated = [...certifications];
+                                updated[currentCertIndex].organization = e.target.value;
+                                setCertifications(updated);
+                            }}
+                            placeholder="Organization"
+                        />
+
+                        {/* BUTTONS */}
+                        <div className="d-grid gap-3 mt-3">
+                            <button
+                                type="button"
+                                className="btn btn-dark"
+                                onClick={() => deleteCertification(currentCertIndex)}
+                            >
+                                Remove
+                            </button>
+
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => handleCertification(currentCertIndex)}
+                            >
+                                Save
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
 
             {/* New Certification */}
             <div className='d-flex justify-content-center m-3'>
@@ -1284,7 +1293,7 @@ const StudentProfile = () => {
 
                             <fieldset>
 
-                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">New Certification</h2>
+                            <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">New Certification</h2>
 
                                 <div className='from-row row'>
                                     <div className='col-md-6'>
@@ -1335,171 +1344,79 @@ const StudentProfile = () => {
             </div>
 
             {/* Project */}
-            {
-                projects.map((project, index) => {
-                    return (
-                        <div key={index} className='d-flex justify-content-center m-3'>
-                            {/* <div className='d-inline-flex p-2'> */}
-                                <div className="card container h-100 shadow-2-strong p-4" style={{ backgroundColor: '#fff' }}>
-                                    <form className="card-body">
+            {projects.length > 0 && (
+                <div className="d-flex justify-content-center m-3">
+                    <div className="card container p-4 shadow-sm">
 
-                                        <div className='d-flex justify-content-between'>
-                                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Project {index + 1}</h2>
+                        <h3 className="mb-4">Projects</h3>
 
-                                            {disabled.project && (
-                                                <div >
-                                                    <button onClick={(e) => setDisabled(prev => ({ ...prev, project: false }))} className="btn btn-dark">Edit</button>
-                                                </div>
-                                            )}
-                                        </div>
+                        <div className="d-flex justify-content-between mb-3">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={currentProjectIndex === 0}
+                                onClick={() => setCurrentProjectIndex(prev => prev - 1)}
+                            >
+                                ⬅ Prev
+                            </button>
 
-                                        <fieldset disabled={disabled.project}>
+                            <span>
+                                {currentProjectIndex + 1} / {projects.length}
+                            </span>
 
-                                            <div className='form-row row'>
-                                                <div className='col-md-6'>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={currentProjectIndex === projects.length - 1}
+                                onClick={() => setCurrentProjectIndex(prev => prev + 1)}
+                            >
+                                Next ➡
+                            </button>
+                        </div>
 
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <input
-                                                                id={index + 'prn'}
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='Name'
-                                                                autoComplete='off'
-                                                                value={project.name}
-                                                                onChange={(e) => setProjects(prev => {
-                                                                    prev[index].name = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'prn'}>Name</label>
-                                                        </div>
-                                                    </div>
+                        <input
+                            className="form-control mb-3"
+                            value={projects[currentProjectIndex]?.name || ""}
+                            onChange={(e) => {
+                                const updated = [...projects];
+                                updated[currentProjectIndex].name = e.target.value;
+                                setProjects(updated);
+                            }}
+                            placeholder="Project Name"
+                        />
 
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <input
-                                                                id={index + 'prs'}
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='Start date'
-                                                                autoComplete='off'
-                                                                value={project.startDate}
-                                                                onChange={(e) => setProjects(prev => {
-                                                                    prev[index].startDate = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'prs'}>Start date</label>
-                                                            {/* <p className="card-subtitle text-body-secondary">&nbsp;DD/MM/YYYY</p> */}
-                                                        </div>
-                                                    </div>
+                        <textarea
+                            className="form-control mb-3"
+                            value={projects[currentProjectIndex]?.description || ""}
+                            onChange={(e) => {
+                                const updated = [...projects];
+                                updated[currentProjectIndex].description = e.target.value;
+                                setProjects(updated);
+                            }}
+                            placeholder="Description"
+                        />
 
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <input
-                                                                id={index + 'pra'}
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='Associated'
-                                                                autoComplete='off'
-                                                                value={project.associated}
-                                                                onChange={(e) => setProjects(prev => {
-                                                                    prev[index].associated = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'pra'}>Associated</label>
-                                                        </div>
-                                                    </div>
+                        <div className="d-grid gap-3 mt-3">
+                            <button
+                                type="button"
+                                className="btn btn-dark"
+                                onClick={() => deleteProject(currentProjectIndex)}
+                            >
+                                Remove
+                            </button>
 
-                                                </div>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => handleProject(currentProjectIndex)}
+                            >
+                                Save
+                            </button>
+                        </div>
 
-                                                <div className='col-md-6'>
-
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <textarea
-                                                                id={index + 'prd'}
-                                                                rows="5"
-                                                                data-spy="scroll"
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='Description'
-                                                                autoComplete='off'
-                                                                value={project.description}
-                                                                onChange={(e) => setProjects(prev => {
-                                                                    prev[index].description = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'prd'}>Description</label>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <input
-                                                                id={index + 'pre'}
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='End date'
-                                                                autoComplete='off'
-                                                                value={project.endDate}
-                                                                disabled={project.currentlyWorking}
-                                                                onChange={(e) => setProjects(prev => {
-                                                                    prev[index].endDate = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                            />
-                                                            <label htmlFor={index + 'pre'}>End date</label>
-                                                            {/* <p className="card-subtitle text-body-secondary">&nbsp;DD/MM/YYYY</p> */}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="card-body mt-3">
-                                                        <div className="flex-nowrap form-check">
-                                                            <input
-                                                                id={index + 'prc'}
-                                                                className='form-check-input'
-                                                                type="checkbox"
-                                                                checked={project.currentlyWorking}
-                                                                onChange={(e) => setProjects(prev => {
-                                                                    prev[index].endDate = ''
-                                                                    prev[index].currentlyWorking = !prev[index].currentlyWorking
-                                                                    return [...prev]
-                                                                })}
-                                                            />
-                                                            <label className="form-check-label" htmlFor={index + "prc"}>Currently working</label>
-                                                        </div>
-                                                    </div>
-
-                                                </div>
-                                            </div>
-
-                                            <div className='d-inline-flex'>
-                                                <div className="card-body">
-                                                    <button id={index + 'pbs'} className="btn btn-primary" onClick={handleProject}>Save</button>
-                                                </div>
-
-                                                <div className="card-body">
-                                                    <button id={index + 'pbd'} className="btn btn-dark" onClick={deleteProject}>Remove</button>
-                                                </div>
-                                            </div>
-
-                                        </fieldset>
-                                    </form>
-                                </div>
-                            {/* </div> */}
-                        </div >
-                    )
-                })
-            }
-
+                    </div>
+                </div>
+            )}
             {/* New Project */}
             <div className='d-flex justify-content-center m-3'>
                 {/* <div className='d-inline-flex p-2'> */}
@@ -1508,7 +1425,7 @@ const StudentProfile = () => {
 
                             <fieldset>
 
-                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">New Project</h2>
+                            <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">New Project</h2>
 
                                 <div className='form-row row'>
                                     <div className='col-md-6'>
@@ -1631,156 +1548,90 @@ const StudentProfile = () => {
             </div>
 
             {/* Work */}
-            {
-                works.map((work, index) => {
-                    return (
-                        <div key={index} className='d-flex justify-content-center m-3'>
-                            {/* <div className='d-inline-flex p-2'> */}
-                                <div className="card container h-100 shadow-2-strong p-4 shadow-sm" style={{ backgroundColor: '#fff' }}>
-                                    <form className="card-body">
+            {works.length > 0 && (
+                <div className="d-flex justify-content-center m-3">
+                    <div className="card container p-4 shadow-sm">
 
-                                        <div className='d-flex justify-content-between'>
-                                            {/* <h2>Work {index + 1}</h2> */}
-                                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Work {index + 1}</h2>
+                        <h3 className="mb-4">Work Experience</h3>
 
+                        <div className="d-flex justify-content-between mb-3">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={currentWorkIndex === 0}
+                                onClick={() => setCurrentWorkIndex(prev => prev - 1)}
+                            >
+                                ⬅ Prev
+                            </button>
 
-                                            {disabled.work && (
-                                                <div >
-                                                    <button onClick={(e) => setDisabled(prev => ({ ...prev, work: false }))} className="btn btn-dark">Edit</button>
-                                                </div>
-                                            )}
-                                        </div>
+                            <span>
+                                {currentWorkIndex + 1} / {works.length}
+                            </span>
 
-                                        <fieldset disabled={disabled.work}>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={currentWorkIndex === works.length - 1}
+                                onClick={() => setCurrentWorkIndex(prev => prev + 1)}
+                            >
+                                Next ➡
+                            </button>
+                        </div>
 
-                                            <div className='form-row row'>
-                                                <div className='col-md-6'>
+                        <input
+                            className="form-control mb-3"
+                            value={works[currentWorkIndex]?.organization || ""}
+                            onChange={(e) => {
+                                const updated = [...works];
+                                updated[currentWorkIndex].organization = e.target.value;
+                                setWorks(updated);
+                            }}
+                            placeholder="Organization"
+                        />
 
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <input
-                                                                id={index + 'wo'}
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='Organization'
-                                                                autoComplete='off'
-                                                                value={work.organization}
-                                                                onChange={(e) => setWorks(prev => {
-                                                                    prev[index].organization = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'wo'}>Organization</label>
-                                                        </div>
-                                                    </div>
+                        <input
+                            className="form-control mb-3"
+                            value={works[currentWorkIndex]?.role || ""}
+                            onChange={(e) => {
+                                const updated = [...works];
+                                updated[currentWorkIndex].role = e.target.value;
+                                setWorks(updated);
+                            }}
+                            placeholder="Role"
+                        />
 
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <input
-                                                                id={index + 'ws'}
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='Start date'
-                                                                autoComplete='off'
-                                                                value={work.startDate}
-                                                                onChange={(e) => setWorks(prev => {
-                                                                    prev[index].startDate = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'ws'}>Start date</label>
-                                                            {/* <p className="card-subtitle text-body-secondary">&nbsp;DD/MM/YYYY</p> */}
-                                                        </div>
-                                                    </div>
+                        <textarea
+                            className="form-control mb-3"
+                            value={works[currentWorkIndex]?.description || ""}
+                            onChange={(e) => {
+                                const updated = [...works];
+                                updated[currentWorkIndex].description = e.target.value;
+                                setWorks(updated);
+                            }}
+                            placeholder="Description"
+                        />
 
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <textarea
-                                                                id={index + 'wd'}
-                                                                className="form-control"
-                                                                rows="5"
-                                                                data-spy="scroll"
-                                                                type="text"
-                                                                placeholder='Description'
-                                                                autoComplete='off'
-                                                                value={work.description}
-                                                                onChange={(e) => setWorks(prev => {
-                                                                    prev[index].description = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'wd'}>Description</label>
-                                                        </div>
-                                                    </div>
+                        <div className="d-grid gap-3 mt-3">
+                            <button
+                                type="button"
+                                className="btn btn-dark"
+                                onClick={() => deleteWork(currentWorkIndex)}
+                            >
+                                Remove
+                            </button>
 
-                                                </div>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => handleWork(currentWorkIndex)}
+                            >
+                                Save
+                            </button>
+                        </div>
 
-                                                <div className='col-md-6'>
-
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <input
-                                                                id={index + 'wr'}
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='Role'
-                                                                autoComplete='off'
-                                                                value={work.role}
-                                                                onChange={(e) => setWorks(prev => {
-                                                                    prev[index].role = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'wr'}>Role</label>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="card-body">
-                                                        <div className="flex-nowrap form-floating">
-                                                            <input
-                                                                id={index + 'we'}
-                                                                className="form-control"
-                                                                type="text"
-                                                                placeholder='End date'
-                                                                autoComplete='off'
-                                                                value={work.endDate}
-                                                                onChange={(e) => setWorks(prev => {
-                                                                    prev[index].endDate = e.target.value
-                                                                    return [...prev]
-                                                                })}
-                                                                required
-                                                            />
-                                                            <label htmlFor={index + 'we'}>End date</label>
-                                                            {/* <p className="card-subtitle text-body-secondary">&nbsp;DD/MM/YYYY</p> */}
-                                                        </div>
-                                                    </div>
-
-                                                </div>
-                                            </div>
-
-                                            <div className='d-inline-flex'>
-                                                <div className="card-body">
-                                                    <button id={index + 'wbs'} className="btn btn-primary" onClick={handleWork}>Save</button>
-                                                </div>
-
-                                                <div className="card-body">
-                                                    <button id={index + 'wbd'} className="btn btn-dark" onClick={deleteWork}>Remove</button>
-                                                </div>
-                                            </div>
-
-                                        </fieldset>
-
-                                    </form>
-                                </div>
-                            {/* </div> */}
-                        </div >
-                    )
-                })
-            }
+                    </div>
+                </div>
+            )}
 
             {/* New Work */}
             <div className='d-flex justify-content-center m-3'>
@@ -1790,7 +1641,7 @@ const StudentProfile = () => {
 
                             <fieldset>
 
-                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">New Work</h2>
+                            <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">New Work</h2>
 
                                 <div className='form-row row'>
                                     <div className='col-md-6'>
@@ -1903,7 +1754,7 @@ const StudentProfile = () => {
                     <div className="card container h-100 shadow-2-strong p-4 shadow-sm  " style={{ backgroundColor: '#fff' }}>
                         <form className="card-body">
 
-                        <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Profile</h2>
+                        <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">Profile</h2>
 
                             <div className='form-row row'>
 
@@ -1969,7 +1820,7 @@ const StudentProfile = () => {
                         <form className="card-body">
 
                             <div className='d-flex justify-content-between'>
-                            <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Account</h2>
+                            <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">Account</h2>
 
                                 {disabled.account && (
                                     <div >

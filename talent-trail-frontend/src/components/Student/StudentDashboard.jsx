@@ -267,7 +267,7 @@ const StudentDashboard = () => {
 
                 <div className="card-body table-responsive" style={{ padding: '2rem' }}>
                     <div className='d-flex justify-content-between'>
-                        <h2 class="card-title pb-1 pb-md-0 mb-md-3">Recommended Jobs</h2>
+                        <h2 className="card-title pb-1 pb-md-0 mb-md-3">Recommended Jobs</h2>
                     </div>
                     <table className="table table-striped">
 
