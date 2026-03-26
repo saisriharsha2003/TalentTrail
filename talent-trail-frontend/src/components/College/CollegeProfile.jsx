@@ -262,7 +262,7 @@ const CollegeProfile = () => {
                     <form className="card-body">
 
                         <div className='d-flex justify-content-between'>
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Institution</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Institution</h3>
                             {disabled.institution && (
                                 <div >
                                     <button onClick={(e) => setDisabled(prev => ({ ...prev, institution: false }))} className="btn btn-danger">Edit</button>
@@ -362,7 +362,7 @@ const CollegeProfile = () => {
                     <form className="card-body">
 
                         <div className='d-flex justify-content-between'>
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Principal</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Principal</h3>
                             {disabled.principal && (
                                 <div >
                                     <button onClick={(e) => setDisabled(prev => ({ ...prev, principal: false }))} className="btn btn-danger">Edit</button>
@@ -462,7 +462,7 @@ const CollegeProfile = () => {
                     <form className="card-body">
 
                         <div className='d-flex justify-content-between'>
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Placement</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Placement</h3>
                             {disabled.placement && (
                                 <div >
                                     <button onClick={(e) => setDisabled(prev => ({ ...prev, placement: false }))} className="btn btn-danger">Edit</button>
@@ -564,7 +564,7 @@ const CollegeProfile = () => {
                             <form className="card-body">
 
                                 <div className='d-flex justify-content-between'>
-                                    <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Course {index + 1}</h3>
+                                    <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Course {index + 1}</h3>
                                     {disabled.course && (
                                         <div >
                                             <button onClick={(e) => setDisabled(prev => ({ ...prev, course: false }))} className="btn btn-danger">Edit</button>
@@ -667,7 +667,7 @@ const CollegeProfile = () => {
                 <div className="card container h-100 shadow-2-strong p-4 shadow-sm mb-5" style={{ backgroundColor: '#f8f8f8' }}>
                     <form className="card-body">
 
-                        <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">New Course</h3>
+                        <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">New Course</h3>
                         <div className='row form-row'>
 
                             <div className='col-md-6'>
@@ -739,7 +739,7 @@ const CollegeProfile = () => {
                 <div className="card container h-100 shadow-2-strong p-4 shadow-sm mb-5" style={{ backgroundColor: '#f8f8f8' }}>
                     <form className="card-body">
 
-                        <   h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Profile</h3>                           
+                        <   h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Profile</h3>                           
                             <div className='form-row row'>
 
                                 <div className='col-md-3'>
@@ -780,7 +780,7 @@ const CollegeProfile = () => {
                     <form className="card-body">
 
                         <div className='d-flex justify-content-between'>
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Account</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Account</h3>
                             {disabled.account && (
                                 <div >
                                     <button onClick={(e) => setDisabled(prev => ({ ...prev, account: false }))} className="btn btn-danger">Edit</button>
