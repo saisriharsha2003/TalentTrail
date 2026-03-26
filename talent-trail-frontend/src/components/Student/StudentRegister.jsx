@@ -4,8 +4,11 @@ import { notify } from "../Toast";
 import { Link } from "react-router-dom";
 
 const StudentRegister = () => {
+
     const parsedOutputString = localStorage.getItem("parsedOutput");
     const parsedOutput = parsedOutputString ? JSON.parse(parsedOutputString) : null;
+    const r = parsedOutput?.resume_data || {};
+
     const disabledDefault = {
         academic: false,
         certification: false,
@@ -14,73 +17,70 @@ const StudentRegister = () => {
         project: false,
         work: false,
     };
+
     const currentDefault = {
-        college: (parsedOutput?.Result?.["17 Candidate_Education"][0]?.["SchoolOrInstitution"]["SchoolName"] != "N/A") ? (parsedOutput?.Result?.["17 Candidate_Education"][0]?.["SchoolOrInstitution"]["SchoolName"].replace(/Of/gi, "of")) : '',
-        course: (parsedOutput?.Result?.["17 Candidate_Education"][0]?.["SchoolOrInstitution"]?.Major != "N/A") ? (parsedOutput?.Result?.["17 Candidate_Education"][0]?.["SchoolOrInstitution"]?.Major) : '',
-        joinDate: "",
-        graduatingYear: "",
-        city: "",
-        state: "",
-        rollNo: "",
-        studyYear: "",
-        major: (parsedOutput?.Result?.["17 Candidate_Education"][0]?.["SchoolOrInstitution"]["Degree"]?.["DegreeName"] != "N/A") ? (parsedOutput?.Result?.["17 Candidate_Education"][0]?.["SchoolOrInstitution"]["Degree"]?.["DegreeName"]) : '',
-        skills: (parsedOutput?.Result?.["23 IT_Skills_with_Keywords_only"]) ? (parsedOutput?.Result?.["23 IT_Skills_with_Keywords_only"]) : [],
-        interests: [],
-        cgpa: "",
+        college: r?.current_education?.college_name || '',
+        course: r?.current_education?.course || '',
+        joinDate: r?.current_education?.join_date || "",
+        graduatingYear: r?.current_education?.graduating_year || "",
+        city: r?.current_education?.city || "",
+        state: r?.current_education?.state || "",
+        rollNo: r?.current_education?.roll_no || "",
+        studyYear: r?.current_education?.study_year || "",
+        major: r?.current_education?.major || '',
+        skills: r?.current_education?.skills || [],
+        interests: r?.current_education?.interests || [],
+        cgpa: r?.current_education?.cgpa || "",
     };
+
     const previousDefault = {
-        college: (parsedOutput?.Result?.["17 Candidate_Education"][1]?.["SchoolOrInstitution"]?.SchoolName != "N/A") ? (parsedOutput?.Result?.["17 Candidate_Education"][1]?.["SchoolOrInstitution"]?.SchoolName) : '',
-        state: "",
-        city: "",
-        major: (parsedOutput?.Result?.["17 Candidate_Education"][1]?.["SchoolOrInstitution"]?.Degree?.DegreeName != "N/A") ? (parsedOutput?.Result?.["17 Candidate_Education"][1]?.["SchoolOrInstitution"]?.Degree?.DegreeName) : '',
-        percentage: "",
+        college: r?.previous_education?.college || '',
+        state: r?.previous_education?.state || "",
+        city: r?.previous_education?.city || "",
+        major: r?.previous_education?.major || '',
+        percentage: r?.previous_education?.percentage || "",
     };
-    const certificationDefault = {
-        name: (parsedOutput?.Result?.["18 Candidate_Certifications"][0] != "N/A") ? (parsedOutput?.Result?.["18 Candidate_Certifications"][0]) : "",
-        organization: (parsedOutput?.Result?.["18 Candidate_Certifications"][0].split(" ")[0] != "N/A") ? (parsedOutput?.Result?.["18 Candidate_Certifications"][0].split(" ")[0]) : "",
-    };
-    const contactDefault = {
-        email: (parsedOutput?.Result?.["11 Candidate_Email"][0] != "N/A") ? (parsedOutput?.Result?.["11 Candidate_Email"][0]) : "",
-        collegeEmail: "",
-        mobile: (parsedOutput?.Result?.["09 Candidate_Phone_Number"][0] != "N/A") ? (parsedOutput?.Result?.["09 Candidate_Phone_Number"][0]) : "",
-        currentAddress: ((parsedOutput?.Result?.["12 Candidate_City"][0] != "N/A") ? (parsedOutput?.Result?.["12 Candidate_City"][0]+', ') : "") +  ((parsedOutput?.Result?.["13 Candidate_State"][0] != "N/A") ? (parsedOutput?.Result?.["13 Candidate_State"][0]+', ') : "") + ((parsedOutput?.Result?.["14 Candidate_Country"][0] != "N/A") ? (parsedOutput?.Result?.["14 Candidate_Country"][0]) : ''),
-        permanentAddress: "",
-    };
-    const personalDefault = {
-        fullName: (parsedOutput?.Result?.["06 Candidate_Name"][0] != "N/A") ? (parsedOutput?.Result?.["06 Candidate_Name"][0]) : "",
-        fatherName: "",
-        motherName: "",
-        dateOfBirth: "",
-        gender: "",
-    };
-    const projectDefault = {
+
+    const certificationDefault = r?.certifications?.[0] || {
         name: "",
-        startDate: "",
-        endDate: "",
-        description: "",
-        associated: "",
+        organization: "",
     };
-    const workDefault = {
-        organization: (parsedOutput?.Result?.["28 Professional_Experience_Details"][0]["02 Company"] != "N/A") ? (parsedOutput?.Result?.["28 Professional_Experience_Details"][0]["02 Company"]) : "",
-        role: (parsedOutput?.Result?.["28 Professional_Experience_Details"][0]["04 Role"] != "N/A") ? (parsedOutput?.Result?.["28 Professional_Experience_Details"][0]["04 Role"]) : "",
-        description: (parsedOutput?.Result?.["28 Professional_Experience_Details"][0]["11 Project Details"] != "N/A") ? (parsedOutput?.Result?.["28 Professional_Experience_Details"][0]["11 Project Details"]) : "",
-        startDate: "",
-        endDate: "",
+
+    const contactDefault = {
+        email: r?.contact?.email || "",
+        collegeEmail: r?.contact?.college_email || "",
+        mobile: r?.contact?.mobile || "",
+        currentAddress: r?.contact?.current_address || "",
+        permanentAddress: r?.contact?.permanent_address || "",
     };
+
+    const personalDefault = {
+        fullName: r?.personal?.full_name || "",
+        fatherName: r?.personal?.father_name || "",
+        motherName: r?.personal?.mother_name || "",
+        dateOfBirth: r?.personal?.date_of_birth || "",
+        gender: r?.personal?.gender || "",
+    };
+
     const [current, setCurrent] = useState(false);
     const [disabled, setDisabled] = useState(disabledDefault);
 
     const axios = useAxiosPrivate();
+
     const [currentEducation, setCurrentEducation] = useState(currentDefault);
     const [previousEducation, setPreviousEducation] = useState(previousDefault);
     const [certification, setCertification] = useState(certificationDefault);
     const [contact, setContact] = useState(contactDefault);
     const [personal, setPersonal] = useState(personalDefault);
-    const [project, setProject] = useState(projectDefault);
-    const [work, setWork] = useState(workDefault);
     const [addcert, disableAddcert] = useState(true);
     const [addwork, disableAddwork] = useState(true);
     const [addproj, disableAddproj] = useState(true);
+
+    const [projects, setProjects] = useState(r?.projects || []);
+    const [currentProjectIndex, setCurrentProjectIndex] = useState(0);
+    const [experiences, setExperiences] = useState(r?.experience || []);
+    const [currentExpIndex, setCurrentExpIndex] = useState(0);
+
     const handleAcademic = async (e) => {
         e.preventDefault();
         try {
@@ -159,48 +159,64 @@ const StudentRegister = () => {
 
     const handleProject = async (e) => {
         e.preventDefault();
-        try {
-            const response = await axios.post("/student/project", {
-                ...project,
-            });
-            const success = response?.data?.success;
-            if (success) notify("success", success);
 
-            // setProject(projectDefault);
-            disableAddproj(false);
+        try {
+            let successMsg = "";
+
+            for (let proj of projects) {
+                const payload = {
+                    name: proj.name,
+                    description: proj.description,
+                    startDate: proj.startDate,
+                    endDate: proj.endDate || null,
+                    associated: proj.associated || "Self",
+                };
+
+                const response = await axios.post("/student/project", payload);
+
+                successMsg = response?.data?.success;
+            }
+
+            if (successMsg) notify("success", successMsg);
+
             setDisabled((prev) => ({ ...prev, project: true }));
+
         } catch (err) {
+            console.log(err?.response?.data);
             notify("failed", err?.response?.data?.message);
         }
     };
 
     const handleWork = async (e) => {
         e.preventDefault();
-        try {
-            const response = await axios.post("/student/work", {
-                ...work,
-            });
-            const success = response?.data?.success;
-            if (success) notify("success", success);
 
-            // if (
-            //     parsedOutput &&
-            //     parsedOutput.Result &&
-            //     parsedOutput.Result["28 Professional_Experience_Details"] &&
-            //     parsedOutput.Result["28 Professional_Experience_Details"][0]
-            // ) {
-            //     const experienceDetails = parsedOutput.Result["28 Professional_Experience_Details"][0];
-            //     experienceDetails["02 Company"] = "N/A";
-            //     experienceDetails["11 Project Details"] = "N/A";
-            //     experienceDetails["04 Role"] = "N/A";
-            // }
-            disableAddwork(false);
+        try {
+            let successMsg = "";
+
+            for (let exp of experiences) {
+                const payload = {
+                    organization: exp.company,
+                    role: exp.role,
+                    description: exp.description,
+                    startDate: exp.start_date,
+                    endDate: exp.end_date || "Present",
+                };
+
+                const response = await axios.post("/student/work", payload);
+
+                successMsg = response?.data?.success;
+            }
+
+            if (successMsg) notify("success", successMsg);
+
             setDisabled((prev) => ({ ...prev, work: true }));
+
         } catch (err) {
+            console.log(err?.response?.data);
             notify("failed", err?.response?.data?.message);
         }
     };
-
+    
     const handleProfile = async (e) => {
         e.preventDefault();
         try {
@@ -920,156 +936,113 @@ const StudentRegister = () => {
 
             {/* Project */}
             <div className="d-flex justify-content-center m-3">
-                <div className="card container p-4 h-100 shadow-2-strong shadow-sm" style={{ backgroundColor: "#fff" }}>
-                    <div className="card-body">
-                        <form>
-                            <fieldset disabled={disabled.project}>
-                                <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Projects</h3>
-                                <div className="form-row row mb-4">
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="prn">Name</label>
-                                        <input
-                                            id="prn"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="Name"
-                                            autoComplete="off"
-                                            value={project.name}
-                                            onChange={(e) =>
-                                                setProject((prev) => ({
-                                                    ...prev,
-                                                    name: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                        />
-                                    </div>
+                <div className="card container p-4 shadow-sm">
 
-                                </div>
-                                <div className="form-group mb-4">
-                                    <label htmlFor="prd">Description</label>
-                                    <textarea
-                                        id="prd"
-                                        rows="3"
-                                        className="form-control"
-                                        type="text"
-                                        placeholder="Description"
-                                        autoComplete="off"
-                                        value={project.description}
-                                        onChange={(e) =>
-                                            setProject((prev) => ({
-                                                ...prev,
-                                                description: e.target.value,
-                                            }))
-                                        }
-                                        required
-                                    />
-                                </div>
+                    <h3 className="mb-4">Projects</h3>
+                    {projects.length > 0 && (
+                        <div className="d-flex justify-content-between mb-3">
+                            <button
+                                className="btn btn-secondary"
+                                disabled={currentProjectIndex === 0}
+                                onClick={() => setCurrentProjectIndex((prev) => prev - 1)}
+                            >
+                                ⬅ Prev
+                            </button>
 
-                                <div className="form-row row mb-4">
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="prs">Start date</label>
-                                        <input
-                                            id="prs"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="DD/MM/YY"
-                                            autoComplete="off"
-                                            value={project.startDate}
-                                            onChange={(e) =>
-                                                setProject((prev) => ({
-                                                    ...prev,
-                                                    startDate: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="pre">End date</label>
-                                        <input
-                                            id="pre"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="DD/MM/YY"
-                                            autoComplete="off"
-                                            value={project.endDate}
-                                            disabled={current}
-                                            onChange={(e) =>
-                                                setProject((prev) => ({
-                                                    ...prev,
-                                                    endDate: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </div>
+                            <span>
+                                {currentProjectIndex + 1} / {projects.length}
+                            </span>
 
+                            <button
+                                className="btn btn-secondary"
+                                disabled={currentProjectIndex === projects.length - 1}
+                                onClick={() => setCurrentProjectIndex((prev) => prev + 1)}
+                            >
+                                Next ➡
+                            </button>
+                        </div>
+                    )}
 
-                                </div>
-                                <div className="form-row row mb-4">
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="pra">Associated</label>
-                                        <input
-                                            id="pra"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="Associated"
-                                            autoComplete="off"
-                                            value={project.associated}
-                                            onChange={(e) =>
-                                                setProject((prev) => ({
-                                                    ...prev,
-                                                    associated: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group col-md-6 mt-4">
-                                        <input
-                                            id="prc"
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            value={current}
-                                            onChange={(e) =>
-                                                setCurrent((prev) => {
-                                                    setProject((prev) => ({ ...prev, endDate: "" }));
-                                                    return !prev;
-                                                })
-                                            }
-                                        />
-                                        <label className="form-check-label" htmlFor="prc">
-                                            Currently working
-                                        </label>
-                                    </div>
+                    {/* 🔥 PROJECT FORM */}
+                    {projects.length > 0 && (
+                        <>
+                            <input
+                                className="form-control mb-3"
+                                placeholder="Project Name"
+                                value={projects[currentProjectIndex]?.name || ""}
+                                onChange={(e) => {
+                                    const updated = [...projects];
+                                    updated[currentProjectIndex].name = e.target.value;
+                                    setProjects(updated);
+                                }}
+                            />
 
+                            <textarea
+                                className="form-control mb-3"
+                                placeholder="Description"
+                                value={projects[currentProjectIndex]?.description || ""}
+                                onChange={(e) => {
+                                    const updated = [...projects];
+                                    updated[currentProjectIndex].description = e.target.value;
+                                    setProjects(updated);
+                                }}
+                            />
 
-                                </div>
+                            <input
+                                className="form-control mb-3"
+                                placeholder="Start Date"
+                                value={projects[currentProjectIndex]?.startDate || ""}
+                                onChange={(e) => {
+                                    const updated = [...projects];
+                                    updated[currentProjectIndex].startDate = e.target.value;
+                                    setProjects(updated);
+                                }}
+                            />
 
-                            </fieldset>
+                            <input
+                                className="form-control mb-3"
+                                placeholder="End Date"
+                                value={projects[currentProjectIndex]?.endDate || ""}
+                                onChange={(e) => {
+                                    const updated = [...projects];
+                                    updated[currentProjectIndex].endDate = e.target.value;
+                                    setProjects(updated);
+                                }}
+                            />
+                        </>
+                    )}
 
-                            <div className="row">
-                                <div className="col-md-6">
-                                    <button
-                                        disabled={disabled.project}
-                                        className="btn btn-primary"
-                                        onClick={handleProject}
-                                    >
-                                        submit
-                                    </button>
-                                </div>
+                    {/* 🔥 ADD PROJECT */}
+                    <button
+                        className="btn btn-dark mt-3"
+                        onClick={() => {
+                            setProjects([
+                                ...projects,
+                                {
+                                    name: "",
+                                    description: "",
+                                    startDate: "",
+                                    endDate: "",
+                                    associated: "",
+                                },
+                            ]);
+                            setCurrentProjectIndex(projects.length);
+                        }}
+                    >
+                        + Add Project
+                    </button>
 
-                                <div className="col-md-6">
-                                    <button className="btn btn-dark" onClick={addProject} disabled={addproj}>
-                                        add another
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+                    {/* 🔥 SUBMIT */}
+                    <button
+                        className="btn btn-primary mt-3"
+                        onClick={handleProject}
+                        disabled={disabled.project}
+                    >
+                        Submit All Projects
+                    </button>
+
                 </div>
             </div>
-
             {/* Work */}
             <div className="d-flex justify-content-center m-3">
                 <div className="card container p-4 h-100 shadow-2-strong shadow-sm" style={{ backgroundColor: "#fff" }}>
@@ -1077,122 +1050,114 @@ const StudentRegister = () => {
                         <form>
                             <fieldset disabled={disabled.work}>
                                 <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Work</h3>
-                                <div className="form-row row mb-4">
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="wo">Organization</label>
-                                        <input
-                                            id="wo"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="Organization"
-                                            autoComplete="off"
-                                            value={work.organization}
-                                            onChange={(e) =>
-                                                setWork((prev) => ({
-                                                    ...prev,
-                                                    organization: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="wr">Role</label>
-                                        <input
-                                            id="wr"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="Role"
-                                            autoComplete="off"
-                                            value={work.role}
-                                            onChange={(e) =>
-                                                setWork((prev) => ({
-                                                    ...prev,
-                                                    role: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                        />
-                                    </div>
+                                {experiences.length > 0 && (
+                                    <div className="card p-3 shadow-sm mb-4">
 
+                                        {/* NAVIGATION */}
+                                        <div className="d-flex justify-content-between mb-3">
+                                        <button
+                                            className="btn btn-secondary"
+                                            disabled={currentExpIndex === 0}
+                                            onClick={() => setCurrentExpIndex((prev) => prev - 1)}
+                                        >
+                                            ⬅ Prev
+                                        </button>
 
-                                </div>
-                                <div className="form-row row mb-4">
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="ws">Start date</label>
+                                        <span>
+                                            {currentExpIndex + 1} / {experiences.length}
+                                        </span>
+
+                                        <button
+                                            className="btn btn-secondary"
+                                            disabled={currentExpIndex === experiences.length - 1}
+                                            onClick={() => setCurrentExpIndex((prev) => prev + 1)}
+                                        >
+                                            Next ➡
+                                        </button>
+                                        </div>
+
+                                        {/* FORM */}
                                         <input
-                                            id="ws"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="DD/MM/YY"
-                                            autoComplete="off"
-                                            value={work.startDate}
-                                            onChange={(e) =>
-                                                setWork((prev) => ({
-                                                    ...prev,
-                                                    startDate: e.target.value,
-                                                }))
-                                            }
-                                            required
+                                        className="form-control mb-3"
+                                        placeholder="Organization"
+                                        value={experiences[currentExpIndex]?.company || ""}
+                                        onChange={(e) => {
+                                            const updated = [...experiences];
+                                            updated[currentExpIndex].company = e.target.value;
+                                            setExperiences(updated);
+                                        }}
                                         />
-                                    </div>
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="we">End date</label>
+
                                         <input
-                                            id="we"
-                                            className="form-control"
-                                            type="text"
-                                            placeholder="DD/MM/YY"
-                                            autoComplete="off"
-                                            value={work.endDate}
-                                            onChange={(e) =>
-                                                setWork((prev) => ({
-                                                    ...prev,
-                                                    endDate: e.target.value,
-                                                }))
-                                            }
-                                            required
+                                        className="form-control mb-3"
+                                        placeholder="Role"
+                                        value={experiences[currentExpIndex]?.role || ""}
+                                        onChange={(e) => {
+                                            const updated = [...experiences];
+                                            updated[currentExpIndex].role = e.target.value;
+                                            setExperiences(updated);
+                                        }}
                                         />
-                                    </div>
-                                </div>
-                                <div className="form-group mb-4">
-                                    <label htmlFor="wd">Description</label>
-                                    <textarea
-                                        id="wd"
-                                        rows="3"
-                                        className="form-control"
-                                        type="text"
+
+                                        <input
+                                        className="form-control mb-3"
+                                        placeholder="Start Date"
+                                        value={experiences[currentExpIndex]?.start_date || ""}
+                                        onChange={(e) => {
+                                            const updated = [...experiences];
+                                            updated[currentExpIndex].start_date = e.target.value;
+                                            setExperiences(updated);
+                                        }}
+                                        />
+
+                                        <input
+                                        className="form-control mb-3"
+                                        placeholder="End Date"
+                                        value={experiences[currentExpIndex]?.end_date || ""}
+                                        onChange={(e) => {
+                                            const updated = [...experiences];
+                                            updated[currentExpIndex].end_date = e.target.value;
+                                            setExperiences(updated);
+                                        }}
+                                        />
+
+                                        <textarea
+                                        className="form-control mb-3"
                                         placeholder="Description"
-                                        autoComplete="off"
-                                        value={work.description}
-                                        onChange={(e) =>
-                                            setWork((prev) => ({
-                                                ...prev,
-                                                description: e.target.value,
-                                            }))
-                                        }
-                                        required
-                                    />
-                                </div>
+                                        value={experiences[currentExpIndex]?.description || ""}
+                                        onChange={(e) => {
+                                            const updated = [...experiences];
+                                            updated[currentExpIndex].description = e.target.value;
+                                            setExperiences(updated);
+                                        }}
+                                        />
+                                    </div>
+                                    )}
+
+                                    <button
+                                    className="btn btn-dark mb-5"
+                                    onClick={() => {
+                                        setExperiences([
+                                        ...experiences,
+                                        {
+                                            company: "",
+                                            role: "",
+                                            start_date: "",
+                                            end_date: "",
+                                            description: "",
+                                        },
+                                        ]);
+                                        setCurrentExpIndex(experiences.length);
+                                    }}
+                                    >
+                                    + Add Experience
+                                    </button>
+
+                                    <button className="btn btn-primary mb-5" onClick={handleWork}>
+                                    Submit All Experience
+                                    </button>
                             </fieldset>
 
-                            <div className="row">
-                                <div className="col-md-6">
-                                    <button
-                                        disabled={disabled.work}
-                                        className="btn btn-primary"
-                                        onClick={handleWork}
-                                    >
-                                        submit
-                                    </button>
-                                </div>
-
-                                <div className="col-md-6">
-                                    <button className="btn btn-dark" onClick={addWork} disabled={addwork}>
-                                        add another
-                                    </button>
-                                </div>
-                            </div>
                         </form>
                     </div>
                 </div>
