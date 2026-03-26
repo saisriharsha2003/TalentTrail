@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const verifyJWT = require('../middleware/verifyJWT');
 
-router.post('/signup', userController.handleSignup);
+router.post('/register', userController.handleRegister);
 
 router.post('/login', userController.handleLogin);
 
