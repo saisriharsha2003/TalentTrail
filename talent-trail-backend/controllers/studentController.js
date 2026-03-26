@@ -12,7 +12,7 @@ const Recruiter = require('../models/recruiter');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
-// const FormData = require("form-data");
+const FormData = require("form-data");
 // const fetch = require('node-fetch');
 
 const { spawn } = require('child_process');
@@ -361,41 +361,55 @@ const parseJsonData = async (data) => {
 
 const parseResume = async (req, res, next) => {
     const { id } = req;
-  
+
     try {
         const foundStudent = await Student.findById(id).exec();
-        if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
+        if (!foundStudent) {
+            return res.status(401).json({ message: "unauthorized" });
+        }
 
-        if (!req.file) return res.status(400).json({ 'message': 'Only pdf or docx are allowed which are less than 2 mb' });
-        // console.log(req)
-        const resumeFile = req.file; // Access the buffer of the uploaded file
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Only pdf or docx under 2MB allowed"
+            });
+        }
+
+        const filePath = "/tmp/" + req.file.originalname;
+
+        console.log("📤 Sending file to Flask...");
+        console.log("URL:", process.env.RESUME_PARSER);
+
         const formData = new FormData();
-        let buf = fs.readFileSync("/tmp/"+resumeFile.originalname);
-        formData.append('resumenergpt', new Blob([buf], { type: resumeFile.mimetype }), resumeFile.originalname); // Append the blob with a filename
-        const parsedOutput = await axios.post(process.env.RESUME_PARSER, formData).then((resp) => {
-            console.log(resp.data);
-            return resp.data;
-        }).catch((e) => {
-            console.log(e.data)
-            next(e);
-        })
-        fs.unlinkSync("/tmp/"+resumeFile.originalname)
-       
-        res.setHeader("Access-Control-Allow-Origin", "*")
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader("Access-Control-Max-Age", "1800");
-        res.setHeader("Access-Control-Allow-Headers", "content-type");
-        res.setHeader( "Access-Control-Allow-Methods", "PUT, POST, GET, DELETE, PATCH, OPTIONS" ); 
-        res.status(201).json({ success: 'Resume processed successfully \nPlease fill out remaining fields', parsedOutput });
 
-        
-        // res.status(200).json({ success: 'Resume processed successfully' });
+        formData.append("file", fs.createReadStream(filePath));
 
-    }
-    catch(err){
+        const response = await axios.post(
+            process.env.RESUME_PARSER, // e.g. http://localhost:5000/parse_resume
+            formData,
+            {
+                headers: {
+                    ...formData.getHeaders()
+                },
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity
+            }
+        );
+
+        console.log("✅ Flask Response:", response.data);
+
+        // delete temp file
+        fs.unlinkSync(filePath);
+
+        return res.status(201).json({
+            success: "Resume processed successfully. Please fill remaining fields",
+            parsedOutput: response.data
+        });
+
+    } catch (err) {
+        console.error("❌ ERROR:", err.response?.data || err.message);
         next(err);
     }
-}
+};
 
 const postPersonal = async (req, res, next) => {
     const { fullName, fatherName, motherName, dateOfBirth, gender } = req.body;
