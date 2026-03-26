@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
-const verifyRole = require('../middleware/verfyRole');
+const verifyRole = require('../middleware/verifyRole');
 const { profileUpload } = require('../middleware/upload');
 
 router.use(verifyRole('admin'));

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const recruiterController = require('../controllers/recruiterController');
-const verifyRole = require('../middleware/verfyRole');
+const verifyRole = require('../middleware/verifyRole');
 const { profileUpload, resumeUpload } = require('../middleware/upload');
 
 router.use(verifyRole('recruiter'));
