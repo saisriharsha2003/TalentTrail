@@ -23,4 +23,4 @@ const RecruiterLayout = () => {
 
 }
 
-export default RecruiterLayout  
+export default RecruiterLayout
