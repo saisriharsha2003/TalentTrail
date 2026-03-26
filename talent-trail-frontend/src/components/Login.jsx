@@ -50,11 +50,11 @@ const Login = () => {
                             <form className="card" onSubmit={handleSubmit} id="is53">
 
                             <div className="card-body">
-                                <a href="/" class="d-flex align-items-center mb-3 link-dark text-decoration-none">
+                                <a href="/" className="d-flex align-items-center mb-3 link-dark text-decoration-none">
                                     <span className="navbar-brand fs-1 pacifico-regular" to={"/"}>Talentrail</span>  
                                 </a>
-                                <div id="i5mdc" class="col-12 col-md-12 mb-4">
-                                    <h4 id="i3nki" class="title">Sign in</h4>
+                                <div id="i5mdc" className="col-12 col-md-12 mb-4">
+                                    <h4 id="i3nki" className="title">Sign in</h4>
                                     <div id="i58zc">Don't have an account? </div>
                                     <a data-selected-page-collection="" target="" href="/register" id="itmob">Sign Up</a> 
                                 </div>
@@ -103,7 +103,7 @@ const Login = () => {
                             </div>
 
                             <div className="card-body">
-                                <button role="button" type="submit" id="iq8qg" class="btn btn-primary rounded-pill text-centered"><strong>Sign In</strong></button>                            
+                                <button role="button" type="submit" id="iq8qg" className="btn btn-primary rounded-pill text-centered"><strong>Sign In</strong></button>                            
                             </div>
 
                         </form>
