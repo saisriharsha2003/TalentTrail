@@ -783,7 +783,7 @@ const RecruiterStudentProfile = () => {
             </div>
 
             <div className='d-flex justify-content-center flex-wrap mx-5 mb-5'>{ jobs ?
-                <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
+                <div id="carouselExampleIndicators" className="carousel slide" data-bs-ride="carousel">
                     <div className="carousel-indicators">
                         {jobs.map((job, index) => (
                             <button
@@ -799,9 +799,9 @@ const RecruiterStudentProfile = () => {
                             ></button>
                         ))}
                     </div>
-                    <div class="carousel-inner" style={{ width: '38rem' }}>
+                    <div className="carousel-inner" style={{ width: '38rem' }}>
                         {jobs.map((job, index) => (
-                            <div key={index} class={"carousel-item" + (index === 0 ? " active" : "")} style={{ height: "54rem" }}>
+                            <div key={index} className={"carousel-item" + (index === 0 ? " active" : "")} style={{ height: "54rem" }}>
                                 <div className='container'>
                                     <div className="card m-5 p-3 my-3 shadow-sm" style={{ height: "54rem" }}>
                                         <section className="mb-3">
@@ -930,13 +930,13 @@ const RecruiterStudentProfile = () => {
                             </div>
                         ))}
                     </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev" style={{ color: 'black', marginRight: '20%', zIndex: "1" }}>
-                        <span class="carousel-control-prev-icon btn btn-dark" aria-hidden="true" style={{height:"10%", marginRight:"25%"}}></span>
-                        <span class="visually-hidden">Previous</span>
+                    <button className="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev" style={{ color: 'black', marginRight: '20%', zIndex: "1" }}>
+                        <span className="carousel-control-prev-icon btn btn-dark" aria-hidden="true" style={{height:"10%", marginRight:"25%"}}></span>
+                        <span className="visually-hidden">Previous</span>
                     </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next" style={{ color: 'black', marginLeft: '20p%', zIndex: "1" }}>
-                        <span class="carousel-control-next-icon btn btn-dark" aria-hidden="true" style={{height:"10%", marginLeft:"25%"}}></span>
-                        <span class="visually-hidden">Next</span>
+                    <button className="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next" style={{ color: 'black', marginLeft: '20p%', zIndex: "1" }}>
+                        <span className="carousel-control-next-icon btn btn-dark" aria-hidden="true" style={{height:"10%", marginLeft:"25%"}}></span>
+                        <span className="visually-hidden">Next</span>
                     </button>
                 </div>
             : null}</div>

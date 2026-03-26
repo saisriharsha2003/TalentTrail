@@ -79,7 +79,7 @@ const RecruiterOpening = () => {
                         
                         <div className='card-body'>
                         <div className='d-flex justify-content-between'>
-                                    <h2 class="mb-4 pb-1 pb-md-0 mb-md-4">Job</h2>
+                                    <h2 className="mb-4 pb-1 pb-md-0 mb-md-4">Job</h2>
                                     <div >
                                         <button onClick={() => navigate('/uploadJD')} className="btn btn-dark">Upload JD</button>
                                     </div>

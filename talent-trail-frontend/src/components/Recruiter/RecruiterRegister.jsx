@@ -106,7 +106,7 @@ const RecruiterRegister = () => {
 
                         <fieldset disabled={disabled.company}>
 
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Company</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Company</h3>
                             <div className='row form-row'>
 
                                 <div className='col-md-6'>
@@ -264,7 +264,7 @@ const RecruiterRegister = () => {
 
                             <fieldset disabled={disabled.recruiterDetail}>
 
-                            <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Recruiter</h3>
+                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Recruiter</h3>
 
                                 <div className='row form-row'>
 
@@ -373,7 +373,7 @@ const RecruiterRegister = () => {
                     <div className="card container h-100 shadow-2-strong mt-5 p-4 shadow-sm mb-5" style={{ backgroundColor: '#fff' }}>
                         <form className="card-body">
 
-                        <h3 class="mb-4 pb-2 pb-md-0 mb-md-4">Profile</h3>
+                        <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Profile</h3>
 
                         <div className="form-row row mb-4">
                                 <div className="form-group col-md-9">
