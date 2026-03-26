@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
@@ -9,6 +8,10 @@ const corsOptions = require('./config/corsOrigins.js');
 const credentials = require('./middleware/credentials');
 const verifyJWT = require('./middleware/verifyJWT.js');
 const PORT = process.env.PORT || 3500;
+
+require('dotenv').config({
+  path: require('path').resolve(__dirname, '../.env')
+});
 
 connectDB();
 
@@ -44,7 +47,7 @@ app.use(cookieParser());
 
 app.use('/resumes', express.static('resumes'));
 
-app.use('^/', require('./routes/user'));
+app.use('/', require('./routes/user'));
 
 app.use(verifyJWT);
 
@@ -56,16 +59,10 @@ app.use('/college', require('./routes/college'));
 
 app.use('/admin', require('./routes/admin'));
 
-app.all('*', (req, res) => {
-    res.status(404).json({ 'message': 'PAGE-NOT-FOUND' });
+app.use((req, res) => {
+    res.status(404).json({ message: 'PAGE-NOT-FOUND' });
 });
-
-app.use((err, req, res, next) => {
-    console.log(err.stack);
-    res.status(500).json({ 'message': err.message });
-});
-
 mongoose.connection.once('open', () => {
-    console.log('mongodb connected');
+    console.log('Connected to MongoDB');
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
