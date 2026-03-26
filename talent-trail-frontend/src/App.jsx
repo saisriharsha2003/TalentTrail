@@ -39,13 +39,12 @@ import AdminProfile from './components/Admin/AdminProfile';
 
 import Layout from "./components/Layout";
 import Login from "./components/Login";
-import Signup from './components/Signup';
+import Register from './components/Register';
 import Home from "./components/Home";
 import Toast from "./components/Toast";
 import NotFound from './components/NotFound';
 import UserLayout from "./components/UserLayout";
 
-import { Route, Routes } from "react-router-dom";
 import { Route, Routes } from "react-router-dom";
 
 const App = () => {
@@ -57,7 +56,7 @@ const App = () => {
 
           <Route index element={<Home />} />
           <Route path='login' element={<Login />} />
-          <Route path='signup' element={<Signup />} />
+          <Route path='register' element={<Register />} />
           <Route path="studentRegister" element={<StudentRegister />} />
           <Route path="uploadResume" element={<UploadResume />} />
           <Route path="uploadJD" element={<UploadJD />} />

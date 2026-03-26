@@ -19,7 +19,7 @@ const Register = () => {
         }
         e.preventDefault();
         try {
-            const response = await axios.post('/signup', { username, password, role });
+            const response = await axios.post('/register', { username, password, role });
             const success = response?.data?.success;
             if (success)
                 notify('success', success);

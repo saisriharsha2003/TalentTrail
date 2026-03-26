@@ -29,7 +29,7 @@ const Home = () => {
                                 <h4 id="i7bxi">Placement Portal</h4>
                                 <h1 id="iwcxz">Comprehensive and effective Placement Portal</h1>
                                 <p id="i725s">Where the appropriate set of opportunities meet the best collection of skills.</p>
-                                <a href="#" class="btn btn-primary rounded-pill mt-md-3 mt-lg-5 text-center fw-bold pr-2 pl-2 fs-5">Contact Us for More</a>
+                                <a href="#" className="btn btn-primary rounded-pill mt-md-3 mt-lg-5 text-center fw-bold pr-2 pl-2 fs-5">Contact Us for More</a>
 
                             </div>
                             <div id="iv3t9" className="col-xl-5 col-lg-5 hero_07_right_image text-right col-md-5">
@@ -79,7 +79,7 @@ const Home = () => {
                                         <div id="imf0h" className="col-12 col-sm-12 col-md-6 col-lg-9 col-xl-9 ml-4">
                                             <h1 id="i64m6">Digitize and automate online placements.</h1>
                                             <p id="i4w0j">Streamline the process, track data, reach out to additional employers, and go online with your placement cell.</p>
-                                            <a href="/login" class="btn btn-primary rounded-pill mt-md-3 mt-lg-4 text-center fw-bold pr-2 pl-2" onClick={() => handleClick("college")}>For Universities</a>
+                                            <a href="/login" className="btn btn-primary rounded-pill mt-md-3 mt-lg-4 text-center fw-bold pr-2 pl-2" onClick={() => handleClick("college")}>For Universities</a>
                                         </div>
                                     </div>
                                 </div>
@@ -96,7 +96,7 @@ const Home = () => {
                                     <div id="ifq93i" className="col-12 col-sm-12 col-md-6 col-lg-9 col-xl-9">
                                         <h1 id="izk04o">Learn about jobs, prepare for them, and apply for them.</h1>
                                         <p id="ixaj7g">Find new possibilities, study and practise on the road, and improve your interview preparation.</p>
-                                        <a href="/login" class="btn btn-primary rounded-pill mt-md-3 mt-lg-4 text-center fw-bold pr-2 pl-2" onClick={() => handleClick("student")}>For Students</a>
+                                        <a href="/login" className="btn btn-primary rounded-pill mt-md-3 mt-lg-4 text-center fw-bold pr-2 pl-2" onClick={() => handleClick("student")}>For Students</a>
                                     </div>
                                 </div>
                                 </div>
@@ -114,7 +114,7 @@ const Home = () => {
                                         <div id="iwlmz" className="col-12 col-sm-12 col-md-6 col-lg-9 col-xl-9">
                                             <h1 id="ib5wo">A one-stop site for employment on campus.</h1>
                                             <p id="i08xl">Connect with additional universities online, and our matching algorithms can help you locate your ideal candidate quickly.</p>
-                                            <a href="/login" class="btn btn-primary rounded-pill mt-md-3 mt-lg-4 text-center fw-bold pr-2 pl-2" onClick={() => handleClick("recruiter")}>For Employers</a>
+                                            <a href="/login" className="btn btn-primary rounded-pill mt-md-3 mt-lg-4 text-center fw-bold pr-2 pl-2" onClick={() => handleClick("recruiter")}>For Employers</a>
                                         </div>
                                     </div>
                                 </div>
@@ -125,59 +125,59 @@ const Home = () => {
             </section>
 
 
-            <section class='Team dc-sections' id="iip7yv">
-                <div class="container-xl p-md-5">
+            <section className='Team dc-sections' id="iip7yv">
+                <div className="container-xl p-md-5">
                     <div id='ii981t' className='p-3 pt-5 mb-4' >
-                        <div class="section-title">
+                        <div className="section-title">
                             <h2>Team</h2>
-                            <p class="mb-5">Our Hardworking Team</p>
+                            <p className="mb-5">Our Hardworking Team</p>
                         </div>
-                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
-                            <div class="col">
-                                <div class="card procard h-55" >
-                                    <div class="card-img-caption">
-                                        <img src={rajesh} class="card-img-top" id="" height={325} />
+                        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+                            <div className="col">
+                                <div className="card procard h-55" >
+                                    <div className="card-img-caption">
+                                        <img src={rajesh} className="card-img-top" id="" height={325} />
                                         <p style={{ backgroundColor: "#493fe5", color: "#fff" }} className='card-text text-center'>Team Lead</p>
                                     </div>
-                                    <div class="card-body">
-                                        <h5 class="card-title">Rajesh</h5>
-                                        <p class="card-text">20BQ1A4247</p>
+                                    <div className="card-body">
+                                        <h5 className="card-title">Rajesh</h5>
+                                        <p className="card-text">20BQ1A4247</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col">
-                                <div class="card procard h-55" >
-                                    <div class="card-img-caption">
-                                        <img src={harsha} class="card-img-top" height={325}/>
+                            <div className="col">
+                                <div className="card procard h-55" >
+                                    <div className="card-img-caption">
+                                        <img src={harsha} className="card-img-top" height={325}/>
                                         <p style={{ backgroundColor: "#493fe5", color: "#fff" }} className='card-text text-center'>Team Member 1</p>
                                     </div>
-                                    <div class="card-body">
-                                        <h5 class="card-title">Harsha</h5>
-                                        <p class="card-text">20BQ1A4245</p>
+                                    <div className="card-body">
+                                        <h5 className="card-title">Harsha</h5>
+                                        <p className="card-text">20BQ1A4245</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col">
-                                <div class="card procard h-55" >
-                                    <div class="card-img-caption">
-                                        <img src={joseph} class="card-img-top" height={325}/>
+                            <div className="col">
+                                <div className="card procard h-55" >
+                                    <div className="card-img-caption">
+                                        <img src={joseph} className="card-img-top" height={325}/>
                                         <p style={{ backgroundColor: "#493fe5", color: "#fff" }} className='card-text text-center'>Team Member 2</p>
                                     </div>
-                                    <div class="card-body">
-                                        <h5 class="card-title">Joseph</h5>
-                                        <p class="card-text">20BQ1A4208</p>
+                                    <div className="card-body">
+                                        <h5 className="card-title">Joseph</h5>
+                                        <p className="card-text">20BQ1A4208</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col">
-                                <div class="card procard h-55" >
-                                    <div class="card-img-caption">
-                                        <img src={vara} class="card-img-top" height={325}/>
+                            <div className="col">
+                                <div className="card procard h-55" >
+                                    <div className="card-img-caption">
+                                        <img src={vara} className="card-img-top" height={325}/>
                                         <p style={{ backgroundColor: "#493fe5", color: "#fff" }} className='card-text text-center'>Team Member 3</p>
                                     </div>
-                                    <div class="card-body">
-                                        <h5 class="card-title">Vara</h5>
-                                        <p class="card-text">20BQ1A4217</p>
+                                    <div className="card-body">
+                                        <h5 className="card-title">Vara</h5>
+                                        <p className="card-text">20BQ1A4217</p>
                                     </div>
                                 </div>
                             </div>
