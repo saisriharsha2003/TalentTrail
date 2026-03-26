@@ -51,11 +51,11 @@ const Register = () => {
                         <form className="card-body" onSubmit={handleSubmit}>
 
                             <div className="card-body">
-                            <a href="/" class="d-flex align-items-center mb-3 link-dark text-decoration-none">
+                            <a href="/" className="d-flex align-items-center mb-3 link-dark text-decoration-none">
                                     <span className="navbar-brand fs-1 pacifico-regular" to={"/"}>Talentrail</span>  
                                 </a>
-                                <div id="i5mdc" class="col-12 col-md-12 mb-4">
-                                    <h2 id="i3nki" class="title">Sign Up</h2>
+                                <div id="i5mdc" className="col-12 col-md-12 mb-4">
+                                    <h2 id="i3nki" className="title">Sign Up</h2>
                                 </div>
                                 <div className="form-floating flex-nowrap">
                                     <input
@@ -121,7 +121,7 @@ const Register = () => {
                             </div>
 
                             <div className="card-body">
-                                <button role="button" type="submit" id="iq8qg" class="btn btn-primary rounded-pill text-centered"><strong>Sign Up</strong></button>                            
+                                <button role="button" type="submit" id="iq8qg" className="btn btn-primary rounded-pill text-centered"><strong>Sign Up</strong></button>                            
                             </div>
 
                         </form>
