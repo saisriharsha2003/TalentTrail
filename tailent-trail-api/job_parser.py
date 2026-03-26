@@ -352,13 +352,3 @@ def job_parser(file_path):
 
     return data
 
-
-# -------------------------------
-# RUN
-# -------------------------------
-if __name__ == "__main__":
-    file_path = input("Enter JD file path: ")
-    parsed = job_parser(file_path)
-
-    print("\n✅ Parsed Job:\n")
-    print(json.dumps(parsed, indent=2))

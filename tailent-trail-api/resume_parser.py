@@ -137,156 +137,134 @@ def resume_ner_gpt(file_path):
     current_date = datetime.today().strftime("%Y-%m")
 
     prompt = f"""
-        You are an advanced resume parsing system.
+Extract structured resume data and return ONLY valid JSON.
 
-        Your task is to extract structured information from a resume and return ONLY valid JSON.
+FORMAT (DO NOT CHANGE KEYS):
 
-        --------------------------------------------------
-        OUTPUT FORMAT (STRICT — DO NOT CHANGE KEYS)
-        --------------------------------------------------
+{{
+  "personal": {{
+    "full_name": "",
+    "date_of_birth": null,
+    "father_name": null,
+    "mother_name": null,
+    "gender": null
+  }},
+  "contact": {{
+    "email": "",
+    "mobile": "",
+    "college_email": null,
+    "current_address": "",
+    "permanent_address": null
+  }},
+  "current_education": {{
+    "college_name": "",
+    "study_year": null,
+    "major": "",
+    "course": "",
+    "join_date": null,
+    "roll_no": null,
+    "graduating_year": null,
+    "skills": [],
+    "city": "",
+    "state": null,
+    "interests": [],
+    "cgpa": null
+  }},
+  "previous_education": {{
+    "college": null,
+    "major": null,
+    "state": null,
+    "percentage": null,
+    "city": null
+  }},
+  "experience": [
+    {{
+      "company": "",
+      "role": "",
+      "start_date": null,
+      "end_date": null,
+      "description": ""
+    }}
+  ],
+  "projects": [
+    {{
+      "name": "",
+      "description": "",
+      "start_date": null,
+      "end_date": null,
+      "associated": null,
+      "currently_working": false
+    }}
+  ],
+  "certifications": [
+    {{
+      "name": "",
+      "organization": null
+    }}
+  ]
+}}
 
-        {{
-        "name": "",
-        "given_name": "",
-        "surname": "",
-        "phone": "",
-        "email": "",
-        "location": {{
-            "city": "",
-            "state": "",
-            "country": ""
-        }},
-        "skills": [],
-        "experience": [
-            {{
-            "company": "",
-            "role": "",
-            "start_date": "",
-            "end_date": "",
-            "skills": [],
-            "description": ""
-            }}
-        ],
-        "education": [
-            {{
-            "degree": "",
-            "specialization": "",
-            "institution": ""
-            }}
-        ]
-        }}
+RULES:
 
-        --------------------------------------------------
-        GLOBAL INSTRUCTIONS
-        --------------------------------------------------
+- Return ONLY JSON (no text, no explanation)
+- NEVER omit any key from FORMAT
+- Use:
+  - [] for empty arrays
+  - null for missing values
+- DO NOT guess missing data
 
-        1. Return ONLY valid JSON.
-        2. Do NOT include explanations, comments, or text outside JSON.
-        3. Do NOT change key names.
-        4. If a value is missing, use null instead of guessing.
-        5. Do NOT hallucinate or invent any information.
+DATE RULES:
+- Format: yyyy-mm
+- "Present" → keep as "Present"
+- If missing → null
 
-        --------------------------------------------------
-        NAME RULES
-        --------------------------------------------------
+ADDRESS RULE:
+- current_address = combine city + state + country
 
-        - Extract full name exactly as written.
-        - Do NOT reorder or modify name.
-        - Do NOT guess given_name or surname if unclear.
+----------------------------------
+EXTRACTION LOGIC
+----------------------------------
 
-        --------------------------------------------------
-        EXPERIENCE RULES (VERY IMPORTANT)
-        --------------------------------------------------
+1. EXPERIENCE:
+- Include ONLY real jobs, internships
+- MUST have company name
+- Exclude anything that looks like personal work
 
-        Include ONLY professional work experience:
+2. PROJECTS (CRITICAL):
+- Include personal, academic, or self-built work
+- Detect:
+  - "project", "built", "developed", "created"
+  - OR descriptions of apps/platforms/tools
+- If something is excluded from experience → move it here
+- Extract tech/tools if possible
 
-        ✔ Full-time roles  
-        ✔ Part-time roles  
-        ✔ Internships  
+3. EDUCATION:
+- First → current_education
+- Second → previous_education
 
-        DO NOT include:
+4. SKILLS:
+- Extract ALL skills (languages, tools, frameworks, cloud, concepts)
+- Keep as clean keywords
 
-        ✘ Personal projects  
-        ✘ Academic projects  
-        ✘ Self-built applications  
-        ✘ Freelance projects unless explicitly marked as professional work  
+5. CERTIFICATIONS:
+- Extract only if explicitly mentioned
+- Otherwise return []
 
-        STRICT VALIDATION:
+----------------------------------
+FINAL VALIDATION (MANDATORY)
+----------------------------------
 
-        - If a company name is NOT clearly mentioned → DO NOT include it in experience.
-        - If the entry contains words like "project", "built", "developed", "created" → DO NOT include in experience.
-        - If unsure whether it is experience → EXCLUDE it.
+Before returning JSON:
+- Ensure ALL keys exist
+- Ensure experience contains ONLY jobs
+- Ensure projects contains non-company work
+- Ensure no hallucinated values
+- Ensure valid JSON
 
-        --------------------------------------------------
-        DATE RULES (STRICT)
-        --------------------------------------------------
-
-        CURRENT DATE: {current_date}
-
-        - Extract dates ONLY if explicitly mentioned in the resume.
-        - DO NOT guess or infer missing dates.
-        - Convert all dates to format: yyyy-mm
-
-        Examples:
-        - "September 2023" → "2023-09"
-        - "Jan 2022" → "2022-01"
-
-        - If end date is "Present" or "Current":
-        → Keep end_date as "Present" (DO NOT replace)
-
-        - If a date is missing:
-        → Use null
-
-        --------------------------------------------------
-        SKILL EXTRACTION RULES
-        --------------------------------------------------
-
-        - Extract ALL skills mentioned in the resume.
-        - Include:
-        • Programming languages
-        • Frameworks
-        • Tools
-        • Databases
-        • Cloud & DevOps technologies
-        • Concepts (e.g., Data Structures, NLP)
-
-        - DO NOT:
-        ✘ Merge multiple skills into one
-        ✘ Drop skills
-        ✘ Convert into sentences
-
-        - Keep skills as clean keywords only.
-
-        --------------------------------------------------
-        EDUCATION RULES
-        --------------------------------------------------
-
-        - Extract:
-        ✔ Degree
-        ✔ Specialization (major / field of study)
-        ✔ Institution name
-
-        - DO NOT guess missing values.
-        - If specialization is not mentioned → return null.
-
-        --------------------------------------------------
-        FINAL VALIDATION RULES
-        --------------------------------------------------
-
-        Before returning JSON:
-
-        - Ensure experience contains ONLY valid professional roles.
-        - Ensure no projects are included in experience.
-        - Ensure all dates follow yyyy-mm format.
-        - Ensure no guessed or hallucinated values are present.
-        - Ensure JSON is valid and properly structured.
-
-        --------------------------------------------------
-        RESUME TEXT
-        --------------------------------------------------
-
-        {text[:12000]}
-    """
+----------------------------------
+RESUME:
+{text[:12000]}
+"""
 
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
@@ -366,13 +344,3 @@ Write a professional 3-line resume summary:
 
     return data
 
-
-# -------------------------------
-# RUN
-# -------------------------------
-if __name__ == "__main__":
-    file_path = input("Enter file path: ")
-    parsed = resume_ner_gpt(file_path)
-
-    print("\n✅ Parsed Resume:\n")
-    print(json.dumps(parsed, indent=2))

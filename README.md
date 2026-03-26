@@ -47,7 +47,7 @@ EmpowerRecruit enhances efficiency, transparency, and engagement in the hiring p
     │       │   ├── layout.js  # Layout component
     │       │   ├── login.js  # Login form component
     │       │   ├── notFound.js  # 404 error page
-    │       │   ├── signup.js  # Signup form component
+    │       │   ├── register.js  # Register form component
     │       │   ├── toast.js  # Notification component
     │       │   ├── userLayout.js  # Layout for user pages
     │       │   ├── admin/

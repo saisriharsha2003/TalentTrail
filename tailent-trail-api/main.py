@@ -6,8 +6,9 @@ from werkzeug.utils import secure_filename
 
 # Import the three modules
 from resume_parser import resume_ner_gpt
-from job_parser import job_ner_gpt1
-from compute_score import compute_similarity
+from job_parser import job_parser
+from mock_data import resume_data_mock
+# from compute_score import compute_similarity
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
@@ -61,8 +62,9 @@ def parse_resume():
         file.save(temp_path)
         
         try:
-            # Parse resume using imported function
-            resume_data = resume_ner_gpt(temp_path)
+            # # Parse resume using imported function
+            # resume_data = resume_ner_gpt(temp_path)
+            resume_data = resume_data_mock
             
             return jsonify({
                 'success': True,
@@ -112,7 +114,7 @@ def parse_job():
         
         try:
             # Parse job description using imported function
-            job_data = job_ner_gpt1(temp_path)
+            job_data = job_parser.parse_job_description(temp_path)
             
             # Map tuple to structured object for cleaner API response
             job_fields = [
@@ -156,41 +158,41 @@ def parse_job():
         return jsonify({'error': f'Job parsing failed: {str(e)}'}), 500
 
 
-@app.route('/compute_score', methods=['POST'])
-@cross_origin(supports_credentials=True)
-def compute_score():
-    """
-    Compute semantic similarity between two text inputs using BGEM3 embeddings.
+# @app.route('/compute_score', methods=['POST'])
+# @cross_origin(supports_credentials=True)
+# def compute_score():
+#     """
+#     Compute semantic similarity between two text inputs using BGEM3 embeddings.
     
-    Expected params:
-        - sent1 (string): First text input
-        - sent2 (string): Second text input
+#     Expected params:
+#         - sent1 (string): First text input
+#         - sent2 (string): Second text input
     
-    Returns: Similarity score as percentage (0-100)
-    """
-    try:
-        # Extract sentences from request
-        sent1 = request.form.get('sent1')
-        sent2 = request.form.get('sent2')
+#     Returns: Similarity score as percentage (0-100)
+#     """
+#     try:
+#         # Extract sentences from request
+#         sent1 = request.form.get('sent1')
+#         sent2 = request.form.get('sent2')
         
-        # Validate inputs
-        if not sent1 or not sent2:
-            return jsonify({
-                'error': 'Both sent1 and sent2 parameters are required'
-            }), 400
+#         # Validate inputs
+#         if not sent1 or not sent2:
+#             return jsonify({
+#                 'error': 'Both sent1 and sent2 parameters are required'
+#             }), 400
         
-        # Compute similarity score
-        similarity_score = compute_similarity(sent1, sent2)
+#         # Compute similarity score
+#         similarity_score = compute_similarity(sent1, sent2)
         
-        return jsonify({
-            'success': True,
-            'similarity_score': similarity_score,
-            'sent1_preview': sent1[:100] + ('...' if len(sent1) > 100 else ''),
-            'sent2_preview': sent2[:100] + ('...' if len(sent2) > 100 else '')
-        }), 200
+#         return jsonify({
+#             'success': True,
+#             'similarity_score': similarity_score,
+#             'sent1_preview': sent1[:100] + ('...' if len(sent1) > 100 else ''),
+#             'sent2_preview': sent2[:100] + ('...' if len(sent2) > 100 else '')
+#         }), 200
 
-    except Exception as e:
-        return jsonify({'error': f'Score computation failed: {str(e)}'}), 500
+#     except Exception as e:
+#         return jsonify({'error': f'Score computation failed: {str(e)}'}), 500
 
 
 @app.route('/api/endpoints', methods=['GET'])
