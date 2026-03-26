@@ -1,18 +1,25 @@
 import axios from '../api/axios';
-import { jwtDecode } from "jwt-decode";
 
 const useRefreshToken = () => {
     const refresh = async () => {
-        const accessToken = localStorage.getItem('accessToken');
-        const decoded = jwtDecode(accessToken);
-        const response = await axios.get(`/refresh/${decoded.userInfo.role}`, {
-            withCredentials: true
-        });
-        localStorage.setItem('accessToken', response?.data?.accessToken);
+        try {
+            const response = await axios.get('/refresh', {
+                withCredentials: true
+            });
 
-        return response?.data?.accessToken;
-    }
+            const newAccessToken = response?.data?.accessToken;
+
+            localStorage.setItem('accessToken', newAccessToken);
+
+            return newAccessToken;
+
+        } catch (err) {
+            console.error("Refresh failed", err);
+            throw err;
+        }
+    };
+
     return refresh;
-}
+};
 
 export default useRefreshToken;

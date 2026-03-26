@@ -13,11 +13,15 @@ const useAxiosPrivate = () => {
         const requestIntercept = axiosPrivate.interceptors.request.use(
             config => {
                 if (!config.headers['Authorization']) {
-                    config.headers['Authorization'] = `Bearer ${accessToken}`;
+                    const token = localStorage.getItem('accessToken');
+                    if (token) {
+                        config.headers['Authorization'] = `Bearer ${token}`;
+                    }
                 }
                 return config;
-            }, (err) => Promise.reject(err)
-        )
+            },
+            err => Promise.reject(err)
+        );
 
         const responseIntercept = axiosPrivate.interceptors.response.use(
             response => response,
