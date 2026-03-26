@@ -2,7 +2,7 @@ const Admin = require('../models/admin');
 const Job = require('../models/job');
 const Student = require('../models/student');
 const Recruiter = require('../models/recruiter');
-const AppliedJob = require('../models/student/appliedJob');
+const AppliedJob = require('../models/student/appliedJob.js');
 
 const getDashboard = async (req, res, next) => {
     const { id } = req;
