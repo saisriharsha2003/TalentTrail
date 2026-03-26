@@ -1,0 +1,14 @@
+Flask==3.0.2
+flask-babel==4.0.0
+Flask-Cors==4.0.0
+requests==2.31.0
+
+# ML / Embeddings (use flexible versions for Py 3.14)
+numpy>=1.26.4
+sentence-transformers>=2.5.1
+FlagEmbedding>=1.2.5
+openai>=1.0.0
+python-dotenv>=1.0.0
+pdfminer.six>=20201018
+docx2txt>=0.8
+mammoth>=1.6.0
