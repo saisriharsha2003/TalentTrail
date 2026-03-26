@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-// console.log("In handle signup")
-const handleSignup = async (req, res, next) => {
-    console.log("In handle signup")
+// console.log("In handle register")
+const handleRegister = async (req, res, next) => {
+    console.log("In handle register")
     const { username, password, role } = req.body;
     if (!username || !password || !role) return res.status(400).json({ 'message': 'Bad request - Username, Password and role are required' });
     if (password.length < 8) return res.status(400).json({ 'message': 'password must have minimun length of 8 characters' });
@@ -230,7 +230,7 @@ const putPassword = async (req, res, next) => {
 
 module.exports = {
     handleLogin,
-    handleSignup,
+    handleRegister,
     handleRefreshToken,
     handleLogout,
     putUsername,
