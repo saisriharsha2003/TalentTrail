@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from pdfminer.high_level import extract_text
 import docx2txt
 import mammoth
+import mock_data
 
 # -------------------------------
 # LOAD ENV
@@ -137,134 +138,153 @@ def resume_ner_gpt(file_path):
     current_date = datetime.today().strftime("%Y-%m")
 
     prompt = f"""
-Extract structured resume data and return ONLY valid JSON.
+    Extract structured resume data and return ONLY valid JSON.
 
-FORMAT (DO NOT CHANGE KEYS):
+    FORMAT (DO NOT CHANGE KEYS):
 
-{{
-  "personal": {{
-    "full_name": "",
-    "date_of_birth": null,
-    "father_name": null,
-    "mother_name": null,
-    "gender": null
-  }},
-  "contact": {{
-    "email": "",
-    "mobile": "",
-    "college_email": null,
-    "current_address": "",
-    "permanent_address": null
-  }},
-  "current_education": {{
-    "college_name": "",
-    "study_year": null,
-    "major": "",
-    "course": "",
-    "join_date": null,
-    "roll_no": null,
-    "graduating_year": null,
-    "skills": [],
-    "city": "",
-    "state": null,
-    "interests": [],
-    "cgpa": null
-  }},
-  "previous_education": {{
-    "college": null,
-    "major": null,
-    "state": null,
-    "percentage": null,
-    "city": null
-  }},
-  "experience": [
     {{
-      "company": "",
-      "role": "",
-      "start_date": null,
-      "end_date": null,
-      "description": ""
+    "personal": {{
+        "full_name": "",
+        "date_of_birth": null,
+        "father_name": null,
+        "mother_name": null,
+        "gender": null
+    }},
+    "contact": {{
+        "email": "",
+        "mobile": "",
+        "college_email": null,
+        "current_address": "",
+        "permanent_address": null
+    }},
+    "current_education": {{
+        "college_name": "",
+        "study_year": null,
+        "major": "",
+        "course": "",
+        "join_date": null,
+        "roll_no": null,
+        "graduating_year": null,
+        "skills": [],
+        "city": "",
+        "state": null,
+        "interests": [],
+        "cgpa": null
+    }},
+    "previous_education": {{
+        "college": null,
+        "major": null,
+        "state": null,
+        "percentage": null,
+        "city": null
+    }},
+    "experience": [
+        {{
+        "company": "",
+        "role": "",
+        "start_date": null,
+        "end_date": null,
+        "description": ""
+        }}
+    ],
+    "projects": [
+        {{
+        "name": "",
+        "description": "",
+        "start_date": null,
+        "end_date": null,
+        "associated": null,
+        "currently_working": false
+        }}
+    ],
+    "certifications": [
+        {{
+        "name": "",
+        "organization": null
+        }}
+    ]
     }}
-  ],
-  "projects": [
-    {{
-      "name": "",
-      "description": "",
-      "start_date": null,
-      "end_date": null,
-      "associated": null,
-      "currently_working": false
-    }}
-  ],
-  "certifications": [
-    {{
-      "name": "",
-      "organization": null
-    }}
-  ]
-}}
 
-RULES:
+    RULES:
 
-- Return ONLY JSON (no text, no explanation)
-- NEVER omit any key from FORMAT
-- Use:
-  - [] for empty arrays
-  - null for missing values
-- DO NOT guess missing data
+    - Return ONLY JSON (no text, no explanation)
+    - NEVER omit any key from FORMAT
+    - Use:
+    - [] for empty arrays
+    - null for missing values
+    - DO NOT guess missing data
 
-DATE RULES:
-- Format: yyyy-mm
-- "Present" → keep as "Present"
-- If missing → null
+    DATE RULES:
+    - Format: yyyy-mm
+    - "Present" → keep as "Present"
+    - If missing → null
 
-ADDRESS RULE:
-- current_address = combine city + state + country
+    ADDRESS RULE:
+    - current_address = combine city + state + country
 
-----------------------------------
-EXTRACTION LOGIC
-----------------------------------
+    ----------------------------------
+    EXTRACTION LOGIC
+    ----------------------------------
 
-1. EXPERIENCE:
-- Include ONLY real jobs, internships
-- MUST have company name
-- Exclude anything that looks like personal work
+    1. EXPERIENCE:
+    - Include ONLY real jobs, internships
+    - MUST have company name
+    - Exclude anything that looks like personal work
 
-2. PROJECTS (CRITICAL):
-- Include personal, academic, or self-built work
-- Detect:
-  - "project", "built", "developed", "created"
-  - OR descriptions of apps/platforms/tools
-- If something is excluded from experience → move it here
-- Extract tech/tools if possible
+    2. PROJECTS (CRITICAL):
+    - Include personal, academic, or self-built work
+    - Detect:
+    - "project", "built", "developed", "created"
+    - OR descriptions of apps/platforms/tools
+    - If something is excluded from experience → move it here
+    - Extract tech/tools if possible
 
-3. EDUCATION:
-- First → current_education
-- Second → previous_education
+    3. EDUCATION:
+    - First → current_education
+    - Second → previous_education
 
-4. SKILLS:
-- Extract ALL skills (languages, tools, frameworks, cloud, concepts)
-- Keep as clean keywords
+    4. SKILLS:
+    - Extract ALL skills (languages, tools, frameworks, cloud, concepts)
+    - Keep as clean keywords
 
-5. CERTIFICATIONS:
-- Extract only if explicitly mentioned
-- Otherwise return []
+    5. CERTIFICATIONS:
+    - Extract only if explicitly mentioned
+    - Otherwise return []
+    --------------------------------------------------
+    SKILL EXTRACTION RULES
+    --------------------------------------------------
 
-----------------------------------
-FINAL VALIDATION (MANDATORY)
-----------------------------------
+    - Extract ALL skills mentioned in the resume.
+    - Include:
+    • Programming languages
+    • Frameworks
+    • Tools
+    • Databases
+    • Cloud & DevOps technologies
+    • Concepts (e.g., Data Structures, NLP)
 
-Before returning JSON:
-- Ensure ALL keys exist
-- Ensure experience contains ONLY jobs
-- Ensure projects contains non-company work
-- Ensure no hallucinated values
-- Ensure valid JSON
+    - DO NOT:
+    ✘ Merge multiple skills into one
+    ✘ Drop skills
+    ✘ Convert into sentences
 
-----------------------------------
-RESUME:
-{text[:12000]}
-"""
+    - Keep skills as clean keywords only.
+
+    ----------------------------------
+    FINAL VALIDATION (MANDATORY)
+    ----------------------------------
+
+    Before returning JSON:
+    - Ensure ALL keys exist
+    - Ensure experience contains ONLY jobs
+    - Ensure projects contains non-company work
+    - Ensure no hallucinated values
+    - Ensure valid JSON
+
+    ----------------------------------
+    RESUME:
+    {text[:12000]}
+    """
 
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
@@ -272,6 +292,8 @@ RESUME:
     )
 
     result = response.text
+
+    # result = mock_data.resume_data_mock
 
     if not result:
         return {}
@@ -329,10 +351,10 @@ RESUME:
     # SUMMARY
     # -------------------------------
     summary_prompt = f"""
-Write a professional 3-line resume summary:
+        Write a professional 3-line resume summary:
 
-{json.dumps(data)}
-"""
+        {json.dumps(data)}
+    """
 
     summary_res = client.models.generate_content(
         model="gemini-3-flash-preview",

@@ -1,11 +1,13 @@
 import os
 import re
 import json
-from datetime import datetime
 from google import genai
 from dotenv import load_dotenv
 from pdfminer.high_level import extract_text
+import json
 
+with open("Test/mock_test_jd.json", "r") as f:
+    MOCK_DATA = json.load(f)
 # -------------------------------
 # LOAD ENV
 # -------------------------------
@@ -18,316 +20,184 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 def extract_job_text(file_path):
     return extract_text(file_path)
 
-# -------------------------------
-# SKILL NORMALIZATION (REUSE)
-# -------------------------------
-SKILL_MAP = {
-    "nodejs": "Node.js",
-    "node.js": "Node.js",
-    "react.js": "React",
-    "expressjs": "Express.js",
-    "express.js": "Express.js",
-    "mongodb": "MongoDB",
-    "mysql": "MySQL",
-    "aws": "AWS",
-    "azure": "Azure",
-    "docker": "Docker",
-    "kubernetes": "Kubernetes",
-    "nlp": "Natural Language Processing",
-    "javascript": "JavaScript",
-    "html": "HTML",
-    "css": "CSS"
-}
-
-def normalize_skills(skills):
-    cleaned = set()
-    for s in skills:
-        if not s:
-            continue
-        s = s.strip().lower()
-        cleaned.add(SKILL_MAP.get(s, s.title()))
-    return sorted(cleaned)
 
 # -------------------------------
-# DATE NORMALIZATION
+# STRICT SCHEMA (FINAL)
 # -------------------------------
-def normalize_date(date_str):
-    if not date_str:
-        return None
+ALLOWED_KEYS = [
+    "jobTitle","companyName","jobDescription",
+    "location","workType","employmentType",
+    "experienceRequired","numberOfOpenings",
+    "salaryRange","requiredSkills","preferredSkills",
+    "educationRequired","minimumCGPA",
+    "applicationDeadline","responsibilities","requirements",
+    "companyWebsite","companyDescription",
+    "jobCategory","department"
+]
 
-    date_str = date_str.strip()
 
-    if date_str.lower() in ["present", "current"]:
-        return "Present"
+# -------------------------------
+# CLEAN PLACEHOLDER VALUES
+# -------------------------------
+def clean_placeholders(data):
+    for key, value in data.items():
+        if isinstance(value, str) and value.strip().lower() == key.lower():
+            data[key] = None
+    return data
 
-    if re.match(r"\d{4}-\d{2}", date_str):
-        return date_str
 
-    for fmt in ["%B %Y", "%b %Y"]:
-        try:
-            return datetime.strptime(date_str, fmt).strftime("%Y-%m")
-        except:
-            continue
+# -------------------------------
+# ENFORCE STRICT SCHEMA
+# -------------------------------
+def enforce_schema(data):
+    return {key: data.get(key, None) for key in ALLOWED_KEYS}
 
-    return None
 
 # -------------------------------
 # MAIN FUNCTION
 # -------------------------------
-def job_parser(file_path):
+def parse_job_description(file_path):
+
     text = extract_job_text(file_path)
 
-    current_date = datetime.today().strftime("%Y-%m")
-
-    # -------------------------------
-    # PROMPT
-    # -------------------------------
-    current_date = datetime.today().strftime("%Y-%m")
-
     prompt = f"""
-        You are an advanced job description parsing system.
+        You are a job description parser.
 
-        Your task is to extract structured information from a job description and return ONLY valid JSON.
+        Extract structured job information from the given job description.
 
-        --------------------------------------------------
-        OUTPUT FORMAT (STRICT — DO NOT CHANGE KEYS)
-        --------------------------------------------------
+        -----------------------------------
+        STRICT RULES (VERY IMPORTANT)
+        -----------------------------------
 
-        {{
-        "job_title": "",
-        "company": "",
-        "industry": "",
-        "company_location": "",
-        "number_of_positions": "",
-        "start_date": "",
-        "end_date": "",
-        "bill_rate_per_hour": "",
-        "is_remote": "",
-        "overall_experience_required_years": "",
-        "it_skills": [],
-        "software_tools_and_programming_languages": [],
-        "organizational_skills": [],
-        "soft_skills": [],
-        "experience_required_by_skill": {{}},
-        "educational_qualifications": [],
-        "certifications": [],
-        "other_requirements": []
-        }}
+        - Return ONLY valid JSON
+        - Use EXACT keys provided below
+        - DO NOT add extra fields
+        - DO NOT remove any fields
+        - DO NOT rename keys
+        - DO NOT repeat key names as values
+        - Extract REAL values from text only
 
-        --------------------------------------------------
-        GLOBAL INSTRUCTIONS
-        --------------------------------------------------
+        If value is missing:
+        - string → null
+        - array → []
+        - number → null
 
-        1. Return ONLY valid JSON.
-        2. Do NOT include explanations, comments, markdown, or extra text.
-        3. Do NOT change any key names.
-        4. If a scalar value is missing → return null.
-        5. If a list value is missing → return [].
-        6. If a dictionary/map value is missing → return {{}}.
-        7. Do NOT hallucinate or invent any information.
+        -----------------------------------
+        SPECIAL HANDLING
+        -----------------------------------
 
-        --------------------------------------------------
-        JOB TITLE RULES
-        --------------------------------------------------
-
-        - Extract the exact job title mentioned.
-        - Do NOT modify or rephrase.
-        - If multiple titles exist, choose the primary role.
-
-        --------------------------------------------------
-        COMPANY & INDUSTRY RULES
-        --------------------------------------------------
-
-        - Extract company name exactly as written.
-        - Extract industry if explicitly mentioned.
-        - If company contains:
-        "State of", "Department of", "City of", "County"
-        → set industry = "Government"
-
-        - If industry not mentioned → return null.
-
-        --------------------------------------------------
-        LOCATION RULES
-        --------------------------------------------------
-
-        - Extract full company location (city/state/country if available).
-        - Do NOT guess missing parts.
-
-        --------------------------------------------------
-        POSITIONS RULES
-        --------------------------------------------------
-
-        - Extract number_of_positions ONLY if clearly mentioned.
-        - Example: "3 openings" → "3"
-        - If not mentioned → null.
-
-        --------------------------------------------------
-        DATE RULES (STRICT)
-        --------------------------------------------------
-
-        CURRENT DATE: {current_date}
-
-        - Extract ONLY explicitly mentioned dates.
-        - DO NOT guess or infer.
-
-        - Convert all dates to format: yyyy-mm
-
-        Examples:
-        - "March 2025" → "2025-03"
-        - "Jan 2024" → "2024-01"
-
-        - If end_date is "Present", "Current", or "Ongoing":
-        → keep as "Present"
-
-        - If date is missing:
-        → return null
-
-        --------------------------------------------------
-        REMOTE / WORK TYPE RULES
-        --------------------------------------------------
-
-        - Extract is_remote as:
-        ✔ "Yes" → Fully remote
-        ✔ "No" → Onsite
-        ✔ "Hybrid" → Hybrid work
-
-        - If not mentioned → null
-
-        --------------------------------------------------
-        EXPERIENCE RULES
-        --------------------------------------------------
-
-        - Extract overall_experience_required_years ONLY if explicitly mentioned.
-        - Example:
-        "3+ years experience" → "3"
-        "Minimum 5 years" → "5"
-
-        - Do NOT guess.
-
-        --------------------------------------------------
-        SKILL EXTRACTION RULES (VERY IMPORTANT)
-        --------------------------------------------------
-
-        Extract ALL skills mentioned in the job description.
-
-        Include:
-
-        ✔ Programming languages  
-        ✔ Frameworks  
-        ✔ Libraries  
-        ✔ Tools  
-        ✔ Databases  
-        ✔ Cloud & DevOps technologies  
-        ✔ Platforms  
-        ✔ Technical concepts  
-
-        DO NOT:
-
-        ✘ Merge multiple skills into one  
-        ✘ Convert into sentences  
-        ✘ Drop skills  
-
-        Keep skills as clean keywords only.
-
-        --------------------------------------------------
-        SKILL CATEGORIZATION RULES
-        --------------------------------------------------
-
-        1. it_skills:
-        - Core technical/domain skills
-        - Example: Python, Java, NLP, Machine Learning
-
-        2. software_tools_and_programming_languages:
-        - Tools, IDEs, frameworks, programming languages
-        - Example: VS Code, Git, React, Docker
-
-        3. organizational_skills:
-        - Work-related functional skills
-        - Example: Project Management, Documentation
-
-        4. soft_skills:
-        - Behavioral skills
-        - Example: Communication, Leadership
-
-        --------------------------------------------------
-        EXPERIENCE BY SKILL RULES
-        --------------------------------------------------
-
-        - Extract experience_required_by_skill as a dictionary:
+        The job description may be unstructured.
 
         Example:
+        Job Title:
+        Software Engineer
+
+        → Extract value even if it appears on next line
+
+        -----------------------------------
+        OUTPUT FORMAT (STRICT — FOLLOW EXACTLY)
+        -----------------------------------
+
         {{
-        "Python": "3",
-        "AWS": "2"
+        "jobTitle": "",
+        "companyName": "",
+        "jobDescription": "",
+
+        "location": "",
+        "workType": "",
+
+        "employmentType": "",
+        "experienceRequired": "",
+        "numberOfOpenings": null,
+
+        "salaryRange": "",
+
+        "requiredSkills": [],
+        "preferredSkills": [],
+
+        "educationRequired": [],
+        "minimumCGPA": null,
+
+        "applicationDeadline": "",
+
+        "responsibilities": "",
+        "requirements": "",
+
+        "companyWebsite": "",
+        "companyDescription": "",
+
+        "jobCategory": "",
+        "department": ""
         }}
 
-        - Only include if clearly mentioned.
-        - Do NOT guess.
+        -----------------------------------
+        FIELD GUIDELINES
+        -----------------------------------
 
-        --------------------------------------------------
-        EDUCATION RULES
-        --------------------------------------------------
+        - jobTitle → exact role name
+        - companyName → organization name
+        - jobDescription → short summary (2–4 lines max)
 
-        - Extract educational qualifications exactly.
-        - Example:
-        "Bachelor’s Degree in Computer Science"
+        - location → city/state/country
+        - workType → ONLY "Onsite", "Remote", or "Hybrid" (if not mentioned → null)
 
-        - If not mentioned → []
+        - employmentType → ONLY "Full-time", "Part-time", "Internship", "Contract"
+        (infer ONLY if very clear, else null)
 
-        --------------------------------------------------
-        CERTIFICATION RULES
-        --------------------------------------------------
+        - experienceRequired → e.g., "2+", "3-5 years"
+        - numberOfOpenings → numeric only
 
-        - Extract certifications if explicitly mentioned.
-        - Example:
-        "AWS Certified Developer"
+        - salaryRange → keep as text (e.g., "6-10 LPA")
 
-        - If none → []
+        - requiredSkills → must-have skills only
+        - preferredSkills → optional / good-to-have skills
 
-        --------------------------------------------------
-        OTHER REQUIREMENTS RULES
-        --------------------------------------------------
+        - educationRequired → degrees (e.g., ["B.Tech", "MCA"])
+        - minimumCGPA → numeric only if clearly mentioned
 
-        Include:
+        - applicationDeadline → extract date if clearly mentioned
 
-        ✔ Shift requirements  
-        ✔ Visa requirements  
-        ✔ Travel requirements  
-        ✔ Notice period  
-        ✔ Any constraints  
+        - responsibilities → convert all responsibilities into ONE clean paragraph (no list, no bullets)
 
-        If none → []
+        - requirements → convert all qualifications/conditions into ONE clean paragraph (no list, no bullets)
 
-        --------------------------------------------------
-        FINAL VALIDATION RULES
-        --------------------------------------------------
+        - companyWebsite → extract URL if present
+        - companyDescription → short summary if available
 
-        Before returning JSON:
+        - jobCategory → e.g., Engineering, Marketing
+        - department → team or division name
 
-        - Ensure no duplicate entries in lists.
-        - Ensure all dates follow yyyy-mm format.
-        - Ensure no hallucinated values.
-        - Ensure clean keyword-based skills.
-        - Ensure JSON is valid and properly structured.
+        -----------------------------------
+        FINAL VALIDATION
+        -----------------------------------
 
-        --------------------------------------------------
-        JOB DESCRIPTION TEXT
-        --------------------------------------------------
+        Before returning:
+        - Ensure NO extra fields exist
+        - Ensure ALL fields are present
+        - Ensure responsibilities and requirements are STRINGS (not arrays)
+        - Ensure JSON is valid
 
-        {text[:12000]}
+        -----------------------------------
+        JOB DESCRIPTION
+        -----------------------------------
+
+        {text[:6000]}
     """
-    response = client.models.generate_content(
-        model="gemini-3-flash-preview",
-        contents=prompt
-    )
 
-    result = response.text
+    # response = client.models.generate_content(
+    #     model="gemini-3-flash-preview",
+    #     contents=prompt
+    # )
+
+    # result = response.text
+
+    result = json.dumps(MOCK_DATA)
 
     if not result:
         return {}
 
     # -------------------------------
-    # JSON PARSE
+    # SAFE JSON PARSE
     # -------------------------------
     try:
         data = json.loads(result)
@@ -339,16 +209,9 @@ def job_parser(file_path):
             return {}
 
     # -------------------------------
-    # POST PROCESSING
+    # CLEAN + ENFORCE
     # -------------------------------
-
-    # Normalize skills
-    data["skills"] = normalize_skills(data.get("skills", []))
-    data["tools"] = normalize_skills(data.get("tools", []))
-
-    # Normalize dates
-    data["start_date"] = normalize_date(data.get("start_date"))
-    data["end_date"] = normalize_date(data.get("end_date"))
+    data = clean_placeholders(data)
+    data = enforce_schema(data)
 
     return data
-

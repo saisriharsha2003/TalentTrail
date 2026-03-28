@@ -2,12 +2,11 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import os
 import tempfile
+import traceback
 from werkzeug.utils import secure_filename
-
-# Import the three modules
 from resume_parser import resume_ner_gpt
-from job_parser import job_parser
-from mock_data import resume_data_mock
+from job_parser import parse_job_description
+from Test.mock_data import resume_data_mock
 # from compute_score import compute_similarity
 
 app = Flask(__name__)
@@ -87,75 +86,68 @@ def parse_resume():
 @app.route('/parse_job', methods=['POST'])
 @cross_origin(supports_credentials=True)
 def parse_job():
-    """
-    Parse job description file and extract structured position information.
-    
-    Accepts: PDF files only
-    Returns: Extracted job data with title, company, skills, experience required, etc.
-    """
     try:
-        # Validate file presence
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
         
         file = request.files['file']
-        
+
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
         
-        # Job parser only accepts PDF
         if not file.filename.lower().endswith('.pdf'):
             return jsonify({'error': 'Job parser requires PDF files only'}), 400
         
-        # Save file temporarily
         filename = secure_filename(file.filename)
         temp_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(temp_path)
-        
+
         try:
-            # Parse job description using imported function
-            job_data = job_parser.parse_job_description(temp_path)
-            
-            # Map tuple to structured object for cleaner API response
-            job_fields = [
-                'job_title',
-                'company',
-                'industry',
-                'location',
-                'positions_available',
-                'start_date',
-                'end_date',
-                'bill_rate',
-                'is_remote',
-                'experience_required',
-                'it_skills',
-                'tools_and_languages',
-                'organizational_skills',
-                'soft_skills',
-                'years_of_experience',
-                'educational_qualifications',
-                'certifications',
-                'other_requirements'
-            ]
-            
-            job_dict = {field: value for field, value in zip(job_fields, job_data)}
-            
+            print("📄 Parsing file:", filename)
+
+            job_data = parse_job_description(temp_path)
+
+            print("🧠 Parsed Output:", job_data)
+
+            # ✅ VALIDATE OUTPUT
+            if not job_data or not isinstance(job_data, dict):
+                return jsonify({
+                    'error': 'Parser returned invalid data'
+                }), 500
+
+            # OPTIONAL: check key existence
+            if "jobTitle" not in job_data:
+                return jsonify({
+                    'error': 'Parser failed to extract required fields'
+                }), 500
+
             return jsonify({
-                'success': True,
-                'job_data': job_dict,
-                'filename': filename
+                "success": True,
+                "job_data": job_data
             }), 200
-            
+
+        except Exception as inner_error:
+            print("❌ ERROR INSIDE PARSER:")
+            traceback.print_exc()
+
+            return jsonify({
+                'error': f'Parsing failed: {str(inner_error)}'
+            }), 500
+
         finally:
-            # Clean up temporary file
             if os.path.exists(temp_path):
                 try:
                     os.remove(temp_path)
                 except:
                     pass
-    
+
     except Exception as e:
-        return jsonify({'error': f'Job parsing failed: {str(e)}'}), 500
+        print("❌ OUTER ERROR:")
+        traceback.print_exc()
+
+        return jsonify({
+            'error': f'Job parsing failed: {str(e)}'
+        }), 500
 
 
 # @app.route('/compute_score', methods=['POST'])
