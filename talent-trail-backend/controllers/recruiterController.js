@@ -8,7 +8,7 @@ const College = require('../models/college');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const axios = require('axios');
-
+const FormData = require("form-data");
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -279,45 +279,70 @@ const postNewJob = async (req, res, next) => {
         next(err);
     }
 }
-
 const parseJD = async (req, res, next) => {
     const { id } = req;
-  
+
     try {
-
         const foundRecruiter = await Recruiter.findById(id).populate('company').exec();
-        if (!foundRecruiter) return res.status(401).json({ 'message': 'unauthorized' });
+        if (!foundRecruiter) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
 
-        if (!req.file) return res.status(400).json({ 'message': 'Only pdf or docx are allowed which are less than 2 mb' });
-        // console.log(req)
-        const jdFile = req.file; // Access the buffer of the uploaded file
+        if (!req.file) {
+            return res.status(400).json({
+                message: 'Only pdf or docx under 2MB allowed'
+            });
+        }
+        const filePath = req.file.path;
+
         const formData = new FormData();
-        let buf = fs.readFileSync("/tmp/"+jdFile.originalname);
-        formData.append('jobnergpt', new Blob([buf], { type: jdFile.mimetype }), jdFile.originalname); // Append the blob with a filename
-        const jdOutput = await axios.post(process.env.JOB_PARSER, formData).then((resp) => {
-            console.log(resp.data);
-            return resp.data;
-        }).catch((e) => {
-            console.log(e.data)
-            next(e);
-        })
-        fs.unlinkSync("/tmp/"+jdFile.originalname)
-       
-        res.setHeader("Access-Control-Allow-Origin", "*")
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader("Access-Control-Max-Age", "1800");
-        res.setHeader("Access-Control-Allow-Headers", "content-type");
-        res.setHeader( "Access-Control-Allow-Methods", "PUT, POST, GET, DELETE, PATCH, OPTIONS" ); 
-        res.status(201).json({ success: 'Job Description processed successfully \nPlease fill out remaining fields', jdOutput });
+        formData.append("file", fs.createReadStream(filePath));
 
-        
-        // res.status(200).json({ success: 'Resume processed successfully' });
+        const response = await axios.post(
+            process.env.JOB_PARSER,
+            formData,
+            {
+                headers: formData.getHeaders(),
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity
+            }
+        );
 
+        // ✅ validate response
+        if (!response?.data?.job_data) {
+            return res.status(500).json({
+                message: "Parser failed to return valid data"
+            });
+        }
+
+        // ✅ delete file
+        fs.unlinkSync(filePath);
+
+        // ✅ clean response
+        return res.status(200).json({
+            success: true,
+            job_data: response.data.job_data
+        });
+    } catch (err) {
+
+        console.error("❌ ERROR:");
+
+        if (err.response) {
+            console.error("Status:", err.response.status);
+            console.error("Data:", err.response.data);
+
+            return res.status(err.response.status).json({
+                message: err.response.data?.error || "Parser service failed"
+            });
+        }
+
+        console.error(err.message);
+
+        return res.status(500).json({
+            message: "Internal server error while parsing JD"
+        });
     }
-    catch(err){
-        next(err);
-    }
-}
+};
 
 const postApplication = async (req, res, next) => {
     const { id } = req;

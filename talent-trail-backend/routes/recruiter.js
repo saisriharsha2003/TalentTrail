@@ -32,7 +32,7 @@ router.post('/capabilityCal', recruiterController.capabilityCal);
 
 router.post('/company', recruiterController.postCompany);
 
-router.post('/parseJD', resumeUpload.single('jd'), recruiterController.parseJD);
+router.post('/parseJD', resumeUpload.single('file'), recruiterController.parseJD);
 
 router.post('/profile', profileUpload.single('profile'), recruiterController.postProfile);
 
