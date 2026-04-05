@@ -13,7 +13,9 @@ const RecruiterPosted = () => {
         const fetchPosted = async () => {
             try {
                 const response = await axios.get('/recruiter/jobs');
+                
                 const posted = response?.data;
+                console.log("Posted jobs:", posted);
                 setPosted(posted);
             } catch (err) {
                 notify('failed', err?.response?.data?.message);
@@ -27,8 +29,10 @@ const RecruiterPosted = () => {
     };
 
     const filteredPostedJobs = posted.filter((job) =>
-        job?.jobRole?.toLowerCase().includes(searchQuery.toLowerCase())
+        job?.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    console.log("Filtered posted jobs:", filteredPostedJobs);
 
     return (
         <>
@@ -59,17 +63,17 @@ const RecruiterPosted = () => {
                         </thead>
                         <tbody>
                             {filteredPostedJobs.map((job, index) => (
-                                <tr key={index}>
-                                    <th scope="row">{index + 1}</th>
-                                    <td>{job.companyName}</td>
-                                    <td>{job.jobRole}</td>
-                                    <td>{job.cgpa}</td>
-                                    <td>{job.package}</td>
-                                    <td>
-                                        <Link className="btn btn-primary" to={job._id} role="button">
-                                            View
-                                        </Link>
-                                    </td>
+                                <tr key={job._id}>
+                                <th scope="row">{index + 1}</th>
+                                <td>{job.companyName}</td>
+                                <td>{job.jobTitle}</td>
+                                <td>{job.minimumCGPA}</td>
+                                <td>{job.salaryRange}</td>
+                                <td>
+                                    <Link className="btn btn-primary" to={job._id} role="button">
+                                    View
+                                    </Link>
+                                </td>
                                 </tr>
                             ))}
                         </tbody>

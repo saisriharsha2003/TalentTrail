@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from pdfminer.high_level import extract_text
 import docx2txt
 import mammoth
-import mock_data
+from Test import mock_data
 
 # -------------------------------
 # LOAD ENV
@@ -286,14 +286,14 @@ def resume_ner_gpt(file_path):
     {text[:12000]}
     """
 
-    response = client.models.generate_content(
-        model="gemini-3-flash-preview",
-        contents=prompt
-    )
+    # response = client.models.generate_content(
+    #     model="gemini-3-flash-preview",
+    #     contents=prompt
+    # )
 
-    result = response.text
+    # result = response.text
 
-    # result = mock_data.resume_data_mock
+    result = mock_data.resume_data_mock
 
     if not result:
         return {}

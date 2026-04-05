@@ -63,12 +63,14 @@ const RecruiterOpening = () => {
     e.preventDefault();
 
     try {
+      console.log("Job:", job);
       const payload = {
         ...job,
-        numberOfOpenings: job.numberOfOpenings
-          ? parseInt(job.numberOfOpenings)
-          : null,
-        minimumCGPA: job.minimumCGPA ? parseFloat(job.minimumCGPA) : null,
+        numberOfOpenings: job.numberOfOpenings ? parseInt(job.numberOfOpenings) : undefined,
+        minimumCGPA: job.minimumCGPA ? parseFloat(job.minimumCGPA) : undefined,
+        applicationDeadline: job.applicationDeadline ? new Date(job.applicationDeadline) : undefined,
+        companyWebsite: job.companyWebsite || undefined,
+        department: job.department || undefined,
       };
 
       const res = await axios.post("/recruiter/job/new", payload);
@@ -217,6 +219,7 @@ const RecruiterOpening = () => {
                     Application Deadline
                   </label>
                   <input
+                    type="date"
                     className="form-control"
                     value={job.applicationDeadline}
                     onChange={(e) =>

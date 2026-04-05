@@ -61,19 +61,17 @@ const getColleges = async (req, res, next) => {
 }
 
 const getJobs = async (req, res, next) => {
-    const { id } = req;
-    try {
-        const foundRecruiter = await Recruiter.findById(id).exec();
-        if (!foundRecruiter) return res.status(401).json({ 'message': 'unauthorized' });
+  const recruiterId = req.user?.id || req.id;
+  try {
+    const foundRecruiter = await Recruiter.findById(recruiterId).exec();
+    if (!foundRecruiter) return res.status(401).json({ message: 'unauthorized' });
 
-        const foundPostedJobs = await Job.find({ recruiter: id }).exec();
-
-        res.json(foundPostedJobs);
-    }
-    catch (err) {
-        next(err);
-    }
-}
+    const foundPostedJobs = await Job.find({ recruiter: recruiterId }).exec();
+    res.json(foundPostedJobs); // ✅ return jobs array
+  } catch (err) {
+    next(err);
+  }
+};
 
 const capabilityCal = async (req, res, next) => {
     const { id } = req;
@@ -247,38 +245,84 @@ const getNotifications = async (req, res, next) => {
 }
 
 const postNewJob = async (req, res, next) => {
-    const { id } = req;
-    const { jobRole, applicationFor, cgpa, description, experience, seats, package } = req.body;
-    if (!jobRole || !cgpa || !description || !experience || !seats || !package) return res.status(400).json({ 'message': 'All fields required' });
-    if (!applicationFor) applicationFor = 'Everyone';
-    try {
-        const foundRecruiter = await Recruiter.findById(id).populate('company').exec();
-        if (!foundRecruiter) return res.status(401).json({ 'message': 'unauthorized' });
+  const recruiterId = req.user?.id || req.id; // depends on your auth middleware
+  let {
+    jobTitle,
+    applicationFor,
+    minimumCGPA,
+    jobDescription,
+    experienceRequired,
+    numberOfOpenings,
+    salaryRange,
+    location,
+    workType,
+    employmentType,
+    requiredSkills,
+    preferredSkills,
+    educationRequired,
+    applicationDeadline,
+    responsibilities,
+    requirements,
+    companyWebsite,
+    companyDescription,
+    jobCategory,
+    department
+  } = req.body;
 
-        const query = await Job.create({
-            companyName: foundRecruiter.company.name,
-            jobRole,
-            applicationFor,
-            cgpa,
-            description,
-            experience,
-            seats,
-            package,
-            collegeApproved: false,
-            recruiter: id
-        });
+  // validate required fields
+  if (!jobTitle || !jobDescription || !experienceRequired || !numberOfOpenings || !salaryRange || !minimumCGPA) {
+    return res.status(400).json({ message: 'All fields required' });
+  }
 
-        const notificationQuery = await Student.updateMany({}, { $push: { notification: `${foundRecruiter.company.name} posted new job for role ${jobRole}` } }).exec();
+  if (!applicationFor) applicationFor = 'Everyone';
 
-        foundRecruiter.notification = [...foundRecruiter.notification, `Posted new job for role ${jobRole}`];
-        await foundRecruiter.save();
+  try {
+    const foundRecruiter = await Recruiter.findById(recruiterId).populate('company').exec();
+    if (!foundRecruiter) return res.status(401).json({ message: 'unauthorized' });
 
-        res.status(201).json({ 'success': 'Job created' });
-    }
-    catch (err) {
-        next(err);
-    }
-}
+    await Job.create({
+      companyName: foundRecruiter.company.name,
+      jobTitle,
+      applicationFor,
+      minimumCGPA,
+      jobDescription,
+      experienceRequired,
+      numberOfOpenings,
+      salaryRange,
+      location,
+      workType,
+      employmentType,
+      requiredSkills,
+      preferredSkills,
+      educationRequired,
+      applicationDeadline,
+      responsibilities,
+      requirements,
+      companyWebsite,
+      companyDescription,
+      jobCategory,
+      department,
+      collegeApproved: false,
+      recruiter: recruiterId
+    });
+
+    await Student.updateMany(
+      {},
+      { $push: { notification: `${foundRecruiter.company.name} posted new job for role ${jobTitle}` } }
+    ).exec();
+
+    foundRecruiter.notification = [
+      ...(foundRecruiter.notification || []),
+      `Posted new job for role ${jobTitle}`
+    ];
+    await foundRecruiter.save();
+
+    res.status(201).json({ success: 'Job created' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const parseJD = async (req, res, next) => {
     const { id } = req;
 
@@ -345,42 +389,64 @@ const parseJD = async (req, res, next) => {
 };
 
 const postApplication = async (req, res, next) => {
-    const { id } = req;
-    const { applicationId, status } = req.body;
-    try {
-        const foundRecruiter = await Recruiter.findById(id).exec();
-        if (!foundRecruiter) return res.status(401).json({ 'message': 'unauthorized' });
+  console.log("Request body:", req.body);
+  const { applicationId, status } = req.body;
+  const recruiterId = req.user?.id; // adjust based on your auth middleware
 
-        const foundApplication = await AppliedJob.findById(applicationId).populate('jobId').exec();
-        if (!foundApplication) return res.status(400).json({ 'message': 'Application not found' });
-        if (foundApplication.jobId.recruiter.toString() !== foundRecruiter._id.toString()) return res.status(401).json({ 'message': 'unauthorized' });
+  try {
+    const foundRecruiter = await Recruiter.findById(recruiterId).exec();
+    if (!foundRecruiter) {
+      return res.status(401).json({ message: 'unauthorized' });
+    }
 
-        const foundStudent = await Student.findById(foundApplication.userId).populate('contact').exec();
-        if (!foundStudent) return res.status(400).json({ 'message': 'Student not found' });
+    const foundApplication = await AppliedJob.findById(applicationId)
+      .populate('jobId')
+      .exec();
+    if (!foundApplication) {
+      return res.status(400).json({ message: 'Application not found' });
+    }
 
-        const email = foundStudent.contact.email;
-        console.log(email);
-        const mailOptions = {
-            from: process.env.MAIL,
-            to: email,
-            subject: 'Job application status',
-            html: `<p>Your job application for <b>${foundApplication.companyName}</b> is viewed and your application is <b>${status}</b></p>`
-        };
+    if (foundApplication.jobId.recruiter.toString() !== foundRecruiter._id.toString()) {
+      return res.status(401).json({ message: 'unauthorized' });
+    }
 
+    const foundStudent = await Student.findById(foundApplication.userId)
+      .populate('contact')
+      .exec();
+    if (!foundStudent) {
+      return res.status(400).json({ message: 'Student not found' });
+    }
+
+    const email = foundStudent.contact?.email;
+    if (email) {
+      const mailOptions = {
+        from: process.env.MAIL,
+        to: email,
+        subject: 'Job application status',
+        html: `<p>Your job application for <b>${foundApplication.jobId.companyName}</b> is updated. Status: <b>${status}</b></p>`
+      };
+
+      try {
         await transporter.sendMail(mailOptions);
-
-        foundApplication.status = status;
-        await foundApplication.save();
-
-        foundStudent.notification = [...foundStudent.notification, `Application ${foundApplication.companyName} for role ${foundApplication.jobRole} is ${status}`];
-        await foundStudent.save();
-
-        res.json({ 'success': 'Application modified' });
+      } catch (mailErr) {
+        console.error("Mail error:", mailErr);
+      }
     }
-    catch (err) {
-        next(err);
-    }
-}
+
+    foundApplication.status = status;
+    await foundApplication.save();
+
+    foundStudent.notification = [
+      ...(foundStudent.notification || []),
+      `Application for ${foundApplication.jobId.jobTitle} at ${foundApplication.jobId.companyName} is ${status}`
+    ];
+    await foundStudent.save();
+
+    res.json({ success: 'Application modified' });
+  } catch (err) {
+    next(err);
+  }
+};
 
 const postCompany = async (req, res, next) => {
     const { id } = req;
