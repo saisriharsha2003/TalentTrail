@@ -30,9 +30,11 @@ const jobSchema = new Schema({
         enum: ['Full-time', 'Part-time', 'Internship', 'Contract', null],
         default: null
     },
+
     experienceRequired: {
         type: String
     },
+
     numberOfOpenings: {
         type: Number,
         min: 1,
@@ -43,48 +45,33 @@ const jobSchema = new Schema({
         type: String
     },
 
-    requiredSkills: {
-        type: [String],
-        default: []
-    },
-    preferredSkills: {
-        type: [String],
-        default: []
-    },
-
-    educationRequired: {
-        type: [String],
-        default: []
-    },
-    minimumCGPA: {
-        type: Number,
-        min: 0,
-        max: 10,
-        default: null
-    },
-
-    applicationDeadline: {
-        type: Date,
-        default: null
+    // ✅ NEW FIELDS
+    role: {
+        type: String
     },
 
     responsibilities: {
         type: String
     },
-    requirements: {
-        type: String
+
+    skills: {
+        type: [String],
+        default: []
     },
 
-    companyWebsite: {
-        type: String
+    skillsNormalized: {
+        type: [String],
+        default: []
     },
-    companyDescription: {
+
+    eligibleBatch: {
         type: String
     },
 
     jobCategory: {
         type: String
     },
+
     department: {
         type: String
     },
