@@ -28,13 +28,11 @@ ALLOWED_KEYS = [
     "jobTitle","companyName","jobDescription",
     "location","workType","employmentType",
     "experienceRequired","numberOfOpenings",
-    "salaryRange","requiredSkills","preferredSkills",
-    "educationRequired","minimumCGPA",
-    "applicationDeadline","responsibilities","requirements",
-    "companyWebsite","companyDescription",
+    "salaryRange",
+    "role","responsibilities","skills",
+    "eligibleBatch",
     "jobCategory","department"
 ]
-
 
 # -------------------------------
 # CLEAN PLACEHOLDER VALUES
@@ -50,7 +48,17 @@ def clean_placeholders(data):
 # ENFORCE STRICT SCHEMA
 # -------------------------------
 def enforce_schema(data):
-    return {key: data.get(key, None) for key in ALLOWED_KEYS}
+    final = {}
+
+    for key in ALLOWED_KEYS:
+        if key == "skills":
+            final[key] = data.get(key) or []
+        elif key == "numberOfOpenings":
+            final[key] = data.get(key) if data.get(key) is not None else None
+        else:
+            final[key] = data.get(key, None)
+
+    return final
 
 
 # -------------------------------
@@ -63,13 +71,25 @@ def parse_job_description(file_path):
     prompt = f"""
         You are a job description parser.
 
-        Extract structured job information from the given job description.
+        Your task is to extract structured job information from the given job description.
 
         -----------------------------------
-        STRICT RULES (VERY IMPORTANT)
+        🚨 CRITICAL OUTPUT RULES (STRICT)
         -----------------------------------
 
-        - Return ONLY valid JSON
+        - Return ONLY a raw JSON object
+        - DO NOT wrap output inside any key (e.g., "job_data", "data", "response")
+        - DO NOT include "success" or any metadata
+        - DO NOT include explanations
+        - DO NOT include markdown (no ```json)
+        - DO NOT include text before or after JSON
+
+        If you violate ANY of the above, the output is INVALID.
+
+        -----------------------------------
+        GENERAL RULES
+        -----------------------------------
+
         - Use EXACT keys provided below
         - DO NOT add extra fields
         - DO NOT remove any fields
@@ -92,7 +112,7 @@ def parse_job_description(file_path):
         Job Title:
         Software Engineer
 
-        → Extract value even if it appears on next line
+        → Extract value even if it appears on the next line
 
         -----------------------------------
         OUTPUT FORMAT (STRICT — FOLLOW EXACTLY)
@@ -112,20 +132,12 @@ def parse_job_description(file_path):
 
         "salaryRange": "",
 
-        "requiredSkills": [],
-        "preferredSkills": [],
-
-        "educationRequired": [],
-        "minimumCGPA": null,
-
-        "applicationDeadline": "",
-
+        "role": "",
         "responsibilities": "",
-        "requirements": "",
+        "skills": [],
 
-        "companyWebsite": "",
-        "companyDescription": "",
-
+        "eligibleBatch": "",
+        
         "jobCategory": "",
         "department": ""
         }}
@@ -144,43 +156,77 @@ def parse_job_description(file_path):
         - employmentType → ONLY "Full-time", "Part-time", "Internship", "Contract"
         (infer ONLY if very clear, else null)
 
-        - experienceRequired → e.g., "2+", "3-5 years"
+        - experienceRequired → e.g., "0-1 years", "2+", "3-5 years"
         - numberOfOpenings → numeric only
 
         - salaryRange → keep as text (e.g., "6-10 LPA")
 
-        - requiredSkills → must-have skills only
-        - preferredSkills → optional / good-to-have skills
+        - role → short description of what the candidate will do (1–2 lines)
 
-        - educationRequired → degrees (e.g., ["B.Tech", "MCA"])
-        - minimumCGPA → numeric only if clearly mentioned
+        - responsibilities → convert all responsibilities into ONE clean paragraph (no bullets, no lists)
 
-        - applicationDeadline → extract date if clearly mentioned
+        -----------------------------------
+        SKILLS EXTRACTION (STRICT)
+        -----------------------------------
 
-        - responsibilities → convert all responsibilities into ONE clean paragraph (no list, no bullets)
+        - skills → MUST be a JSON array of strings
 
-        - requirements → convert all qualifications/conditions into ONE clean paragraph (no list, no bullets)
+        STRICT RULES:
+        - Each skill must be a separate array item
+        - DO NOT return a comma-separated string
+        - DO NOT return a single sentence
+        - DO NOT include phrases like "the skills", "skills include", etc.
+        - DO NOT include explanations
 
-        - companyWebsite → extract URL if present
-        - companyDescription → short summary if available
+        EXTRACTION RULES:
+        - Extract ALL relevant technical and soft skills
 
-        - jobCategory → e.g., Engineering, Marketing
+        - Split combined phrases:
+        "JavaScript, TypeScript, HTML5" →
+        ["JavaScript", "TypeScript", "HTML5"]
+
+        - Handle parentheses:
+        "React (Hooks, Context, Router)" →
+        ["React", "Hooks", "Context", "Router"]
+
+        "Node.js (Express/Fastify)" →
+        ["Node.js", "Express", "Fastify"]
+
+        - Normalize:
+        - Preserve proper casing from the job description
+        - Keep standard industry naming (JavaScript, React, Node.js, HTML5, CSS3)
+        - Trim spaces
+        - Remove duplicates (case-insensitive)
+
+        - Keep skills concise (1–3 words max)
+
+        VALID EXAMPLE:
+        ["JavaScript", "React", "Node.js", "Docker"]
+
+        -----------------------------------
+        OTHER FIELDS
+        -----------------------------------
+
+        - eligibleBatch → e.g., "2023, 2024", "2025 only" (if not mentioned → null)
+
+        - jobCategory → e.g., Engineering, Marketing, Sales
         - department → team or division name
 
         -----------------------------------
-        FINAL VALIDATION
+        FINAL VALIDATION (STRICT)
         -----------------------------------
 
         Before returning:
         - Ensure NO extra fields exist
         - Ensure ALL fields are present
-        - Ensure responsibilities and requirements are STRINGS (not arrays)
+        - Ensure responsibilities is a STRING (not array)
+        - Ensure skills is an ARRAY
         - Ensure JSON is valid
+        - Ensure output is NOT wrapped in any object
 
         -----------------------------------
         JOB DESCRIPTION
         -----------------------------------
-
         {text[:6000]}
     """
 
@@ -207,10 +253,10 @@ def parse_job_description(file_path):
             data = json.loads(match.group())
         else:
             return {}
-
     # -------------------------------
     # CLEAN + ENFORCE
     # -------------------------------
+
     data = clean_placeholders(data)
     data = enforce_schema(data)
 
