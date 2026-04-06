@@ -554,7 +554,6 @@ const StudentProfile = () => {
     return (
         <>
 
-            {/* Personal */}
             < div className='d-flex justify-content-center m-3'>
                 {/* <div className='d-inline-flex p-4'> */}
                     <div className="card container h-100 shadow-2-strong mt-5 p-4 shadow-sm" style={{ backgroundColor: '#fff' }}>
@@ -669,7 +668,6 @@ const StudentProfile = () => {
                 {/* </div> */}
             </div >
 
-            {/* Contact */}
             < div className='d-flex justify-content-center m-3' >
                 {/* <div className='d-inline-flex p-2'> */}
                     <div className="card container h-100 shadow-2-strong p-4 shadow-sm" style={{ backgroundColor: '#fff' }}>
@@ -865,7 +863,6 @@ const StudentProfile = () => {
                 {/* </div> */}
             </div >
 
-            {/* Academic */}
             < div className='d-flex justify-content-center m-3' >
                 {/* <div className='d-inline-flex p-2'> */}
                     <div className="card container h-100 shadow-2-strong p-4 shadow-sm" style={{ backgroundColor: '#fff' }}>
@@ -1207,14 +1204,12 @@ const StudentProfile = () => {
                 {/* </div > */}
             </div >
 
-            {/* Certification */}
             {certifications.length > 0 && (
                 <div className="d-flex justify-content-center m-3">
                     <div className="card container p-4 shadow-sm">
 
                         <h3 className="mb-4">Certifications</h3>
 
-                        {/* NAV */}
                         <div className="d-flex justify-content-between mb-3">
                             <button
                                 type="button"
@@ -1239,7 +1234,6 @@ const StudentProfile = () => {
                             </button>
                         </div>
 
-                        {/* FORM */}
                         <input
                             className="form-control mb-3"
                             value={certifications[currentCertIndex]?.name || ""}
@@ -1262,7 +1256,6 @@ const StudentProfile = () => {
                             placeholder="Organization"
                         />
 
-                        {/* BUTTONS */}
                         <div className="d-grid gap-3 mt-3">
                             <button
                                 type="button"
@@ -1285,7 +1278,6 @@ const StudentProfile = () => {
                 </div>
             )}
 
-            {/* New Certification */}
             <div className='d-flex justify-content-center m-3'>
                 {/* <div className='d-inline-flex p-2'> */}
                     <div className="card container h-100 shadow-2-strong p-4 shadow-sm" style={{ backgroundColor: '#fff' }}>
@@ -1343,7 +1335,6 @@ const StudentProfile = () => {
                 {/* </div> */}
             </div>
 
-            {/* Project */}
             {projects.length > 0 && (
                 <div className="d-flex justify-content-center m-3">
                     <div className="card container p-4 shadow-sm">
@@ -1417,7 +1408,6 @@ const StudentProfile = () => {
                     </div>
                 </div>
             )}
-            {/* New Project */}
             <div className='d-flex justify-content-center m-3'>
                 {/* <div className='d-inline-flex p-2'> */}
                     <div className="card container h-100 shadow-2-strong p-4 shadow-sm" style={{ backgroundColor: '#fff' }}>
@@ -1547,7 +1537,6 @@ const StudentProfile = () => {
                 {/* </div> */}
             </div>
 
-            {/* Work */}
             {works.length > 0 && (
                 <div className="d-flex justify-content-center m-3">
                     <div className="card container p-4 shadow-sm">
@@ -1633,7 +1622,6 @@ const StudentProfile = () => {
                 </div>
             )}
 
-            {/* New Work */}
             <div className='d-flex justify-content-center m-3'>
                 {/* <div className='d-inline-flex p-2'> */}
                     <div className="card container h-100 shadow-2-strong p-4 shadow-sm" style={{ backgroundColor: '#fff' }}>
@@ -1748,7 +1736,6 @@ const StudentProfile = () => {
                 {/* </div> */}
             </div>
 
-            {/* Profile */}
             <div className='d-flex justify-content-center m-3'>
                 {/* <div className='d-inline-flex p-2'> */}
                     <div className="card container h-100 shadow-2-strong p-4 shadow-sm  " style={{ backgroundColor: '#fff' }}>
@@ -1813,7 +1800,6 @@ const StudentProfile = () => {
                 {/* </div> */}
             </div>
 
-            {/* Account */}
             <div className='d-flex justify-content-center m-3'>
                 {/* <div className='d-inline-flex p-2'> */}
                     <div className="card container h-100 shadow-2-strong p-4 shadow-sm mb-5" style={{ backgroundColor: '#fff' }}>
