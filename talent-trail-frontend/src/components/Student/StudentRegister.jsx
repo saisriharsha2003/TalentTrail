@@ -301,7 +301,6 @@ const StudentRegister = () => {
                 <h3>Provide all details</h3>
             </div>
 
-            {/* Personal */}
             <div className="d-flex justify-content-center m-3 ">
                 <div
                     className="card container p-4 h-100 shadow-2-strong shadow-sm"
@@ -415,7 +414,6 @@ const StudentRegister = () => {
                                 </button>
                             </fieldset>
 
-                            {/* contact */}
                             <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Contact</h3>
                             <fieldset disabled={disabled.contact}>
                                 <div className="form-row row mb-4">
@@ -522,7 +520,6 @@ const StudentRegister = () => {
                                 </button>
                                 </fieldset>
                                 <fieldset disabled={disabled.academic}>
-                                {/* current education */}
                                 <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Current Education</h3>
                                 <div className="form-row row mb-4">
                                     <div className="form-group col-md-6">
@@ -862,8 +859,6 @@ const StudentRegister = () => {
             </div>
 
 
-
-            {/* Certification */}
             <div className="d-flex justify-content-center m-3">
                 <div className="card container p-4 h-100 shadow-2-strong shadow-sm" style={{ backgroundColor: "#fff" }}>
                     <div className="card-body">
@@ -954,7 +949,6 @@ const StudentRegister = () => {
                 </div>
             </div>
 
-            {/* Project */}
             <div className="d-flex justify-content-center m-3">
                 <div className="card container p-4 shadow-sm">
 
@@ -983,7 +977,6 @@ const StudentRegister = () => {
                         </div>
                     )}
 
-                    {/* 🔥 PROJECT FORM */}
                     {projects.length > 0 && (
                         <>
                             <input
@@ -1032,7 +1025,6 @@ const StudentRegister = () => {
                         </>
                     )}
 
-                    {/* 🔥 ADD PROJECT */}
                     <button
                         className="btn btn-dark mt-3"
                         onClick={() => {
@@ -1052,7 +1044,6 @@ const StudentRegister = () => {
                         + Add Project
                     </button>
 
-                    {/* 🔥 SUBMIT */}
                     <button
                         className="btn btn-primary mt-3"
                         onClick={handleProject}
@@ -1063,7 +1054,6 @@ const StudentRegister = () => {
 
                 </div>
             </div>
-            {/* Work */}
             <div className="d-flex justify-content-center m-3">
                 <div
                     className="card container p-4 h-100 shadow-2-strong shadow-sm"
@@ -1077,7 +1067,6 @@ const StudentRegister = () => {
                                 {experiences.length > 0 && (
                                     <div className="card p-3 shadow-sm mb-4">
 
-                                        {/* NAVIGATION */}
                                         <div className="d-flex justify-content-between mb-3">
                                             <button
                                                 type="button"
@@ -1108,7 +1097,6 @@ const StudentRegister = () => {
                                             </button>
                                         </div>
 
-                                        {/* FORM */}
                                         <input
                                             className="form-control mb-3"
                                             placeholder="Organization"
@@ -1171,7 +1159,6 @@ const StudentRegister = () => {
                                     </div>
                                 )}
 
-                                {/* BUTTONS */}
                                 <div className="d-grid gap-3 mt-3">
                                     <button
                                         type="button"
@@ -1207,7 +1194,6 @@ const StudentRegister = () => {
                     </div>
                 </div>
             </div>
-            {/* Profile */}
             <div className="d-flex justify-content-center align-items-end mt-3 mb-5">
                 <div className="card container p-4 h-100 shadow-2-strong shadow-sm" style={{ backgroundColor: "#fff" }}>
                     <div className="card-body">
