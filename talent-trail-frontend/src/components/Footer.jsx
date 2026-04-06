@@ -14,7 +14,6 @@ const Footer = () => {
                 </div>
 
                 <div className="col mb-3">
-                    {/* Additional content */}
                 </div>
 
                 <div className="col mb-3">
@@ -29,7 +28,6 @@ const Footer = () => {
                 </div>
 
                 <div className="col mb-3">
-                    {/* Other content */}
                 </div>
 
                 <div className="col mb-3">
