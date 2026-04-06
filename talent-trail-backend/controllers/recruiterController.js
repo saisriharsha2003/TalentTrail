@@ -245,11 +245,11 @@ const getNotifications = async (req, res, next) => {
 }
 
 const postNewJob = async (req, res, next) => {
-  const recruiterId = req.user?.id || req.id; // depends on your auth middleware
+  const recruiterId = req.user?.id || req.id;
+
   let {
     jobTitle,
     applicationFor,
-    minimumCGPA,
     jobDescription,
     experienceRequired,
     numberOfOpenings,
@@ -257,67 +257,91 @@ const postNewJob = async (req, res, next) => {
     location,
     workType,
     employmentType,
-    requiredSkills,
-    preferredSkills,
-    educationRequired,
-    applicationDeadline,
+    role,
     responsibilities,
-    requirements,
-    companyWebsite,
-    companyDescription,
+    skills,
+    eligibleBatch,
     jobCategory,
     department
   } = req.body;
 
-  // validate required fields
-  if (!jobTitle || !jobDescription || !experienceRequired || !numberOfOpenings || !salaryRange || !minimumCGPA) {
-    return res.status(400).json({ message: 'All fields required' });
+  // ✅ Required validation
+  if (
+    !jobTitle ||
+    !jobDescription ||
+    !experienceRequired ||
+    !numberOfOpenings ||
+    !salaryRange
+  ) {
+    return res.status(400).json({ message: 'Required fields missing' });
   }
 
   if (!applicationFor) applicationFor = 'Everyone';
 
   try {
-    const foundRecruiter = await Recruiter.findById(recruiterId).populate('company').exec();
-    if (!foundRecruiter) return res.status(401).json({ message: 'unauthorized' });
+    const foundRecruiter = await Recruiter.findById(recruiterId)
+      .populate('company')
+      .exec();
+
+    if (!foundRecruiter) {
+      return res.status(401).json({ message: 'unauthorized' });
+    }
+
+    // ✅ Clean skills (preserve casing)
+    const cleanedSkills = (skills || [])
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    // ✅ Normalized version (for matching/search)
+    const normalizedSkills = cleanedSkills.map(s => s.toLowerCase());
 
     await Job.create({
       companyName: foundRecruiter.company.name,
       jobTitle,
       applicationFor,
-      minimumCGPA,
       jobDescription,
       experienceRequired,
-      numberOfOpenings,
+      numberOfOpenings: Number(numberOfOpenings),
       salaryRange,
       location,
-      workType,
-      employmentType,
-      requiredSkills,
-      preferredSkills,
-      educationRequired,
-      applicationDeadline,
+      workType: workType || null,
+      employmentType: employmentType || null,
+
+      role,
       responsibilities,
-      requirements,
-      companyWebsite,
-      companyDescription,
+
+      // ✅ Store both versions
+      skills: [...new Set(cleanedSkills)],               // UI display
+      skillsNormalized: [...new Set(normalizedSkills)],  // search/matching
+
+      eligibleBatch,
       jobCategory,
       department,
+
       collegeApproved: false,
       recruiter: recruiterId
     });
 
+    // 🔔 Notify students
     await Student.updateMany(
       {},
-      { $push: { notification: `${foundRecruiter.company.name} posted new job for role ${jobTitle}` } }
+      {
+        $push: {
+          notification: `${foundRecruiter.company.name} posted new job for role ${jobTitle}`
+        }
+      }
     ).exec();
 
+    // 🔔 Recruiter notification
     foundRecruiter.notification = [
       ...(foundRecruiter.notification || []),
       `Posted new job for role ${jobTitle}`
     ];
+
     await foundRecruiter.save();
 
     res.status(201).json({ success: 'Job created' });
+
   } catch (err) {
     next(err);
   }
@@ -391,7 +415,7 @@ const parseJD = async (req, res, next) => {
 const postApplication = async (req, res, next) => {
   console.log("Request body:", req.body);
   const { applicationId, status } = req.body;
-  const recruiterId = req.user?.id; // adjust based on your auth middleware
+  const recruiterId = req.id; // adjust based on your auth middleware
 
   try {
     const foundRecruiter = await Recruiter.findById(recruiterId).exec();
