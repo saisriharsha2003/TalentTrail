@@ -260,7 +260,6 @@ const StudentDashboard = () => {
                     </div>
                 </div>
             </div>
-            {/* Demo */}
 
             <div className="card m-4 mb-5 shadow-sm" >
 
