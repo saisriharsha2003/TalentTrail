@@ -25,15 +25,10 @@ const RecruiterOpening = () => {
     experienceRequired: "",
     numberOfOpenings: "",
     salaryRange: "",
-    requiredSkills: [],
-    preferredSkills: [],
-    educationRequired: [],
-    minimumCGPA: "",
-    applicationDeadline: "",
+    role: "",
     responsibilities: "",
-    requirements: "",
-    companyWebsite: "",
-    companyDescription: "",
+    skills: [],
+    eligibleBatch: "",
     jobCategory: "",
     department: "",
     applicationFor: "",
@@ -43,6 +38,8 @@ const RecruiterOpening = () => {
 
   const [job, setJob] = useState(jobDefault);
   const [colleges, setColleges] = useState([]);
+  const [skillsInput, setSkillsInput] = useState("");
+
 
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -63,14 +60,11 @@ const RecruiterOpening = () => {
     e.preventDefault();
 
     try {
-      console.log("Job:", job);
       const payload = {
         ...job,
-        numberOfOpenings: job.numberOfOpenings ? parseInt(job.numberOfOpenings) : undefined,
-        minimumCGPA: job.minimumCGPA ? parseFloat(job.minimumCGPA) : undefined,
-        applicationDeadline: job.applicationDeadline ? new Date(job.applicationDeadline) : undefined,
-        companyWebsite: job.companyWebsite || undefined,
-        department: job.department || undefined,
+        numberOfOpenings: job.numberOfOpenings
+          ? parseInt(job.numberOfOpenings)
+          : undefined,
       };
 
       const res = await axios.post("/recruiter/job/new", payload);
@@ -86,236 +80,197 @@ const RecruiterOpening = () => {
   };
 
   return (
-    <div className="d-flex justify-content-center my-4">
-      <div className="container" style={{ maxWidth: "1000px" }}>
-        <div className="card p-4 shadow-sm rounded-4 border-0">
-          {/* HEADER */}
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h3 className="fw-bold">Post Job</h3>
-            <button
-              onClick={() => navigate("/uploadJD")}
-              className="btn btn-outline-dark"
-            >
-              Upload JD
-            </button>
+    <div className="container my-5" style={{ maxWidth: "1000px" }}>
+
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="fw-bold">Post Job</h2>
+          <p className="text-muted mb-0">
+            Fill details or upload JD to auto-fill
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate("/uploadJD")}
+          className="btn btn-outline-dark"
+        >
+          Upload JD
+        </button>
+      </div>
+
+      <form onSubmit={handleJob}>
+
+        <Card title="📌 Basic Info">
+          <Row>
+            <Input label="Job Title" value={job.jobTitle}
+              onChange={(v) => setJob({ ...job, jobTitle: v })} />
+
+            <Input label="Company Name" value={job.companyName}
+              onChange={(v) => setJob({ ...job, companyName: v })} />
+
+            <Input label="Location" value={job.location}
+              onChange={(v) => setJob({ ...job, location: v })} />
+
+            <Input label="Experience" value={job.experienceRequired}
+              onChange={(v) => setJob({ ...job, experienceRequired: v })} />
+
+            <Input label="Openings" value={job.numberOfOpenings}
+              onChange={(v) => setJob({ ...job, numberOfOpenings: v })} />
+
+            <Input label="Salary Range" value={job.salaryRange}
+              onChange={(v) => setJob({ ...job, salaryRange: v })} />
+          </Row>
+        </Card>
+
+        <Card title="💼 Job Details">
+          <Row>
+            <Select label="Work Type" value={job.workType}
+              options={["Onsite", "Remote", "Hybrid"]}
+              onChange={(v) => setJob({ ...job, workType: v })} />
+
+            <Select label="Employment Type" value={job.employmentType}
+              options={["Full-time", "Part-time", "Internship", "Contract"]}
+              onChange={(v) => setJob({ ...job, employmentType: v })} />
+
+            <Input label="Eligible Batch"
+              value={job.eligibleBatch}
+              onChange={(v) => setJob({ ...job, eligibleBatch: v })} />
+
+            <Select label="Application For"
+              value={job.applicationFor}
+              options={["Everyone", ...colleges]}
+              onChange={(v) => setJob({ ...job, applicationFor: v })} />
+          </Row>
+        </Card>
+
+        <Card title="📄 Description">
+          <Textarea label="Job Description"
+            value={job.jobDescription}
+            onChange={(v) => setJob({ ...job, jobDescription: v })} />
+
+          <Textarea label="Role"
+            value={job.role}
+            onChange={(v) => setJob({ ...job, role: v })} />
+
+          <Textarea label="Responsibilities"
+            value={job.responsibilities}
+            onChange={(v) => setJob({ ...job, responsibilities: v })} />
+        </Card>
+
+        <Card title="🛠 Skills">
+
+          <input
+            className="form-control"
+            placeholder="Type a skill and press Enter"
+            value={skillsInput}
+            onChange={(e) => setSkillsInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && skillsInput.trim()) {
+                e.preventDefault();
+
+                if (!job.skills.includes(skillsInput.trim())) {
+                  setJob({
+                    ...job,
+                    skills: [...job.skills, skillsInput.trim()],
+                  });
+                }
+
+                setSkillsInput("");
+              }
+            }}
+          />
+
+          <div className="mt-3">
+            {job.skills.map((skill, i) => (
+              <span
+                key={i}
+                className="badge bg-dark me-2 mb-2 px-3 py-2 rounded-pill"
+                style={{ cursor: "pointer" }}
+                onClick={() =>
+                  setJob({
+                    ...job,
+                    skills: job.skills.filter((_, index) => index !== i),
+                  })
+                }
+              >
+                {skill} ❌
+              </span>
+            ))}
           </div>
 
-          <form onSubmit={handleJob}>
-            {/* ---------------- BASIC INFO ---------------- */}
-            <div className="mb-4">
-              <h5 className="fw-semibold mb-3 text-primary">Basic Info</h5>
+        </Card>
 
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Job Title</label>
-                  <input
-                    className="form-control"
-                    value={job.jobTitle}
-                    onChange={(e) =>
-                      setJob({ ...job, jobTitle: e.target.value })
-                    }
-                  />
-                </div>
+        <Card title="📊 Category">
+          <Row>
+            <Input label="Job Category" value={job.jobCategory}
+              onChange={(v) => setJob({ ...job, jobCategory: v })} />
 
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Company Name</label>
-                  <input
-                    className="form-control"
-                    value={job.companyName}
-                    onChange={(e) =>
-                      setJob({ ...job, companyName: e.target.value })
-                    }
-                  />
-                </div>
+            <Input label="Department" value={job.department}
+              onChange={(v) => setJob({ ...job, department: v })} />
+          </Row>
+        </Card>
 
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Location</label>
-                  <input
-                    className="form-control"
-                    value={job.location}
-                    onChange={(e) =>
-                      setJob({ ...job, location: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Experience</label>
-                  <input
-                    className="form-control"
-                    value={job.experienceRequired}
-                    onChange={(e) =>
-                      setJob({ ...job, experienceRequired: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Openings</label>
-                  <input
-                    className="form-control"
-                    value={job.numberOfOpenings}
-                    onChange={(e) =>
-                      setJob({ ...job, numberOfOpenings: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Salary Range</label>
-                  <input
-                    className="form-control"
-                    value={job.salaryRange}
-                    onChange={(e) =>
-                      setJob({ ...job, salaryRange: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* ---------------- JOB DETAILS ---------------- */}
-            <div className="mb-4">
-              <h5 className="fw-semibold mb-3 text-primary">Job Details</h5>
-
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Work Type</label>
-                  <input
-                    className="form-control"
-                    value={job.workType}
-                    onChange={(e) =>
-                      setJob({ ...job, workType: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">
-                    Employment Type
-                  </label>
-                  <input
-                    className="form-control"
-                    value={job.employmentType}
-                    onChange={(e) =>
-                      setJob({ ...job, employmentType: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">Minimum CGPA</label>
-                  <input
-                    className="form-control"
-                    value={job.minimumCGPA}
-                    onChange={(e) =>
-                      setJob({ ...job, minimumCGPA: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-medium">
-                    Application Deadline
-                  </label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={job.applicationDeadline}
-                    onChange={(e) =>
-                      setJob({ ...job, applicationDeadline: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="col-md-12">
-                  <label className="form-label fw-medium">
-                    Application For
-                  </label>
-                  <select
-                    className="form-select"
-                    value={job.applicationFor}
-                    onChange={(e) =>
-                      setJob({ ...job, applicationFor: e.target.value })
-                    }
-                  >
-                    <option value="">Select</option>
-                    <option value="Everyone">Global Pool</option>
-                    {colleges.map((c, i) => (
-                      <option key={i}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* ---------------- DESCRIPTION ---------------- */}
-            <div className="mb-4">
-              <h5 className="fw-semibold mb-3 text-primary">Description</h5>
-
-              <label className="form-label fw-medium">Job Description</label>
-              <textarea
-                className="form-control mb-3"
-                rows="4"
-                value={job.jobDescription}
-                onChange={(e) =>
-                  setJob({ ...job, jobDescription: e.target.value })
-                }
-              />
-
-              <label className="form-label fw-medium">Responsibilities</label>
-              <textarea
-                className="form-control mb-3"
-                rows="4"
-                value={job.responsibilities}
-                onChange={(e) =>
-                  setJob({ ...job, responsibilities: e.target.value })
-                }
-              />
-
-              <label className="form-label fw-medium">Requirements</label>
-              <textarea
-                className="form-control"
-                rows="4"
-                value={job.requirements}
-                onChange={(e) =>
-                  setJob({ ...job, requirements: e.target.value })
-                }
-              />
-            </div>
-
-            {/* ---------------- SKILLS ---------------- */}
-            <div className="mb-4">
-              <h5 className="fw-semibold mb-3 text-primary">Skills</h5>
-
-              <label className="form-label fw-medium">Required Skills</label>
-              <textarea
-                className="form-control mb-3"
-                value={job.requiredSkills.join(", ")}
-                onChange={(e) =>
-                  setJob({ ...job, requiredSkills: e.target.value.split(",") })
-                }
-              />
-
-              <label className="form-label fw-medium">Preferred Skills</label>
-              <textarea
-                className="form-control"
-                value={job.preferredSkills.join(", ")}
-                onChange={(e) =>
-                  setJob({ ...job, preferredSkills: e.target.value.split(",") })
-                }
-              />
-            </div>
-
-            {/* SUBMIT */}
-            <div className="text-end">
-              <button className="btn btn-primary px-4 py-2">Submit Job</button>
-            </div>
-          </form>
+        <div className="text-end mt-4">
+          <button className="btn btn-primary px-4 py-2">
+            Submit Job
+          </button>
         </div>
-      </div>
+
+      </form>
     </div>
   );
 };
+
+/* 🔥 REUSABLE UI COMPONENTS */
+
+const Card = ({ title, children }) => (
+  <div className="card shadow-sm border-0 rounded-4 p-4 mb-4">
+    <h5 className="fw-semibold mb-3">{title}</h5>
+    {children}
+  </div>
+);
+
+const Row = ({ children }) => (
+  <div className="row g-3">{children}</div>
+);
+
+const Input = ({ label, value, onChange }) => (
+  <div className="col-md-6">
+    <label className="form-label">{label}</label>
+    <input
+      className="form-control"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  </div>
+);
+
+const Select = ({ label, value, options, onChange }) => (
+  <div className="col-md-6">
+    <label className="form-label">{label}</label>
+    <select
+      className="form-select"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">Select</option>
+      {options.map((o, i) => (
+        <option key={i}>{o}</option>
+      ))}
+    </select>
+  </div>
+);
+
+const Textarea = ({ label, value, onChange }) => (
+  <div className="mb-3">
+    <label className="form-label">{label}</label>
+    <textarea
+      className="form-control"
+      rows="3"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  </div>
+);
 
 export default RecruiterOpening;
