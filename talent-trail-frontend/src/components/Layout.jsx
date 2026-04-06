@@ -120,7 +120,7 @@ const Layout = () => {
                     <div className='d-flex align-items-center'>
                         {
                             !decoded?.userInfo?.username ? null :  <button className="navbar-toggler" type="button" onClick={toggleNavbar}>
-                            <span className="navbar-toggler-icon"></span> {/* Hamburger icon */}
+                            <span className="navbar-toggler-icon"></span>  
                         </button>
                         }
                             
