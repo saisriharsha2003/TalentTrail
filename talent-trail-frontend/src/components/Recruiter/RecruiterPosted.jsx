@@ -1,87 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import useAxiosPrivate from '../../hooks/useAxiosPrivate';
-import { notify } from '../Toast';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { notify } from "../Toast";
+import { Link } from "react-router-dom";
 
 const RecruiterPosted = () => {
-    const [posted, setPosted] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
+  const [posted, setPosted] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-    const axios = useAxiosPrivate();
+  const axios = useAxiosPrivate();
 
-    useEffect(() => {
-        const fetchPosted = async () => {
-            try {
-                const response = await axios.get('/recruiter/jobs');
-                
-                const posted = response?.data;
-                console.log("Posted jobs:", posted);
-                setPosted(posted);
-            } catch (err) {
-                notify('failed', err?.response?.data?.message);
-            }
-        };
-        fetchPosted();
-    }, [axios]);
-
-    const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value);
+  useEffect(() => {
+    const fetchPosted = async () => {
+      try {
+        const res = await axios.get("/recruiter/jobs");
+        setPosted(res?.data || []);
+      } catch (err) {
+        notify("failed", err?.response?.data?.message);
+      }
     };
+    fetchPosted();
+  }, [axios]);
 
-    const filteredPostedJobs = posted.filter((job) =>
-        job?.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const filteredJobs = posted.filter((job) =>
+    job?.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-    console.log("Filtered posted jobs:", filteredPostedJobs);
+  return (
+    <div className="container my-5">
 
-    return (
-        <>
-            <div className="card m-4 mb-5 shadow">
-                <div className="card-body table-responsive" style={{ padding: '2rem' }}>
-                    <div className="input-group mb-4 mt-1 rounded" style={{ maxWidth: '500px' }}>
-                        <span className="input-group-text"><i className="bi bi-search"></i></span>
-                        <input
-                            type="text"
-                            placeholder="Search by company role."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            className="form-control"
-                            style={{ outline: 'none', boxShadow: 'none' }}
+      <div className="mb-4">
+        <h2 className="fw-bold">Posted Jobs</h2>
+        <p className="text-muted mb-0">
+          Manage and track all your job postings
+        </p>
+      </div>
 
-                        />
-                    </div>
-                    <table className="table table-hover">
-                        <thead>
-                            <tr>
-                                <th scope="col">Job id</th>
-                                <th scope="col">Company name</th>
-                                <th scope="col">Job role</th>
-                                <th scope="col">CGPA</th>
-                                <th scope="col">Salary</th>
-                                <th scope="col">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredPostedJobs.map((job, index) => (
-                                <tr key={job._id}>
-                                <th scope="row">{index + 1}</th>
-                                <td>{job.companyName}</td>
-                                <td>{job.jobTitle}</td>
-                                <td>{job.minimumCGPA}</td>
-                                <td>{job.salaryRange}</td>
-                                <td>
-                                    <Link className="btn btn-primary" to={job._id} role="button">
-                                    View
-                                    </Link>
-                                </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+      <div className="input-group mb-4" style={{ maxWidth: "400px" }}>
+        <span className="input-group-text">🔍</span>
+        <input
+          type="text"
+          placeholder="Search by job title..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="form-control"
+        />
+      </div>
+
+      <div className="row g-4">
+
+        {filteredJobs.length ? (
+          filteredJobs.map((job) => (
+            <div key={job._id} className="col-md-6">
+
+              <div className="card shadow-sm border-0 rounded-4 p-4 h-100">
+
+                <h5 className="fw-bold">{job.jobTitle}</h5>
+                <p className="text-muted mb-2">{job.companyName}</p>
+
+                <div className="d-flex flex-wrap gap-2 mb-3">
+
+                  {job.location && (
+                    <span className="badge bg-light text-dark">
+                      📍 {job.location}
+                    </span>
+                  )}
+
+                  {job.salaryRange && (
+                    <span className="badge bg-success">
+                      💰 ₹{job.salaryRange}
+                    </span>
+                  )}
+
+                  {job.numberOfOpenings && (
+                    <span className="badge bg-info text-dark">
+                      🔢 {job.numberOfOpenings}
+                    </span>
+                  )}
+
+                  {job.experienceRequired && (
+                    <span className="badge bg-light text-dark">
+                      🧠 {job.experienceRequired}
+                    </span>
+                  )}
                 </div>
+
+                <div className="mb-3">
+                  {job.skills?.slice(0, 5).map((s, i) => (
+                    <span
+                      key={i}
+                      className="badge bg-dark me-2 mb-2 px-3 py-1 rounded-pill"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-auto d-flex justify-content-between align-items-center">
+
+                  <small className="text-muted">
+                    {job.department || "General"}
+                  </small>
+
+                  <Link
+                    className="btn btn-outline-primary btn-sm"
+                    to={job._id}
+                  >
+                    View →
+                  </Link>
+                </div>
+
+              </div>
             </div>
-        </>
-    );
+          ))
+        ) : (
+          <div className="text-center text-muted mt-5">
+            <h5>No jobs found</h5>
+            <p>Try a different search or post a new job</p>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
 };
 
 export default RecruiterPosted;
