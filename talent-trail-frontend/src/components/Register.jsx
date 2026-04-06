@@ -1,140 +1,128 @@
-import React, { useState } from 'react';
-import '../styles/form.css';
-import axios from '../api/axios';
-import { notify } from './Toast';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import axios from "../api/axios";
+import { notify } from "./Toast";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [matchPassword, setMatchPassword] = useState('');
-    const [role, setRole] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [matchPassword, setMatchPassword] = useState("");
+  const [role, setRole] = useState("");
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        if (password !== matchPassword) {
-            notify('failed', 'passwords dont match');
-            return;
-        }
-        e.preventDefault();
-        try {
-            const response = await axios.post('/register', { username, password, role });
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-            const response1 = await axios.post('/login', { username, password, role });
-            const accessToken = response1?.data?.accessToken;
-            localStorage.setItem('accessToken', accessToken);
+    if (password !== matchPassword) {
+      notify("failed", "Passwords do not match");
+      return;
+    }
 
-            if(role.toLowerCase() === 'student'){
-                navigate('/uploadResume');
-            }
-            else{
-                navigate('/' + role + 'Register');
-            }
-            setUsername('');
-            setPassword('');
-            setMatchPassword('');
-            setRole('');
-        } catch (err) {
-            notify('failed', err?.response?.data?.message);
-        }
-    };
+    try {
+      const res = await axios.post("/register", { username, password, role });
 
-    return (
-        <>
-            <div className='form'>
-                <div className='d-inline-flex p-2'>
-                    <div className="card" style={{ backgroundColor: '#fff', width: '500px' }}>
-                        <form className="card-body" onSubmit={handleSubmit}>
+      notify("success", res?.data?.success);
 
-                            <div className="card-body">
-                            <a href="/" className="d-flex align-items-center mb-3 link-dark text-decoration-none">
-                                    <span className="navbar-brand fs-1 pacifico-regular" to={"/"}>Talentrail</span>  
-                                </a>
-                                <div id="i5mdc" className="col-12 col-md-12 mb-4">
-                                    <h2 id="i3nki" className="title">Sign Up</h2>
-                                </div>
-                                <div className="form-floating flex-nowrap">
-                                    <input
-                                        className="form-control"
-                                        type="text"
-                                        placeholder='Username'
-                                        id='username'
-                                        minLength={8}
-                                        maxLength={30}
-                                        autoComplete='off'
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        required
-                                    />
-                                    <label htmlFor='username'>Username</label>
-                                </div>
-                            </div>
+      const login = await axios.post("/login", { username, password, role });
+      localStorage.setItem("accessToken", login?.data?.accessToken);
 
-                            <div className="card-body">
-                                <div className="form-floating flex-nowrap">
-                                    <input
-                                        className="form-control"
-                                        type="password"
-                                        id='password'
-                                        autoComplete='off'
-                                        placeholder='Password'
-                                        value={password}
-                                        min={8}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                    />
-                                    <label htmlFor='password'>Password</label>
-                                </div>
-                            </div>
+      if (role.toLowerCase() === "student") {
+        navigate("/uploadResume");
+      } else {
+        navigate("/" + role + "Register");
+      }
 
-                            <div className="card-body">
-                                <div className="form-floating flex-nowrap">
-                                    <input
-                                        className="form-control"
-                                        type="password"
-                                        id='confirmPassword'
-                                        autoComplete='off'
-                                        placeholder='Confirm password'
-                                        value={matchPassword}
-                                        min={8}
-                                        onChange={(e) => setMatchPassword(e.target.value)}
-                                        required
-                                    />
-                                    <label htmlFor='confirmPassword'>Confirm password</label>
-                                </div>
-                            </div>
+    } catch (err) {
+      notify("failed", err?.response?.data?.message);
+    }
+  };
 
-                            <div className="card-body">
-                                <div className="form-floating flex-nowrap">
-                                    <select id='role' required className="form-select" value={role} onChange={(e) => setRole(e.target.value)}>
-                                        <option defaultValue=''></option>
-                                        <option value='student'>Student</option>
-                                        <option value='recruiter'>Recruiter</option>
-                                        <option value='college'>College</option>
-                                    </select>
-                                    <label htmlFor='role'>Role</label>
-                                </div>
-                            </div>
+  return (
+    <div className="container-fluid min-vh-100 p-0">
+      <div className="row g-0 min-vh-100">
 
-                            <div className="card-body">
-                                <button role="button" type="submit" id="iq8qg" className="btn btn-primary rounded-pill text-centered"><strong>Sign Up</strong></button>                            
-                            </div>
+        <div className="col-lg-6 d-flex justify-content-center align-items-center bg-light">
 
-                        </form>
-                    </div>
-
-                    <div id="ihnx5" style={{ width: '400px' }} className="d-flex flex-column text-wrap">
-                        <h1 id="iwymk">Welcome To Talentrail</h1>
-                        <p id="ioe5g">Talentrail India is a groundbreaking platform addressing the employability challenge in higher education. By analyzing placement data nationwide, we empower policymakers with insights to enhance graduate employability. For recruiters, our extensive database streamlines talent sourcing. Join us in shaping India's skill-driven future.</p>
-                    </div>
-                </div>
+          <div
+            className="p-4 rounded-4"
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 25px 50px rgba(0,0,0,0.15)",
+              transition: "0.3s"
+            }}
+          >
+            <div className="text-center mb-4">
+              <h2 className="fw-bold">Talentrail</h2>
+              <p className="text-muted">Create your account</p>
             </div>
-        </>
-    );
-}
+
+            <form onSubmit={handleSubmit}>
+
+              <Input label="Username" value={username} onChange={setUsername} />
+              <Input label="Password" type="password" value={password} onChange={setPassword} />
+              <Input label="Confirm Password" type="password" value={matchPassword} onChange={setMatchPassword} />
+
+              <div className="mb-3">
+                <label className="form-label">Role</label>
+                <select className="form-select" value={role} onChange={(e) => setRole(e.target.value)} required>
+                  <option value="">Select Role</option>
+                  <option value="student">Student</option>
+                  <option value="recruiter">Recruiter</option>
+                  <option value="college">College</option>
+                </select>
+              </div>
+
+              <button className="btn btn-primary w-100 mt-2 fw-semibold">
+                Sign Up
+              </button>
+
+            </form>
+          </div>
+        </div>
+
+        <div
+          className="col-lg-6 d-none d-lg-flex align-items-center justify-content-center text-white"
+          style={{
+            background: "radial-gradient(circle at 20% 20%, #3b82f6, #1e3a8a 60%)"
+          }}
+        >
+          <div className="px-5" style={{ maxWidth: "500px" }}>
+            <h1 className="fw-bold mb-3">Welcome to Talentrail 🚀</h1>
+            <p className="mb-4">Discover opportunities and connect with recruiters.</p>
+
+            <div>
+              <p className="fw-semibold">✨ Smart job matching</p>
+              <p className="fw-semibold">📊 Recruiter insights</p>
+              <p className="fw-semibold">🚀 Faster hiring</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+const Input = ({ label, value, onChange, type = "text" }) => (
+  <div className="mb-3">
+    <label className="form-label fw-medium">{label}</label>
+    <input
+      type={type}
+      className="form-control"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      required
+      style={{
+        background: "#fff",
+        color: "#111827",        // 🔥 dark text
+        border: "1px solid #d1d5db", // 🔥 visible border
+      }}
+    />
+  </div>
+);
 
 export default Register;
