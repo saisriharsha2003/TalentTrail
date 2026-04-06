@@ -1,79 +1,124 @@
-import React, { useState, useEffect } from 'react';
-import useAxiosPrivate from '../../hooks/useAxiosPrivate';
-import { notify } from '../Toast';
+import React, { useState, useEffect } from "react";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { notify } from "../Toast";
 
 const StudentApplied = () => {
-    const [appliedJobs, setAppliedJobs] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
+  const [appliedJobs, setAppliedJobs] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const axios = useAxiosPrivate();
 
-    const axios = useAxiosPrivate();
+  useEffect(() => {
+    const fetchApplied = async () => {
+      try {
+        const res = await axios.get("/student/applied");
+        setAppliedJobs(res?.data || []);
+      } catch (err) {
+        notify("failed", err?.response?.data?.message);
+      }
+    };
+    fetchApplied();
+  }, [axios]);
 
-    useEffect(() => {
-        const fetchApplied = async () => {
-            try {
-                const response = await axios.get('/student/applied');
-                const appliedJobs = response?.data;
-                setAppliedJobs(appliedJobs);
-            } catch (err) {
-                notify('failed', err?.response?.data?.message);
-            }
-        }
-        fetchApplied();
-    }, [axios]);
+  const filteredJobs = appliedJobs.filter((job) =>
+    (job.companyName || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase()) ||
+    (job.jobTitle || job.jobRole || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  );
 
-    const handleSearchChange = (event) => {
-        setSearchQuery(event.target.value);
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "selected":
+        return "bg-success";
+      case "rejected":
+        return "bg-danger";
+      default:
+        return "bg-warning text-dark";
     }
+  };
 
-    const filteredJobs = appliedJobs.filter((job) =>
-        job.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.jobRole.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  return (
+    <div className="container my-5">
 
-    return (
-        <>
-            <div className="card m-4 shadow">
-                <div className="card-body table-responsive" style={{ padding: '2rem' }}>
-                    <div className="input-group mb-4 mt-1 rounded" style={{ maxWidth: '500px' }}>
-                        <span className="input-group-text"><i className="bi bi-search"></i></span>
-                        <input
-                            type="text"
-                            placeholder="Search by company name or job role..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            className="form-control"
-                            style={{ outline: 'none', boxShadow: 'none' }}
+      <div className="mb-4">
+        <h2 className="fw-bold">Applied Jobs</h2>
+        <p className="text-muted">Track your job applications</p>
+      </div>
 
-                        />
-                    </div>
-                    <table className="table table-hover">
-                        <thead className='thead-dark'>
-                            <tr>
-                                <th scope="col">Job id</th>
-                                <th scope="col">Company name</th>
-                                <th scope="col">Job role</th>
-                                <th scope="col">salary</th>
-                                <th scope="col">Applied on</th>
-                                <th scope="col">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredJobs.map((job, index) => (
-                                <tr key={index}>
-                                    <th scope="row">{index + 1}</th>
-                                    <td>{job.companyName}</td>
-                                    <td>{job.jobRole}</td>
-                                    <td>{job.salary}</td>
-                                    <td>{new Date(job.appliedOn).toString().slice(4, 21)}</td>
-                                    <td>{job.status}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+      <div className="input-group mb-4" style={{ maxWidth: "400px" }}>
+        <span className="input-group-text">🔍</span>
+        <input
+          type="text"
+          placeholder="Search by company or role..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="form-control"
+        />
+      </div>
+
+      <div className="row g-4">
+
+        {filteredJobs.length ? (
+          filteredJobs.map((job) => (
+            <div key={job._id} className="col-md-6">
+
+              <div className="card shadow-sm border-0 rounded-4 p-4 h-100">
+
+                <h5 className="fw-bold">
+                  {job.jobTitle || job.jobRole}
+                </h5>
+                <p className="text-muted mb-2">
+                  {job.companyName}
+                </p>
+
+                <div className="d-flex flex-wrap gap-2 mb-3">
+
+                  {job.salary && (
+                    <span className="badge bg-success">
+                      💰 ₹{job.salary}
+                    </span>
+                  )}
+
+                  <span className={`badge ${getStatusBadge(job.status)}`}>
+                    {job.status}
+                  </span>
+
+                  <span className="badge bg-light text-dark">
+                    📅 {new Date(job.appliedOn).toLocaleDateString()}
+                  </span>
                 </div>
+
+                <div className="mt-auto d-flex justify-content-between align-items-center">
+
+                  <small className="text-muted">
+                    <p className="fw-bold">Application ID:</p> {job._id?.slice(-6)}
+                  </small>
+
+                  <span className="text-muted small">
+                    {job.status === "pending"
+                      ? "⏳ In Progress"
+                      : job.status === "selected"
+                      ? "🎉 Selected"
+                      : "❌ Rejected"}
+                  </span>
+
+                </div>
+
+              </div>
             </div>
-        </>
-    )
-}
+          ))
+        ) : (
+          <div className="text-center text-muted mt-5">
+            <h5>No applications found</h5>
+            <p>Start applying to jobs 🚀</p>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};
 
 export default StudentApplied;
