@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "../styles/home.css";
 import Footer from "./Footer";
 
@@ -8,8 +8,24 @@ import rajesh from "./images/rajesh.jpeg";
 import vara from "./images/vara.jpeg";
 
 const Home = () => {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
   const handleClick = (acctype) => {
     localStorage.setItem("acctype", acctype);
+  };
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(form);
+    setForm({ name: "", email: "", message: "" });
   };
 
   return (
@@ -38,8 +54,35 @@ const Home = () => {
             <img src="https://i.postimg.cc/yNdhMtqd/home1.png" alt="" />
           </div>
         </div>
+      </section>
 
-        <div className="hero-blob"></div>
+      <section className="features-section">
+        <div className="container">
+          <h2 className="section-title text-center mb-5">Why TalentTrail?</h2>
+
+          <div className="row g-4">
+            <div className="col-md-4">
+              <div className="feature-card">
+                <h4>⚡ AI Matching</h4>
+                <p>Smart algorithms match students with the best jobs instantly.</p>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="feature-card">
+                <h4>📊 Analytics</h4>
+                <p>Track placement stats and student performance in real time.</p>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="feature-card">
+                <h4>🔗 Seamless Hiring</h4>
+                <p>Connect recruiters and students on a single platform.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="modern-section">
@@ -124,6 +167,45 @@ const Home = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="contact-section">
+        <div className="container">
+          <h2 className="text-center mb-5">Contact Us</h2>
+
+          <form className="contact-form" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              name="name"
+              placeholder="Your Name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+
+            <input
+              type="email"
+              name="email"
+              placeholder="Your Email"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+
+            <textarea
+              name="message"
+              placeholder="Your Message"
+              rows="4"
+              value={form.message}
+              onChange={handleChange}
+              required
+            ></textarea>
+
+            <button type="submit" className="btn btn-glow">
+              Send Message →
+            </button>
+          </form>
         </div>
       </section>
 
