@@ -7,13 +7,11 @@ const appliedJobSchema = new Schema({
         required: true
     },
 
-    // 🔥 UPDATED FIELD
     jobTitle: {
         type: String,
         required: true
     },
 
-    // 🔥 KEEP SIMPLE (string is fine for now)
     salary: {
         type: String,
         required: true
@@ -22,7 +20,7 @@ const appliedJobSchema = new Schema({
     appliedOn: {
         type: Date,
         required: true,
-        default: Date.now // ✅ auto-set
+        default: Date.now 
     },
 
     status: {
@@ -31,6 +29,12 @@ const appliedJobSchema = new Schema({
         default: 'pending'
     },
 
+    applicationId: {
+        type: String,
+        unique: true,
+        required: true
+    },
+    
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'Student',
@@ -44,7 +48,10 @@ const appliedJobSchema = new Schema({
     }
 
 }, {
-    timestamps: true // 🔥 bonus (createdAt, updatedAt)
+    timestamps: true 
 });
+
+appliedJobSchema.index({ userId: 1, jobId: 1 }, { unique: true });
+appliedJobSchema.index({ userId: 1 });
 
 module.exports = mongoose.model('AppliedJob', appliedJobSchema);
