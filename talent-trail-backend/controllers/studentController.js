@@ -17,6 +17,9 @@ const FormData = require("form-data");
 
 const { spawn } = require('child_process');
 
+const generateApplicationId = () => {
+    return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+};
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -67,6 +70,7 @@ const getStudent = async (req, res, next) => {
 
 const getJobs = async (req, res, next) => {
     const { id } = req;
+
     try {
         const foundStudent = await Student.findById(id)
             .populate('academic')
@@ -75,10 +79,17 @@ const getJobs = async (req, res, next) => {
         if (!foundStudent)
             return res.status(401).json({ message: 'unauthorized' });
 
+        const appliedJobs = await AppliedJob.find({ userId: id })
+            .select('jobId')
+            .lean();
+
+        const appliedJobIds = appliedJobs.map(a => a.jobId.toString());
+
         const foundJobs = await Job.find({
             applicationFor: {
                 $in: ['Everyone', foundStudent.academic.currentEducation.college]
-            }
+            },
+            _id: { $nin: appliedJobIds } 
         })
         .select(`
             companyName
@@ -97,6 +108,7 @@ const getJobs = async (req, res, next) => {
         .exec();
 
         res.json(foundJobs);
+
     } catch (err) {
         next(err);
     }
@@ -130,15 +142,49 @@ const capabilityCal = async (req, res, next) => {
 
 const getAppliedJobs = async (req, res, next) => {
     const { id } = req;
-    try {
-        const foundAppliedJobs = await AppliedJob.find({ userId: id }).exec();
 
-        res.json(foundAppliedJobs);
-    }
-    catch (err) {
+    try {
+        const foundAppliedJobs = await AppliedJob.find({ userId: id })
+            .sort({ createdAt: -1 }) // 🔥 latest first
+            .populate({
+                path: 'jobId',
+                select: `
+                    jobTitle
+                    companyName
+                    jobDescription
+                    location
+                    salaryRange
+                    skills
+                    responsibilities
+                    experienceRequired
+                    employmentType
+                `
+            })
+            .lean();
+
+        const response = foundAppliedJobs.map(app => ({
+            _id: app._id,
+            applicationId: app.applicationId,
+            companyName: app.companyName,
+            jobTitle: app.jobTitle,
+            salary: app.salary,
+            status: app.status,
+            appliedOn: app.appliedOn,
+
+            // ✅ For card display
+            location: app.jobId?.location,
+            salaryRange: app.jobId?.salaryRange,
+
+            // 🔥 FULL JOB OBJECT FOR MODAL
+            job: app.jobId
+        }));
+
+        res.json(response);
+
+    } catch (err) {
         next(err);
     }
-}
+};
 
 const getJobProfile = async (req, res, next) => {
     const { jobId } = req.params;
@@ -202,7 +248,6 @@ const postAppliedJob = async (req, res, next) => {
         if (!foundStudent)
             return res.status(401).json({ message: 'unauthorized' });
 
-        // ✅ Prevent duplicate application
         const duplicateApplication = await AppliedJob.findOne({
             userId: id,
             jobId
@@ -222,18 +267,19 @@ const postAppliedJob = async (req, res, next) => {
         if (!foundCompany)
             return res.status(400).json({ message: 'Company not found' });
 
+        const applicationId = `APP${Date.now()}`;
 
         const application = await AppliedJob.create({
             companyName: foundJob.companyName,
-
             jobTitle: foundJob.jobTitle || foundJob.jobRole,
             salary: foundJob.salaryRange || foundJob.package,
+
+            applicationId, 
 
             appliedOn: new Date(),
             userId: id,
             jobId
         });
-
 
         const mailOptions = {
             from: process.env.MAIL,
@@ -245,11 +291,11 @@ const postAppliedJob = async (req, res, next) => {
                     <b>${foundJob.jobTitle || foundJob.jobRole}</b> 
                     at <b>${foundJob.companyName}</b> has been submitted successfully.
                 </p>
+                <p><b>Application ID:</b> ${applicationId}</p>
             `
         };
 
         await transporter.sendMail(mailOptions);
-
 
         foundStudent.applied = [application._id, ...foundStudent.applied];
 
@@ -259,7 +305,6 @@ const postAppliedJob = async (req, res, next) => {
         ];
 
         await foundStudent.save();
-
 
         const foundRecruiter = await Recruiter.findById(foundJob.recruiter).exec();
 
@@ -273,7 +318,8 @@ const postAppliedJob = async (req, res, next) => {
         }
 
         res.status(201).json({
-            success: 'Applied job successfully'
+            success: 'Applied job successfully',
+            applicationId 
         });
 
     } catch (err) {
