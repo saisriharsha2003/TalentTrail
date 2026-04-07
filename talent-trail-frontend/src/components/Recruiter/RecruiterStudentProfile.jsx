@@ -241,7 +241,7 @@ const RecruiterStudentProfile = () => {
           {jobs[activeIndex] && (
             <div className="card p-4">
 
-              <h5>{jobs[activeIndex].jobRole}</h5>
+              <h5>{jobs[activeIndex].jobTitle}</h5>
               <p>{jobs[activeIndex].companyName}</p>
 
               <p className="text-muted">
