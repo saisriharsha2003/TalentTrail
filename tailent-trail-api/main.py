@@ -42,7 +42,6 @@ def parse_resume():
     Returns: Extracted resume data with candidate details, education, experience, skills, etc.
     """
     try:
-        # Validate file presence
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
         
@@ -51,19 +50,16 @@ def parse_resume():
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
         
-        # Validate file format
         if not allowed_file(file.filename):
             return jsonify({'error': 'Invalid file format. Allowed: PDF, DOCX, DOC'}), 400
         
-        # Save file temporarily
         filename = secure_filename(file.filename)
         temp_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(temp_path)
         
         try:
-            # # Parse resume using imported function
-            # resume_data = resume_ner_gpt(temp_path)
-            resume_data = resume_data_mock
+            resume_data = resume_ner_gpt(temp_path)
+            # resume_data = resume_data_mock
             
             return jsonify({
                 'success': True,
@@ -72,7 +68,6 @@ def parse_resume():
             }), 200
             
         finally:
-            # Clean up temporary file
             if os.path.exists(temp_path):
                 try:
                     os.remove(temp_path)
@@ -109,13 +104,11 @@ def parse_job():
 
             print("🧠 Parsed Output:", job_data)
 
-            # ✅ VALIDATE OUTPUT
             if not job_data or not isinstance(job_data, dict):
                 return jsonify({
                     'error': 'Parser returned invalid data'
                 }), 500
 
-            # OPTIONAL: check key existence
             if "jobTitle" not in job_data:
                 return jsonify({
                     'error': 'Parser failed to extract required fields'
