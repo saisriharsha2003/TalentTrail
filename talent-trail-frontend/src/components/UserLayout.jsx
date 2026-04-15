@@ -1,18 +1,15 @@
-import { Outlet, useLocation, Navigate } from 'react-router-dom'
-import { jwtDecode } from 'jwt-decode';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 
 const UserLayout = () => {
-    const accessToken = localStorage.getItem('accessToken');
-    let decoded;
-    if (accessToken)
-        decoded = jwtDecode(accessToken);
-    const location = useLocation();
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
-    return (
-        decoded?.userInfo?.username
-            ? <Outlet />
-            : <Navigate to='/login' state={{ from: location }} replace />
-    )
-}
+  if (loading) return null;
+
+  return user
+    ? <Outlet />
+    : <Navigate to="/login" state={{ from: location }} replace />;
+};
 
 export default UserLayout;

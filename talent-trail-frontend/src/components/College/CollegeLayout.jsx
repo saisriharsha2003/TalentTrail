@@ -1,26 +1,29 @@
-import React from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
-import { jwtDecode } from 'jwt-decode';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { notify } from '../Toast';
 import { useEffect } from 'react';
+import { useAuth } from '../AuthContext';
 
 const CollegeLayout = () => {
-    const accessToken = localStorage.getItem('accessToken');
-    const decoded = jwtDecode(accessToken);
-    const navigate = useNavigate();
-
-    const goback = () => navigate(-1)
+    const { user, loading } = useAuth();
+    const location = useLocation();
 
     useEffect(() => {
-        if (decoded?.userInfo?.role !== 'college')
-            notify('failed', 'unauthorized');
-    }, [decoded?.userInfo?.role])
+        if (user && user.userInfo.role !== 'college') {
+            notify('failed', 'Unauthorized');
+        }
+    }, [user]);
 
-    return (
-        decoded?.userInfo?.role === 'college'
-            ? <Outlet />
-            : <button onClick={goback}>go back</button>
-    )
-}
+    if (loading) return null;
 
-export default CollegeLayout
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    if (user.userInfo.role !== 'college') {
+        return <Navigate to="/" replace />;
+    }
+
+    return <Outlet />;
+};
+
+export default CollegeLayout;

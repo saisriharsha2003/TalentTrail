@@ -1,26 +1,24 @@
-import { Outlet, useNavigate } from 'react-router-dom'
-import { jwtDecode } from 'jwt-decode';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { notify } from '../Toast';
-import { useEffect, React } from 'react';
+import { useEffect } from 'react';
+import { useAuth } from '../AuthContext';
 
 const StudentLayout = () => {
-    const accessToken = localStorage.getItem('accessToken');
-    const decoded = jwtDecode(accessToken);
-    const navigate = useNavigate();
+    const { user, loading } = useAuth();
+    const location = useLocation();
 
-    const goback = () => navigate(-1)
+    if (loading) return null;
 
-    useEffect(() => {
-        if (decoded?.userInfo?.role !== 'student')
-            notify('failed', 'unauthorized');
-    }, [decoded?.userInfo?.role])
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
 
-    return (
-        decoded?.userInfo?.role === 'student'
-            ? <Outlet />
-            : <button className='btn btn-primary' onClick={goback}>go back</button>
+    if (user?.userInfo?.role !== 'student') {
+        notify('failed', 'Unauthorized');
+        return <Navigate to="/" replace />;
+    }
 
-    )
-}
+    return <Outlet />;
+};
 
 export default StudentLayout;

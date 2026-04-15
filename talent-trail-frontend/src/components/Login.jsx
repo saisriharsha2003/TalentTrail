@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "../api/axios";
 import { notify } from "./Toast";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "./AuthContext";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -10,6 +11,7 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
   const from = location.state?.from?.pathname;
 
   useEffect(() => {
@@ -26,7 +28,7 @@ const Login = () => {
     try {
       const res = await axios.post("/login", { username, password, role });
 
-      localStorage.setItem("accessToken", res?.data?.accessToken);
+      login(res?.data?.accessToken); // ✅ IMPORTANT FIX
 
       if (res?.data?.success) notify("success", res.data.success);
 

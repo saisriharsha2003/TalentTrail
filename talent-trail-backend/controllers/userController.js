@@ -32,31 +32,53 @@ const handleRegister = async (req, res, next) => {
 }
 
 const handleLogin = async (req, res, next) => {
-    console.log("In handle login")
+
     const cookies = req.cookies;
     const { username, password, role } = req.body;
-    if (!username || !password || !role) return res.status(400).json({ 'message': 'Bad request - Username, Password and role are required' });
-    if (!['student', 'college', 'recruiter', 'admin'].includes(role)) return res.status(400).json({ 'message': 'invalid role' });
 
-    const User = require('../models/' + role);
-    const foundUser = await User.findOne({ username }).exec();
-    if (!foundUser) return res.status(401).json({ 'message': 'unauthorized' });
+    if (!username || !password || !role) {
+        return res.status(400).json({
+            message: "Username, password, and role are required"
+        });
+    }
 
-    const match = await bcrypt.compare(password, foundUser.password);
-    if (match) {
+    if (!['student', 'college', 'recruiter', 'admin'].includes(role)) {
+        return res.status(400).json({
+            message: "Invalid role selected"
+        });
+    }
+
+    try {
+        const User = require('../models/' + role);
+
+        const foundUser = await User.findOne({ username }).exec();
+        if (!foundUser) {
+            return res.status(404).json({
+                message: "Username not found"
+            });
+        }
+
+        const match = await bcrypt.compare(password, foundUser.password);
+        if (!match) {
+            return res.status(401).json({
+                message: "Invalid password"
+            });
+        }
+
         const accessToken = jwt.sign(
             {
-                'userInfo': {
-                    'id': foundUser._id,
-                    'username': foundUser.username,
-                    'role': foundUser.role
+                userInfo: {
+                    id: foundUser._id,
+                    username: foundUser.username,
+                    role: foundUser.role
                 }
             },
             process.env.ACCESS_TOKEN_SECRET,
             { expiresIn: '1d' }
         );
+
         const newRefreshToken = jwt.sign(
-            { 'username': foundUser.username },
+            { username: foundUser.username },
             process.env.REFRESH_TOKEN_SECRET,
             { expiresIn: '1d' }
         );
@@ -67,26 +89,41 @@ const handleLogin = async (req, res, next) => {
                 : foundUser.refreshToken.filter(rt => rt !== cookies.jwt);
 
         if (cookies?.jwt) {
-
             const refreshToken = cookies.jwt;
             const foundToken = await User.findOne({ refreshToken }).exec();
+
             if (!foundToken) {
                 newRefreshTokenArray = [];
             }
 
-            res.clearCookie('jwt', { httpOnly: true, sameSite: 'Lax', maxAge: 24 * 60 * 60 * 1000 });
+            res.clearCookie('jwt', {
+                httpOnly: true,
+                sameSite: 'Lax',
+                maxAge: 24 * 60 * 60 * 1000
+            });
         }
+
         foundUser.refreshToken = [...newRefreshTokenArray, newRefreshToken];
-        const query = await foundUser.save();
-        res.cookie('jwt', newRefreshToken, { httpOnly: true, sameSite: 'Lax', maxAge: 24 * 60 * 60 * 1000 });
+        await foundUser.save();
+
+        res.cookie('jwt', newRefreshToken, {
+            httpOnly: true,
+            sameSite: 'Lax',
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
         res.json({
-            'success': `${role} ${username} is logged in hello!`,
+            success: `${role} ${username} logged in successfully`,
             accessToken
         });
-    } else {
-        res.status(401).json({ 'message': 'unauthorized' });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            message: "Server error, please try again later"
+        });
     }
-}
+};
 
 const handleRefreshToken = async (req, res) => {
     const cookies = req.cookies;
