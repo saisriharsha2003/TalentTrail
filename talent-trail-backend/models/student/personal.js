@@ -15,7 +15,7 @@ const personalSchema = new Schema({
         required: true
     },
     dateOfBirth: {
-        type: String,
+        type: Date,
         required: true
     },
     gender: {
