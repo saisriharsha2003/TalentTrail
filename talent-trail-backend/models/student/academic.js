@@ -6,6 +6,10 @@ const currentEducationSchema = new Schema({
         type: String,
         required: true
     },
+    collegeId: {
+        type: Schema.Types.ObjectId,
+        ref: 'College'
+    },
     course: {
         type: String,
         required: true
