@@ -20,6 +20,8 @@ router.get('/courses', collegeController.getCourses);
 
 router.get('/students/:courseId', collegeController.getStudents);
 
+router.get('/student/:studentId', collegeController.getStudent);
+
 router.get('/drives', collegeController.getDrives);
 
 router.get('/job/:jobId', collegeController.getJob);
