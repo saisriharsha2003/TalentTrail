@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "../api/axios";
 import { notify } from "./Toast";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,8 +23,9 @@ const Login = () => {
     }
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const res = await axios.post("/login", { username, password, role });
@@ -36,98 +38,111 @@ const Login = () => {
 
     } catch (err) {
       notify("failed", err?.response?.data?.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="container-fluid min-vh-100 p-0">
+    <div className="container-fluid min-vh-100 p-0 overflow-hidden bg-white">
       <div className="row g-0 min-vh-100">
-
-        <div
-          className="col-lg-6 d-none d-lg-flex align-items-center justify-content-center text-white"
-          style={{
-            background: "radial-gradient(circle at 20% 20%, #3b82f6, #1e3a8a 60%)"
-          }}
-        >
-          <div className="px-5" style={{ maxWidth: "500px" }}>
-            <h1 className="fw-bold mb-3">Welcome Back 👋</h1>
-            <p className="mb-4">Continue your journey with Talentrail.</p>
-
-            <div>
-              <p className="fw-semibold">✔ Track applications</p>
-              <p className="fw-semibold">✔ Connect with recruiters</p>
-              <p className="fw-semibold">✔ Discover opportunities</p>
+        {/* Left Side: Visual Content */}
+        <div className="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center bg-primary text-white p-5 position-relative">
+          <div className="position-absolute top-0 start-0 w-100 h-100 opacity-25" 
+               style={{ background: 'radial-gradient(circle at 20% 30%, #ffffff 0%, transparent 50%)' }}></div>
+          
+          <div className="text-center z-1 animate__animated animate__fadeInLeft">
+            <div className="mb-4">
+              <i className="bi bi-rocket-takeoff display-1"></i>
+            </div>
+            <h1 className="display-4 fw-bold mb-3">TalentTrail</h1>
+            <p className="fs-4 opacity-75 mb-5">Where top talent meets <br/>world-class opportunities.</p>
+            
+            <div className="row g-4 text-start mt-4 px-5">
+              <div className="col-12 d-flex align-items-center gap-3">
+                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-check2"></i></div>
+                <span>AI-Powered Resume Analysis</span>
+              </div>
+              <div className="col-12 d-flex align-items-center gap-3">
+                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-check2"></i></div>
+                <span>Verified Campus Placements</span>
+              </div>
+              <div className="col-12 d-flex align-items-center gap-3">
+                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-check2"></i></div>
+                <span>Direct Recruiter Interaction</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="col-lg-6 d-flex justify-content-center align-items-center bg-light">
-
-          <div
-            className="p-4 rounded-4"
-            style={{
-              width: "100%",
-              maxWidth: "420px",
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              boxShadow: "0 25px 50px rgba(0,0,0,0.15)"
-            }}
-          >
-
-            <div className="text-center mb-4">
-              <h2 className="fw-bold">Talentrail</h2>
-              <p className="text-muted">Sign in to your account</p>
+        {/* Right Side: Login Form */}
+        <div className="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5">
+          <div className="w-100 animate__animated animate__fadeInRight" style={{ maxWidth: '450px' }}>
+            <div className="mb-5 text-center text-lg-start">
+              <h2 className="fw-bold text-dark display-6 mb-2">Welcome Back</h2>
+              <p className="text-muted">Sign in to your professional trail</p>
             </div>
 
-            <form onSubmit={handleSubmit}>
-
-              <Input label="Username" value={username} onChange={setUsername} />
-              <Input label="Password" type="password" value={password} onChange={setPassword} />
-
-              <div className="mb-3">
-                <label className="form-label">Role</label>
-                <select className="form-select" value={role} onChange={(e) => setRole(e.target.value)} required>
+            <form onSubmit={handleLogin}>
+              <div className="form-floating mb-3 shadow-sm">
+                <input
+                  type="text"
+                  className="form-control border-0 rounded-3 bg-light"
+                  id="username"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+                <label htmlFor="username">Username</label>
+              </div>
+              <div className="form-floating mb-3 shadow-sm">
+                <input
+                  type="password"
+                  className="form-control border-0 rounded-3 bg-light"
+                  id="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <label htmlFor="password">Password</label>
+              </div>
+              <div className="form-floating mb-4 shadow-sm">
+                <select 
+                  className="form-select border-0 rounded-3 bg-light" 
+                  id="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)} 
+                  required
+                >
                   <option value="">Select Role</option>
                   <option value="admin">Admin</option>
                   <option value="student">Student</option>
                   <option value="recruiter">Recruiter</option>
                   <option value="college">College</option>
                 </select>
+                <label htmlFor="role">Role</label>
               </div>
 
-              <button className="btn btn-primary w-100 mt-2 fw-semibold">
-                Sign In
-              </button>
+              <div className="d-grid mb-4">
+                <button className="btn btn-primary btn-lg rounded-3 fw-bold shadow-sm py-3" type="submit" disabled={loading}>
+                  {loading ? (
+                    <div className="spinner-border spinner-border-sm me-2"></div>
+                  ) : 'Sign In Now'}
+                </button>
+              </div>
 
-              <p className="text-center mt-3 mb-0">
-                Don’t have an account? <a href="/register">Sign Up</a>
-              </p>
-
+              <div className="text-center">
+                <span className="text-muted">New to TalentTrail? </span>
+                <Link to="/register" className="text-primary fw-bold text-decoration-none border-bottom border-primary">Create Account</Link>
+              </div>
             </form>
           </div>
         </div>
-
       </div>
     </div>
   );
 };
-
-const Input = ({ label, value, onChange, type = "text" }) => (
-  <div className="mb-3">
-    <label className="form-label fw-medium">{label}</label>
-    <input
-      type={type}
-      className="form-control"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      required
-      style={{
-        background: "#fff",
-        color: "#111827",        
-        border: "1px solid #d1d5db", 
-      }}
-    />
-  </div>
-);
 
 export default Login;

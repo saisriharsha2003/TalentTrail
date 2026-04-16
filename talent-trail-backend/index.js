@@ -48,6 +48,8 @@ app.use('/resumes', express.static('resumes'));
 
 app.use('/', require('./routes/user'));
 
+app.use('/public', require('./routes/public'));
+
 app.use(verifyJWT);
 
 app.use('/student', require('./routes/student'));

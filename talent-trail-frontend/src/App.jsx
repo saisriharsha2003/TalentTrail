@@ -28,6 +28,7 @@ import CollegeSections from "./components/College/CollegeSections";
 import CollegeDrives from "./components/College/CollegeDrives";
 import CollegeDriveProfile from "./components/College/CollegeDriveProfile";
 import CollegeStudents from "./components/College/CollegeStudents";
+import CollegeStudentProfile from "./components/College/CollegeStudentProfile";
 
 import AdminLayout from "./components/Admin/AdminLayout";
 import AdminDashboard from "./components/Admin/AdminDashboard";
@@ -89,6 +90,7 @@ const App = () => {
               <Route path="companies/:id" element={<CollegeCompanyProfile />} />
               <Route path="sections" element={<CollegeSections />} />
               <Route path="sections/:course/:id" element={<CollegeStudents />} />
+              <Route path="student/:studentId" element={<CollegeStudentProfile />} />
               <Route path="drives" element={<CollegeDrives />} />
               <Route path="drives/:id" element={<CollegeDriveProfile />} />
               <Route path="profile" element={<CollegeProfile />} />

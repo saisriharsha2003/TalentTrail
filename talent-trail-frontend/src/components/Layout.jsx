@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, Link } from 'react-router-dom';
+import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from '../api/axios';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import { notify } from './Toast';
@@ -8,6 +8,7 @@ import { useAuth } from './AuthContext';
 
 const Layout = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const axiosP = useAxiosPrivate();
 
     const { user, logout } = useAuth();
@@ -17,8 +18,28 @@ const Layout = () => {
     const [newN, setNewN] = useState(false);
     const [link, setLink] = useState('/');
     const [isOpen, setIsOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
 
     const intervalRef = useRef(null);
+    const profileRef = useRef(null);
+    const notifRef = useRef(null);
+
+    const showSidebar = user?.userInfo?.username && location.pathname.startsWith('/user/');
+
+    // Close dropdowns on outside click
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (profileRef.current && !profileRef.current.contains(event.target)) {
+                setIsProfileOpen(false);
+            }
+            if (notifRef.current && !notifRef.current.contains(event.target)) {
+                setIsNotifOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const bufferToBase64 = (bufferArray) => {
         const chunkSize = 100000;
@@ -114,7 +135,7 @@ const Layout = () => {
                 <div className="container-fluid">
                     <div className='d-flex align-items-center'>
                         {
-                            !user?.userInfo?.username ? null :
+                            !showSidebar ? null :
                                 <button className="navbar-toggler" type="button" onClick={toggleNavbar}>
                                     <span className="navbar-toggler-icon"></span>
                                 </button>
@@ -135,8 +156,14 @@ const Layout = () => {
                             </>
                             : <>
                                 <li className="nav-item mx-4">
-                                    <div className="dropdown" style={{ float: 'right' }}>
-                                        <button className="position-relative nav-button" onMouseOver={() => setNewN(false)}>
+                                    <div className="dropdown" ref={notifRef} style={{ float: 'right' }}>
+                                        <button 
+                                            className={`position-relative nav-button ${isNotifOpen ? 'bg-white bg-opacity-10' : ''}`} 
+                                            onClick={() => {
+                                                setIsNotifOpen(!isNotifOpen);
+                                                setNewN(false);
+                                            }}
+                                        >
                                             🔔
                                             {newN && (
                                                 <span className="position-absolute start-50 bg-danger border border-light rounded-circle">
@@ -145,22 +172,27 @@ const Layout = () => {
                                             )}
                                         </button>
 
-                                        <ul className="notification-dropdown-content list-group">
-                                            {
-                                                notifications.length
-                                                    ? notifications.map((notification, index) => (
-                                                        <li key={index} className='list-group-item'>{notification}</li>
-                                                    ))
-                                                    : <li className='list-group-item'>No notifications</li>
-                                            }
-                                        </ul>
+                                        {isNotifOpen && (
+                                            <ul className="notification-dropdown-content list-group show-dropdown">
+                                                {
+                                                    notifications.length
+                                                        ? notifications.map((notification, index) => (
+                                                            <li key={index} className='list-group-item'>{notification}</li>
+                                                        ))
+                                                        : <li className='list-group-item'>No notifications</li>
+                                                }
+                                            </ul>
+                                        )}
                                     </div>
                                 </li>
 
                                 {/* 👤 Profile */}
                                 <li className="nav-item mx-1">
-                                    <div className="dropdown" style={{ float: 'right' }}>
-                                        <button className="nav-button dropbtn">
+                                    <div className="dropdown" ref={profileRef} style={{ float: 'right' }}>
+                                        <button 
+                                            className={`nav-button dropbtn ${isProfileOpen ? 'bg-white bg-opacity-10' : ''}`}
+                                            onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                        >
                                             {profile
                                                 ? <img className='profile' src={profile} height={'35'} alt='' />
                                                 : <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="white" className="bi bi-person-circle" viewBox="0 0 16 16">
@@ -170,15 +202,23 @@ const Layout = () => {
                                             }
                                         </button>
 
-                                        <ul className="dropdown-content list-group">
-                                            <li className='list-group-item'
-                                                onClick={() => navigate(`/user/${user.userInfo.role}/profile`)}>
-                                                Profile
-                                            </li>
-                                            <li className='list-group-item' onClick={handleLogout}>
-                                                Logout
-                                            </li>
-                                        </ul>
+                                        {isProfileOpen && (
+                                            <ul className="dropdown-content list-group show-dropdown">
+                                                <li className='list-group-item'
+                                                    onClick={() => {
+                                                        navigate(`/user/${user.userInfo.role}/profile`);
+                                                        setIsProfileOpen(false);
+                                                    }}>
+                                                    Profile
+                                                </li>
+                                                <li className='list-group-item' onClick={() => {
+                                                    handleLogout();
+                                                    setIsProfileOpen(false);
+                                                }}>
+                                                    Logout
+                                                </li>
+                                            </ul>
+                                        )}
                                     </div>
                                 </li>
                             </>
@@ -188,47 +228,47 @@ const Layout = () => {
             </nav>
 
             <div className='d-flex'>
-                {user?.userInfo?.username && (
+                {showSidebar && (
                     <nav id="ibd6" className={`sidebar ${isOpen ? 'active' : ''}`}>
                         <div className={`collapse navbar-collapse ${isOpen ? '' : 'show'}`}>
 
                             {user.userInfo.role === 'student' && (
-                                <ul className="list-unstyled components sidebar-ul">
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/student'>Dashboard</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/student/jobOpenings'>Job openings</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/student/applied'>Applied jobs</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/student/profile'>Profile</Link></li>
+                                <ul className="list-unstyled sidebar-ul">
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/student'><i className="bi bi-grid-1x2"></i> Dashboard</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/student/jobOpenings'><i className="bi bi-briefcase"></i> Job openings</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/student/applied'><i className="bi bi-check-circle"></i> Applied jobs</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/student/profile'><i className="bi bi-person"></i> Profile</Link></li>
                                 </ul>
                             )}
 
                             {user.userInfo.role === 'recruiter' && (
-                                <ul className="list-group list-group-flush">
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/recruiter'>Dashboard</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/recruiter/new'>Post new job</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/recruiter/posted'>Posted jobs</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/recruiter/applications'>Applications</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/recruiter/profile'>Profile</Link></li>
+                                <ul className="list-unstyled sidebar-ul">
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/recruiter'><i className="bi bi-grid-1x2"></i> Dashboard</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/recruiter/new'><i className="bi bi-plus-circle"></i> Post new job</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/recruiter/posted'><i className="bi bi-journal-text"></i> Posted jobs</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/recruiter/applications'><i className="bi bi-people"></i> Applications</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/recruiter/profile'><i className="bi bi-person"></i> Profile</Link></li>
                                 </ul>
                             )}
 
                             {user.userInfo.role === 'college' && (
-                                <ul className="list-group list-group-flush">
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/college'>Dashboard</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/college/companies'>Companies</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/college/sections'>Sections</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/college/drives'>Placement drives</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/college/profile'>Profile</Link></li>
+                                <ul className="list-unstyled sidebar-ul">
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/college'><i className="bi bi-grid-1x2"></i> Dashboard</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/college/companies'><i className="bi bi-building"></i> Companies</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/college/sections'><i className="bi bi-columns-gap"></i> Sections</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/college/drives'><i className="bi bi-mortarboard"></i> Placement drives</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/college/profile'><i className="bi bi-person"></i> Profile</Link></li>
                                 </ul>
                             )}
 
                             {user.userInfo.role === 'admin' && (
-                                <ul className="list-group list-group-flush">
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/admin'>Dashboard</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/admin/students'>Students</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/admin/recruiters'>Recruiters</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/admin/openings'>Openings</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/admin/selected'>Selected</Link></li>
-                                    <li className="sidebar-list"><Link className='nav-link active rounded' to='/user/admin/profile'>Profile</Link></li>
+                                <ul className="list-unstyled sidebar-ul">
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/admin'><i className="bi bi-grid-1x2"></i> Dashboard</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/admin/students'><i className="bi bi-people"></i> Students</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/admin/recruiters'><i className="bi bi-building"></i> Recruiters</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/admin/openings'><i className="bi bi-briefcase"></i> Openings</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/admin/selected'><i className="bi bi-patch-check"></i> Selected</Link></li>
+                                    <li className="sidebar-list"><Link className='nav-link rounded' to='/user/admin/profile'><i className="bi bi-person"></i> Profile</Link></li>
                                 </ul>
                             )}
 
@@ -236,7 +276,7 @@ const Layout = () => {
                     </nav>
                 )}
 
-                <div className='outlet'>
+                <div className={`outlet ${!showSidebar ? 'full-width' : ''}`}>
                     <Outlet />
                 </div>
             </div>

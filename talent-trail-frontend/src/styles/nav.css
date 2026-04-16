@@ -72,96 +72,125 @@
     padding: 7px;
 }
 
-.outlet {
+.navbar {
+    position: fixed;
+    top: 0;
     width: 100%;
-    max-height: 100vh;
-    overflow-y: auto;
-}
-
-::-webkit-scrollbar {
-    width: 0;
-    /* Remove scrollbar space */
-    /* background: transparent; */
-    /* Optional: just make scrollbar invisible */
+    z-index: 1030;
+    height: 70px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .sidebar {
-    width: 20vw;
-    min-width: 15vw;
-    background: #2d2d2d;
+    position: fixed;
+    top: 70px;
+    left: 0;
+    width: 260px;
+    height: calc(100vh - 70px);
+    background: #0f172a;
     color: #fff;
-    height: 100vh;
-    min-height: 100vh;
     transition: all 0.3s;
+    z-index: 1020;
+    border-right: 1px solid rgba(255,255,255,0.05);
 }
 
 .sidebar.active {
-    margin-left: -250px;
+    margin-left: -260px;
 }
 
-.sidebar .sidebar-header {
-    padding: 20px;
-    background: #222222;
+.outlet {
+    flex-grow: 1;
+    margin-top: 70px;
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    min-height: calc(100vh - 70px);
+    background-color: #f8fafc;
+    transition: all 0.3s;
 }
 
-.sidebar ul li {
-    color: #fff;
-    padding: 10px;
+.outlet.full-width {
+    margin-left: 0;
+    width: 100%;
 }
 
-.sidebar ul li a {
-    padding: 10px;
-    font-size: 1.1em;
-    display: block;
+.sidebar.active + .outlet {
+    margin-left: 0;
+    width: 100%;
 }
 
-.sidebar ul li a:hover {
-    color: #222222;
-    background: #fff;
+.sidebar-ul {
+    padding: 20px 15px;
 }
 
-.sidebar ul li.active>a,
-a[aria-expanded="true"] {
-    color: #fff;
-    background: #222222;
+.sidebar-list {
+    margin-bottom: 8px;
+    padding: 0 !important;
 }
 
-a[data-toggle="collapse"] {
-    position: relative;
+.sidebar-list .nav-link {
+    padding: 12px 20px !important;
+    color: rgba(255,255,255,0.7) !important;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    transition: 0.2s;
 }
 
-ul ul a {
-    font-size: 0.9em !important;
-    padding-left: 30px !important;
-    background: #222222;
-}
-
-ul.CTAs {
-    padding: 20px;
-}
-
-ul.CTAs a {
-    text-align: center;
-    font-size: 0.9em !important;
-    display: block;
-    border-radius: 5px;
-    margin-bottom: 5px;
-}
-
-a.download {
-    background: #fff;
-    color: #222222;
-}
-
-a.article,
-a.article:hover {
-    background: #222222 !important;
+.sidebar-list .nav-link:hover {
     color: #fff !important;
+    background: rgba(255,255,255,0.1) !important;
 }
 
-#ibd6 {
-    min-height: auto;
-    background-color: #0F172A;
+.sidebar-list .nav-link.active {
+    background: #3b82f6 !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.notification-dropdown-content, .dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    border: none;
+    border-radius: 12px;
+    margin-top: 10px;
+    padding: 8px;
+    background: #1e293b;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+    z-index: 1040;
+}
+
+.show-dropdown {
+    display: block !important;
+}
+
+.dropdown:hover .dropdown-content, .dropdown:hover .notification-dropdown-content {
+    display: none; /* Disable hover since we use click now */
+}
+
+.list-group-item {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    border-radius: 8px !important;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.list-group-item:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.nav-button {
+    padding: 8px;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+
+.nav-button:hover {
+    background: rgba(255,255,255,0.1);
 }
 
 #iio8 {
