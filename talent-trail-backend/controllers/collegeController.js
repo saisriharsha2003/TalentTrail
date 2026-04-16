@@ -14,7 +14,7 @@ const getDashboard = async (req, res, next) => {
         const foundCollege = await College.findById(id).populate('institution').exec();
         if (!foundCollege) return res.status(401).json({ 'message': 'unauthorized' });
 
-        const foundSelectedStudents = await Student.find({ jobsSelected: { $gt: 0 } }).exec();
+        const foundSelectedStudents = await Student.find({ college: id, jobsSelected: { $gt: 0 } }).exec();
         const foundOngoingDrives = await Job.find({ applicationFor: foundCollege.institution.name, collegeApproved: true }).exec();
         const foundUpcomingDrives = await Job.find({ applicationFor: foundCollege.institution.name, collegeApproved: false }).exec();
         const foundRegisteredRecruiters = await Job.distinct('recruiter', { collegeApproved: true, applicationFor: foundCollege.institution.name }).exec();
@@ -122,16 +122,20 @@ const getStudents = async (req, res, next) => {
         const foundCourse = await Course.findById(courseId).exec();
         if (!foundCourse) return res.status(404).json({ 'message': 'Course details not found' });
 
-        const foundAcademics = await Academic.find({ 'currentEducation.college': foundCollege.institution.name, 'currentEducation.course': foundCourse.name }).exec();
-        const userIds = foundAcademics.map(a => a.userId);
-        const foundStudents = await Student.find({ _id: { $in: userIds } })
+        const foundStudents = await Student.find({ college: id })
+            .populate({
+                path: 'academic',
+                match: { 'currentEducation.course': foundCourse.name }
+            })
             .populate('personal')
-            .populate('academic')
             .populate('contact')
             .select('personal academic contact rollNo')
             .exec();
 
-        res.json(foundStudents)
+        // Filter out students whose academic info didn't match the course
+        const filteredStudents = foundStudents.filter(s => s.academic !== null);
+
+        res.json(filteredStudents)
     }
     catch (err) {
         next(err);
@@ -470,6 +474,26 @@ const deleteCourse = async (req, res, next) => {
     }
 }
 
+const getStudent = async (req, res, next) => {
+    const { studentId } = req.params;
+    try {
+        const student = await Student.findById(studentId)
+            .populate('personal')
+            .populate('academic')
+            .populate('contact')
+            .populate('certifications')
+            .populate('projects')
+            .populate('workExperiences')
+            .exec();
+            
+        if (!student) return res.status(404).json({ 'message': 'Student not found' });
+        
+        res.json(student);
+    } catch (err) {
+        next(err);
+    }
+}
+
 module.exports = {
     getDashboard,
     getCollege,
@@ -478,6 +502,7 @@ module.exports = {
     getCompany,
     getCourses,
     getStudents,
+    getStudent,
     getDrives,
     getJob,
     postJob,
