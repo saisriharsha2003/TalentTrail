@@ -13,6 +13,10 @@ const studentSchema = new Schema({
     rollNo: {
         type: String
     },
+    college: {
+        type: Schema.Types.ObjectId,
+        ref: 'College'
+    },
     personal: {
         type: Schema.Types.ObjectId,
         ref: 'Personal'
