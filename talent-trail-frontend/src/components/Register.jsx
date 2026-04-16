@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "../api/axios";
 import { notify } from "./Toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Register = () => {
   const [username, setUsername] = useState("");
@@ -39,90 +39,117 @@ const Register = () => {
   };
 
   return (
-    <div className="container-fluid min-vh-100 p-0">
+    <div className="container-fluid min-vh-100 p-0 overflow-hidden bg-white">
       <div className="row g-0 min-vh-100">
-
-        <div className="col-lg-6 d-flex justify-content-center align-items-center bg-light">
-
-          <div
-            className="p-4 rounded-4"
-            style={{
-              width: "100%",
-              maxWidth: "420px",
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              boxShadow: "0 25px 50px rgba(0,0,0,0.15)",
-              transition: "0.3s"
-            }}
-          >
-            <div className="text-center mb-4">
-              <h2 className="fw-bold">Talentrail</h2>
-              <p className="text-muted">Create your account</p>
+        {/* Left Side: Register Form */}
+        <div className="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5">
+          <div className="w-100 animate__animated animate__fadeInLeft" style={{ maxWidth: '450px' }}>
+            <div className="mb-5 text-center text-lg-start">
+              <h2 className="fw-bold text-dark display-6 mb-2">Create Account</h2>
+              <p className="text-muted">Join the next generation of campus recruitment</p>
             </div>
 
             <form onSubmit={handleSubmit}>
-
-              <Input label="Username" value={username} onChange={setUsername} />
-              <Input label="Password" type="password" value={password} onChange={setPassword} />
-              <Input label="Confirm Password" type="password" value={matchPassword} onChange={setMatchPassword} />
-
-              <div className="mb-3">
-                <label className="form-label">Role</label>
-                <select className="form-select" value={role} onChange={(e) => setRole(e.target.value)} required>
-                  <option value="">Select Role</option>
+              <div className="form-floating mb-3 shadow-sm">
+                <input
+                  type="text"
+                  className="form-control border-0 rounded-3 bg-light"
+                  id="username"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  minLength={8}
+                  maxLength={30}
+                  required
+                />
+                <label htmlFor="username">Username (min 8 chars)</label>
+              </div>
+              <div className="form-floating mb-3 shadow-sm">
+                <input
+                  type="password"
+                  className="form-control border-0 rounded-3 bg-light"
+                  id="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={8}
+                  required
+                />
+                <label htmlFor="password">Password (min 8 chars)</label>
+              </div>
+              <div className="form-floating mb-3 shadow-sm">
+                <input
+                  type="password"
+                  className="form-control border-0 rounded-3 bg-light"
+                  id="matchPassword"
+                  placeholder="Confirm Password"
+                  value={matchPassword}
+                  onChange={(e) => setMatchPassword(e.target.value)}
+                  required
+                />
+                <label htmlFor="matchPassword">Confirm Password</label>
+              </div>
+              <div className="form-floating mb-4 shadow-sm">
+                <select
+                  className="form-select border-0 rounded-3 bg-light"
+                  id="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                >
+                  <option value="">I am a...</option>
                   <option value="student">Student</option>
                   <option value="recruiter">Recruiter</option>
                   <option value="college">College</option>
                 </select>
+                <label htmlFor="role">Select Role</label>
               </div>
 
-              <button className="btn btn-primary w-100 mt-2 fw-semibold">
-                Sign Up
-              </button>
+              <div className="d-grid mb-4">
+                <button className="btn btn-primary btn-lg rounded-3 fw-bold shadow-sm py-3" type="submit">
+                  Get Started 🚀
+                </button>
+              </div>
 
+              <div className="text-center">
+                                <span className="text-muted">Already have an account? </span>
+                                <Link to="/login" className="text-primary fw-bold text-decoration-none border-bottom border-primary">Sign In</Link>
+                            </div>
             </form>
           </div>
         </div>
 
-        <div
-          className="col-lg-6 d-none d-lg-flex align-items-center justify-content-center text-white"
-          style={{
-            background: "radial-gradient(circle at 20% 20%, #3b82f6, #1e3a8a 60%)"
-          }}
-        >
-          <div className="px-5" style={{ maxWidth: "500px" }}>
-            <h1 className="fw-bold mb-3">Welcome to Talentrail 🚀</h1>
-            <p className="mb-4">Discover opportunities and connect with recruiters.</p>
+        {/* Right Side: Visual Content */}
+        <div className="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center bg-primary text-white p-5 position-relative">
+          <div className="position-absolute top-0 start-0 w-100 h-100 opacity-25"
+            style={{ background: 'radial-gradient(circle at 80% 70%, #ffffff 0%, transparent 50%)' }}></div>
 
-            <div>
-              <p className="fw-semibold">✨ Smart job matching</p>
-              <p className="fw-semibold">📊 Recruiter insights</p>
-              <p className="fw-semibold">🚀 Faster hiring</p>
+          <div className="text-center z-1 animate__animated animate__fadeInRight">
+            <div className="mb-4">
+              <i className="bi bi-people display-1"></i>
+            </div>
+            <h1 className="display-4 fw-bold mb-3">Join the Community</h1>
+            <p className="fs-4 opacity-75 mb-5">Build your career profile and <br />start your journey today.</p>
+
+            <div className="row g-4 text-start mt-4 px-5">
+              <div className="col-12 d-flex align-items-center gap-3">
+                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-star"></i></div>
+                <span>Get noticed by top companies</span>
+              </div>
+              <div className="col-12 d-flex align-items-center gap-3">
+                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-shield-check"></i></div>
+                <span>Secure and verified data</span>
+              </div>
+              <div className="col-12 d-flex align-items-center gap-3">
+                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-lightning"></i></div>
+                <span>Fast and easy registration</span>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
 };
-
-const Input = ({ label, value, onChange, type = "text" }) => (
-  <div className="mb-3">
-    <label className="form-label fw-medium">{label}</label>
-    <input
-      type={type}
-      className="form-control"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      required
-      style={{
-        background: "#fff",
-        color: "#111827",        // 🔥 dark text
-        border: "1px solid #d1d5db", // 🔥 visible border
-      }}
-    />
-  </div>
-);
 
 export default Register;
