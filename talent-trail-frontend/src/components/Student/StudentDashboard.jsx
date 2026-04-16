@@ -168,140 +168,91 @@ const StudentDashboard = () => {
 
 
     return (
-        <>
-
-            <div className='d-flex flex-column ml-3'>
-
-                <div className="welcome-container my-5 mb-4 px-0 mx-0">
-                    <div className="welcome-content d-flex flex-row justify-content-center align-items-center p-3 shadow">
-                        <div className="profile-container pe-3"> 
-                            {profile ? (
-                                <img className="profile-image mx-auto d-block" src={profile} height={'125'} alt='' /> 
-                            ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="155" height="155" fill="#0f172a" className="bi bi-person-circle" viewBox="0 0 16 16">
-                                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
-                                <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1" />
-                            </svg>
-                            )}
-                        </div>
-                        <div className="welcome-message text-center"> {/* Add text-center class */}
-                            <h2 className="welcome-title">Welcome back, {username}</h2>
-                
-                        </div>
-                    </div>
-                </div>
-
-
-                <div className='d-flex justify-content-center align-items-center m-3'>
-
-                    <div className='row'>
-                        <div className='col-md-6 col-sm-12'>
-                            <div className="card m-3 box1 shadow profile-container" onClick={() => navigate('/user/student/applied')} >
-                                <div className="card-body">
-                                    <h3 className="card-title">Jobs applied</h3>
-                                    <h3 className="mb-2" style={{ color: '#3b82f6' }}>{jobsApplied}</h3>
-                                </div>
+        <div className="container-fluid py-4 bg-light min-vh-100">
+            {/* Header Section */}
+            <div className="row mb-4">
+                <div className="col-12">
+                    <div className="card border-0 shadow-sm rounded-4 overflow-hidden" 
+                         style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
+                        <div className="card-body p-4 d-flex align-items-center text-white">
+                            <div className="me-4 profile-container">
+                                {profile ? (
+                                    <img src={profile} className="rounded-circle border border-4 border-white-50 shadow" 
+                                         height="100" width="100" style={{ objectFit: 'cover' }} alt="Profile" />
+                                ) : (
+                                    <div className="bg-white-50 rounded-circle d-flex align-items-center justify-content-center" 
+                                         style={{ width: '100px', height: '100px' }}>
+                                        <i className="bi bi-person-circle fs-1 text-white"></i>
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <h2 className="fw-bold mb-1">Welcome back, {username}! 👋</h2>
+                                <p className="mb-0 opacity-75">Your career journey starts here. Explore new opportunities.</p>
                             </div>
                         </div>
-                        <div className='col-md-6 col-sm-12'>
-                            <div className="card m-3 box1 shadow profile-container"  onClick={() => navigate('/user/student/applied')} >
-                                <div className="card-body">
-                                    <h3 className="card-title">Jobs rejected</h3>
-                                    <h3 className="mb-2" style={{ color: '#ef4444' }}>{jobsRejected}</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='col-md-6 col-sm-12'>
-                            <div className="card m-3 box1 shadow profile-container" onClick={() => navigate('/user/student/applied')} >
-                                <div className="card-body">
-                                    <h3 className="card-title">Jobs selected</h3>
-                                    <h3 className="mb-2" style={{ color: '#ffc107' }}>{jobsSelected}</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div className='col-md-6 col-sm-12'>
-                            <div className="card m-3 box1 shadow profile-container"  onClick={() => navigate('/user/student/jobOpenings')} >
-                                <div className="card-body">
-                                    <h3 className="card-title">Job Openings</h3>
-                                    <h3 className="mb-2" style={{ color: '#28a745' }}>{openings}</h3>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-            <div className='row mx-2'>
-                <div className='col-md-6 col-sm-12'>
-                    <div className='card m-4 shadow-sm' height="1000px" width="1000px">
-                        <div className="card-body my-2 px-4 py-2">
-                            <h2 className="card-title mb-3 mb-4 pb-1 mt-2 pb-md-0 mb-md-3">Job Analytics</h2>
-                            {/* <div className='card shadow'> */}
-                            <Bar data={barChartData} options={barChartOptions} className='mb-2 p-2' />
-                            {/* </div> */}
-                        </div>
-
-
-
-                    </div>
-                </div>
-                <div className='col-md-6 col-sm-12'>
-                    <div className='card m-4 shadow-sm' height="1000px" width="1000px">
-                        <div className="card-body my-2 px-4 py-2">
-                            <h2 className="card-title mb-3 mt-2 mb-4 pb-1 pb-md-0 mb-md-3">Your Analytics</h2>
-                            {/* <div className='card shadow'> */}
-                            <Doughnut data={doughnutChartData} options={doughnutChartOptions} className='mb-2 p-2' />
-                            {/* </div> */}
-                        </div>
-
-
                     </div>
                 </div>
             </div>
 
-            <div className="card m-4 mb-5 shadow-sm" >
-
-
-                <div className="card-body table-responsive" style={{ padding: '2rem' }}>
-                    <div className='d-flex justify-content-between'>
-                        <h2 className="card-title pb-1 pb-md-0 mb-md-3">Recommended Jobs</h2>
+            {/* Stats Grid */}
+            <div className="row g-4 mb-4">
+                {[
+                    { label: 'Job Openings', value: openings, color: '#4f46e5', icon: 'bi-briefcase', path: '/user/student/jobOpenings' },
+                    { label: 'Applied Jobs', value: jobsApplied, color: '#10b981', icon: 'bi-check-circle', path: '/user/student/applied' },
+                    { label: 'Shortlisted', value: jobsSelected, color: '#f59e0b', icon: 'bi-patch-check', path: '/user/student/applied' },
+                    { label: 'Rejected', value: jobsRejected, color: '#ef4444', icon: 'bi-x-circle', path: '/user/student/applied' }
+                ].map((stat, i) => (
+                    <div key={i} className="col-md-6 col-lg-3">
+                        <div className="card border-0 shadow-sm rounded-4 h-100 stat-card" 
+                             onClick={() => navigate(stat.path)} 
+                             style={{ cursor: 'pointer', transition: '0.3s' }}>
+                            <div className="card-body p-4">
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <div className="rounded-3 p-3" style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
+                                        <i className={`bi ${stat.icon} fs-4`}></i>
+                                    </div>
+                                    <span className="text-muted small fw-medium">View</span>
+                                </div>
+                                <h3 className="fw-bold mb-1" style={{ color: '#1e293b' }}>{stat.value}</h3>
+                                <p className="text-muted mb-0 fw-medium">{stat.label}</p>
+                            </div>
+                        </div>
                     </div>
-                    <table className="table table-striped">
-
-                        <thead>
-                            <tr>
-                                <th scope="col">Job id</th>
-                                <th scope="col">Company name</th>
-                                <th scope="col">Job role</th>
-                                <th scope="col">salary</th>
-                                <th scope="col">Action</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {/* {console.log(jobs)} */}
-                            {jobs.slice(jobs.length - 3).reverse().map((job, index) => (
-                                <tr key={index}>
-                                    <th scope="row">{index + 1}</th>
-                                    <td>{job.companyName}</td>
-                                    <td>{job.jobRole}</td>
-                                    <td>{job.package}</td>
-                                    <td><Link className="btn btn-primary" to={`jobOpenings/${job._id}`} role="button">View</Link></td>
-                                </tr>
-                            ))}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
+                ))}
             </div>
 
-        </>
-    )
-
+            {/* Analytics Section */}
+            <div className="row g-4">
+                <div className="col-lg-7">
+                    <div className="card border-0 shadow-sm rounded-4 h-100">
+                        <div className="card-body p-4">
+                            <h5 className="fw-bold mb-4 d-flex align-items-center">
+                                <i className="bi bi-bar-chart-fill text-primary me-2"></i>
+                                Application Overview
+                            </h5>
+                            <div style={{ height: '350px' }}>
+                                <Bar data={barChartData} options={{...barChartOptions, maintainAspectRatio: false}} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-lg-5">
+                    <div className="card border-0 shadow-sm rounded-4 h-100">
+                        <div className="card-body p-4 text-center">
+                            <h5 className="fw-bold mb-4 text-start d-flex align-items-center">
+                                <i className="bi bi-pie-chart-fill text-warning me-2"></i>
+                                Selection Status
+                            </h5>
+                            <div style={{ height: '350px', display: 'flex', justifyContent: 'center' }}>
+                                <Doughnut data={doughnutChartData} options={{...doughnutChartOptions, maintainAspectRatio: false}} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 export default StudentDashboard;
