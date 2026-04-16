@@ -35,7 +35,10 @@ const getDashboard = async (req, res, next) => {
         const foundStudent = await Student.findOne({ username: user }).populate('academic').select('jobsSelected jobsApplied jobsRejected profile username academic').exec();
         if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
 
-        const foundJobs = await Job.find({ applicationFor: { $in: ['Everyone', foundStudent.academic.currentEducation.college] }, collegeApproved: { $ne: false } }).exec()
+        const foundJobs = await Job.find({ 
+            applicationFor: { $in: ['Everyone', foundStudent.academic.currentEducation.college] }, 
+            collegeApproved: true 
+        }).exec()
 
         const dashboard = { ...foundStudent, openings: foundJobs.length, profile: foundStudent.profile };
 
@@ -89,6 +92,7 @@ const getJobs = async (req, res, next) => {
             applicationFor: {
                 $in: ['Everyone', foundStudent.academic.currentEducation.college]
             },
+            collegeApproved: true,
             _id: { $nin: appliedJobIds } 
         })
         .select(`
@@ -328,7 +332,7 @@ const postAppliedJob = async (req, res, next) => {
 };
 
 const postAcademic = async (req, res, next) => {
-    const { currentEducation, previousEducation, rollNo } = req.body;
+    const { currentEducation, previousEducation, rollNo, collegeId } = req.body;
     if (!currentEducation || !previousEducation || !rollNo) return res.status(400).json({ 'message': 'All fields required' });
 
     const { id } = req;
@@ -342,11 +346,15 @@ const postAcademic = async (req, res, next) => {
         const query = await Academic.create({
             currentEducation,
             previousEducation,
-            userId: id
+            userId: id,
+            collegeId
         });
 
         foundStudent.academic = query._id;
         foundStudent.rollNo = rollNo;
+        if (collegeId) {
+            foundStudent.college = collegeId;
+        }
         await foundStudent.save();
 
         res.status(201).json({ 'success': 'Academic info added' });
