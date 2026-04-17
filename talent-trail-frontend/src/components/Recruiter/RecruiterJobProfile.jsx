@@ -36,7 +36,7 @@ const RecruiterJobProfile = () => {
   };
 
   return (
-    <div className="container my-5">
+    <div className="container my-5" style={{ maxWidth: "1200px" }}>
 
       <div className="card shadow-sm border-0 rounded-4 p-4 mb-4">
         <h2 className="fw-bold">{job.jobTitle || "Untitled Role"}</h2>
