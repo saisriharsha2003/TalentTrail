@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../styles/home.css";
+import "../assets/styles/home.css";
 import Footer from "./Footer";
 
 import harsha from "./images/harsha.jpg";
@@ -58,7 +58,7 @@ const Home = () => {
 
       <section className="features-section">
         <div className="container">
-          <h2 className="section-title text-center mb-5">Why TalentTrail?</h2>
+          <h2 className="section-title text-center mb-5">Why TalenTrail?</h2>
 
           <div className="row g-4">
             <div className="col-md-4">
@@ -143,7 +143,7 @@ const Home = () => {
       <section className="team-modern">
         <div className="container">
           <h2 className="team-title text-center mb-5">
-            The Minds Behind TalentTrail 💡
+            The Minds Behind TalenTrail 💡
           </h2>
 
           <div className="row g-4 justify-content-center">

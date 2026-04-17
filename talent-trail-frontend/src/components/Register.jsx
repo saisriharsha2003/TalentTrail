@@ -24,7 +24,9 @@ const Register = () => {
 
       notify("success", res?.data?.success);
 
-      const login = await axios.post("/login", { username, password, role });
+      const login = await axios.post("/login", { username, password, role }, {
+        withCredentials: true
+      });
       localStorage.setItem("accessToken", login?.data?.accessToken);
 
       if (role.toLowerCase() === "student") {
@@ -32,7 +34,6 @@ const Register = () => {
       } else {
         navigate("/" + role + "Register");
       }
-
     } catch (err) {
       notify("failed", err?.response?.data?.message);
     }
@@ -43,10 +44,17 @@ const Register = () => {
       <div className="row g-0 min-vh-100">
         {/* Left Side: Register Form */}
         <div className="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5">
-          <div className="w-100 animate__animated animate__fadeInLeft" style={{ maxWidth: '450px' }}>
+          <div
+            className="w-100 animate__animated animate__fadeInLeft"
+            style={{ maxWidth: "450px" }}
+          >
             <div className="mb-5 text-center text-lg-start">
-              <h2 className="fw-bold text-dark display-6 mb-2">Create Account</h2>
-              <p className="text-muted">Join the next generation of campus recruitment</p>
+              <h2 className="fw-bold text-dark display-6 mb-2">
+                Create Account
+              </h2>
+              <p className="text-muted">
+                Join the next generation of campus recruitment
+              </p>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -106,43 +114,69 @@ const Register = () => {
               </div>
 
               <div className="d-grid mb-4">
-                <button className="btn btn-primary btn-lg rounded-3 fw-bold shadow-sm py-3" type="submit">
+                <button
+                  className="btn btn-primary btn-lg rounded-3 fw-bold shadow-sm py-3"
+                  type="submit"
+                >
                   Get Started 🚀
                 </button>
               </div>
 
               <div className="text-center">
-                                <span className="text-muted">Already have an account? </span>
-                                <Link to="/login" className="text-primary fw-bold text-decoration-none border-bottom border-primary">Sign In</Link>
-                            </div>
+                <span className="text-muted">Already have an account? </span>
+                <Link
+                  to="/login"
+                  className="text-primary fw-bold text-decoration-none border-bottom border-primary"
+                >
+                  Sign In
+                </Link>
+              </div>
             </form>
           </div>
         </div>
 
-        {/* Right Side: Visual Content */}
-        <div className="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center bg-primary text-white p-5 position-relative">
-          <div className="position-absolute top-0 start-0 w-100 h-100 opacity-25"
-            style={{ background: 'radial-gradient(circle at 80% 70%, #ffffff 0%, transparent 50%)' }}></div>
+        <div className="col-lg-6 d-none d-lg-flex align-items-center justify-content-center position-relative modern-right-panel">
+          <div className="overlay-bg"></div>
 
-          <div className="text-center z-1 animate__animated animate__fadeInRight">
-            <div className="mb-4">
-              <i className="bi bi-people display-1"></i>
-            </div>
-            <h1 className="display-4 fw-bold mb-3">Join the Community</h1>
-            <p className="fs-4 opacity-75 mb-5">Build your career profile and <br />start your journey today.</p>
+          <div className="content-wrapper text-white">
+            <h1 className="fw-bold mb-3 display-5">
+              Smart Campus Recruitment 🚀
+            </h1>
 
-            <div className="row g-4 text-start mt-4 px-5">
-              <div className="col-12 d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-star"></i></div>
-                <span>Get noticed by top companies</span>
+            <p className="lead opacity-75 mb-5">
+              One platform connecting Students, Colleges & Recruiters
+              seamlessly.
+            </p>
+
+            <div className="feature-cards">
+              <div className="feature-card">
+                <div className="icon">
+                  <i className="bi bi-mortarboard"></i>
+                </div>
+                <div>
+                  <h5>For Students</h5>
+                  <p>Build profile, upload resume & apply instantly</p>
+                </div>
               </div>
-              <div className="col-12 d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-shield-check"></i></div>
-                <span>Secure and verified data</span>
+
+              <div className="feature-card">
+                <div className="icon">
+                  <i className="bi bi-building"></i>
+                </div>
+                <div>
+                  <h5>For Colleges</h5>
+                  <p>Track placements & manage student data</p>
+                </div>
               </div>
-              <div className="col-12 d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-lightning"></i></div>
-                <span>Fast and easy registration</span>
+
+              <div className="feature-card">
+                <div className="icon">
+                  <i className="bi bi-briefcase"></i>
+                </div>
+                <div>
+                  <h5>For Recruiters</h5>
+                  <p>Find verified talent & streamline hiring</p>
+                </div>
               </div>
             </div>
           </div>
