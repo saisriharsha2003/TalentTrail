@@ -45,7 +45,7 @@ const CollegeSections = () => {
                                         <p className="text-muted small mb-0">{course.specialization || 'General'}</p>
                                         <div className="mt-3">
                                             <span className="badge bg-light text-dark border rounded-pill px-3 py-2">
-                                                {course.duration} Program
+                                                {course.duration} Years Program
                                             </span>
                                         </div>
                                     </div>
