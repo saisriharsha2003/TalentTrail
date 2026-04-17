@@ -230,14 +230,14 @@ def parse_job_description(file_path):
         {text[:6000]}
     """
 
-    # response = client.models.generate_content(
-    #     model="gemini-3-flash-preview",
-    #     contents=prompt
-    # )
+    response = client.models.generate_content(
+        model="gemini-3-flash-preview",
+        contents=prompt
+    )
 
-    # result = response.text
+    result = response.text
 
-    result = json.dumps(MOCK_DATA)
+    # result = json.dumps(MOCK_DATA)
 
     if not result:
         return {}

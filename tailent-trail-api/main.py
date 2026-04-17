@@ -27,7 +27,7 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'message': 'TalentTrail API is running',
+        'message': 'TalenTrail API is running',
         'version': '1.0.0'
     }), 200
 
@@ -246,10 +246,10 @@ def list_endpoints():
 def index():
     """Welcome endpoint - shows API information"""
     return jsonify({
-        'name': 'TalentTrail Unified API',
+        'name': 'TalenTrail Unified API',
         'version': '1.0.0',
         'description': 'Unified API for resume parsing, job parsing, and similarity scoring',
-        'author': 'TalentTrail Team',
+        'author': 'TalenTrail Team',
         'endpoints': {
             'list_all_endpoints': '/api/endpoints',
             'health_check': '/health',
