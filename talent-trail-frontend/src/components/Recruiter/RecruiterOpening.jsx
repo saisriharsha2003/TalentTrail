@@ -73,6 +73,7 @@ const RecruiterOpening = () => {
         notify("success", res.data.success);
         localStorage.removeItem("jdOutput");
         setJob(initjobDefault);
+        navigate("/user/recruiter/posted");
       }
     } catch (err) {
       notify("failed", err?.response?.data?.message);
@@ -80,7 +81,7 @@ const RecruiterOpening = () => {
   };
 
   return (
-    <div className="container my-5" style={{ maxWidth: "1000px" }}>
+    <div className="container my-4" style={{ maxWidth: "1100px" }}>
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
