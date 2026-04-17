@@ -35,7 +35,7 @@ const RecruiterPosted = () => {
         </p>
       </div>
 
-      <div className="input-group mb-4" style={{ maxWidth: "400px" }}>
+      <div className="input-group mb-4" style={{ maxWidth: "500px" }}>
         <span className="input-group-text">🔍</span>
         <input
           type="text"
