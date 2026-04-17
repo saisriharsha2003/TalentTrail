@@ -7,6 +7,8 @@ const RecruiterProfile = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState("company");
+
   const [disabled, setDisabled] = useState({
     company: true,
     recruiter: true,
@@ -21,12 +23,13 @@ const RecruiterProfile = () => {
   const [newPassword, setNewPassword] = useState("");
 
   const bufferToBase64 = (buffer) => {
-    return btoa(
-      new Uint8Array(buffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        ""
-      )
-    );
+    const chunkSize = 100000;
+    let base64 = "";
+    for (let i = 0; i < buffer.length; i += chunkSize) {
+      const chunk = buffer.slice(i, i + chunkSize);
+      base64 += String.fromCharCode.apply(null, chunk);
+    }
+    return btoa(base64);
   };
 
   useEffect(() => {
@@ -38,15 +41,13 @@ const RecruiterProfile = () => {
         if (!data?.company || !data?.recruiterDetail)
           return navigate("/recruiterRegister");
 
-        setCompany({ ...data.company, logo: null });
+        setCompany(data.company);
         setRecruiter(data.recruiterDetail);
         setUsername(data.username);
 
         if (data.company?.logo?.data) {
           setProfile(
-            `data:image/jpeg;base64,${bufferToBase64(
-              data.company.logo.data
-            )}`
+            `data:image/jpeg;base64,${bufferToBase64(data.company.logo.data)}`,
           );
         }
       } catch (err) {
@@ -57,17 +58,11 @@ const RecruiterProfile = () => {
     fetchData();
   }, [axios, navigate]);
 
-
   const handleCompany = async (e) => {
     e.preventDefault();
     try {
-      await axios.put("/recruiter/company", {
-        ...company,
-        size: parseInt(company.size),
-        mobile: parseInt(company.mobile) || company.mobile,
-      });
+      await axios.put("/recruiter/company", company);
       notify("success", "Company updated");
-      setDisabled((p) => ({ ...p, company: true }));
     } catch (err) {
       notify("failed", err?.response?.data?.message);
     }
@@ -76,38 +71,15 @@ const RecruiterProfile = () => {
   const handleRecruiter = async (e) => {
     e.preventDefault();
     try {
-      await axios.put("/recruiter/recruiterDetails", {
-        ...recruiter,
-        mobile: parseInt(recruiter.mobile) || recruiter.mobile,
-      });
-      notify("success", "Details updated");
-      setDisabled((p) => ({ ...p, recruiter: true }));
+      await axios.put("/recruiter/recruiterDetails", recruiter);
+      notify("success", "Recruiter updated");
     } catch (err) {
       notify("failed", err?.response?.data?.message);
     }
   };
 
-  const handleUsername = async () => {
-    try {
-      await axios.put("/username", { newUsername: username });
-      notify("success", "Username updated");
-    } catch (err) {
-      notify("failed", err?.response?.data?.message);
-    }
-  };
-
-  const handlePassword = async () => {
-    try {
-      await axios.put("/password", { prevPassword, newPassword });
-      notify("success", "Password updated");
-      setPrevPassword("");
-      setNewPassword("");
-    } catch (err) {
-      notify("failed", err?.response?.data?.message);
-    }
-  };
-
-  const handleLogo = async () => {
+  const handleLogo = async (e) => {
+    e.preventDefault();
     try {
       const file = document.getElementById("profile").files[0];
       if (!file) return;
@@ -115,158 +87,315 @@ const RecruiterProfile = () => {
       const fd = new FormData();
       fd.append("profile", file);
 
-      await axios.post("/recruiter/profile", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      notify("success", "Profile updated");
+      await axios.post("/recruiter/profile", fd);
+      notify("success", "Logo updated");
       window.location.reload();
     } catch (err) {
       notify("failed", err?.response?.data?.message);
     }
   };
 
+  const handleUsername = async (e) => {
+    e.preventDefault();
+    await axios.put("/username", { newUsername: username });
+    notify("success", "Username updated");
+  };
+
+  const handlePassword = async (e) => {
+    e.preventDefault();
+    await axios.put("/password", { prevPassword, newPassword });
+    notify("success", "Password updated");
+    setPrevPassword("");
+    setNewPassword("");
+  };
 
   return (
-    <div className="container my-5" style={{ maxWidth: "1000px" }}>
+    <div className="container-fluid py-4 bg-light min-vh-100">
+      <div className="row justify-content-center">
+        <div className="col-12 px-md-4">
+          <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+            {/* HEADER (same as college) */}
+            <div className="bg-primary p-4 text-white d-flex align-items-center">
+              <div className="me-4">
+                {profile ? (
+                  <img
+                    src={profile}
+                    className="rounded-circle border border-3 border-white-50"
+                    height="80"
+                    width="80"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <div
+                    className="bg-white-50 rounded-circle d-flex align-items-center justify-content-center"
+                    style={{ width: "80px", height: "80px" }}
+                  >
+                    <i className="bi bi-building fs-1"></i>
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 className="fw-bold mb-1">
+                  {company.name || "Recruiter Profile"}
+                </h3>
+                <p className="mb-0 opacity-75">{username}</p>
+              </div>
+            </div>
 
-      <SectionCard
-        title="🏢 Company"
-        editable={disabled.company}
-        onEdit={() => setDisabled((p) => ({ ...p, company: false }))}
-        onSave={handleCompany}
-      >
-        <Row>
-          <Input label="Name" value={company.name}
-            onChange={(v) => setCompany({ ...company, name: v })} disabled={disabled.company} />
+            {/* TABS (same structure) */}
+            <div className="card-header bg-white border-bottom-0 p-0">
+              <ul className="nav nav-tabs nav-fill border-0">
+                {[
+                  { id: "company", label: "Company", icon: "bi-building" },
+                  { id: "recruiter", label: "Recruiter", icon: "bi-person" },
+                  { id: "profile", label: "Profile", icon: "bi-image" },
+                  { id: "account", label: "Account", icon: "bi-shield-lock" },
+                ].map((tab) => (
+                  <li key={tab.id} className="nav-item">
+                    <button
+                      className={`nav-link py-3 border-0 rounded-0 d-flex align-items-center justify-content-center gap-2 
+                      ${activeTab === tab.id ? "active border-bottom border-primary border-3 text-primary fw-bold" : "text-muted"}`}
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      <i className={`bi ${tab.icon}`}></i>
+                      {tab.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <Input label="Industry" value={company.industry}
-            onChange={(v) => setCompany({ ...company, industry: v })} disabled={disabled.company} />
+            {/* BODY */}
+            <div className="card-body p-4 p-md-5 bg-white">
+              {/* COMPANY */}
+              {activeTab === "company" && (
+                <form>
+                  <div className="d-flex justify-content-between mb-4">
+                    <h5 className="fw-bold mb-0">Company Details</h5>
+                    <button
+                      className="btn btn-sm btn-outline-danger rounded-pill px-3"
+                      onClick={() =>
+                        setDisabled({ ...disabled, company: !disabled.company })
+                      }
+                    >
+                      {disabled.company ? "Edit" : "Cancel"}
+                    </button>
+                  </div>
 
-          <Input label="Size" value={company.size}
-            onChange={(v) => setCompany({ ...company, size: v })} disabled={disabled.company} />
+                  <fieldset disabled={disabled.company}>
+                    <div className="row g-3">
+                      <Input
+                        label="Name"
+                        value={company.name}
+                        onChange={(v) => setCompany({ ...company, name: v })}
+                      />
+                      <Input
+                        label="Industry"
+                        value={company.industry}
+                        onChange={(v) =>
+                          setCompany({ ...company, industry: v })
+                        }
+                      />
+                      <Input
+                        label="Website"
+                        value={company.website}
+                        onChange={(v) => setCompany({ ...company, website: v })}
+                      />
+                      <Input
+                        label="Mobile"
+                        value={company.mobile}
+                        onChange={(v) => setCompany({ ...company, mobile: v })}
+                      />
+                      <Textarea
+                        label="Address"
+                        value={company.address}
+                        onChange={(v) => setCompany({ ...company, address: v })}
+                      />
+                    </div>
+                    {!disabled.company && (
+                      <button
+                        className="btn btn-primary mt-4"
+                        onClick={handleCompany}
+                      >
+                        Save Changes
+                      </button>
+                    )}
+                  </fieldset>
+                </form>
+              )}
 
-          <Input label="Website" value={company.website}
-            onChange={(v) => setCompany({ ...company, website: v })} disabled={disabled.company} />
+              {/* RECRUITER */}
+              {activeTab === "recruiter" && (
+                <form>
+                  <div className="d-flex justify-content-between mb-4">
+                    <h5 className="fw-bold mb-0">Recruiter Details</h5>
+                    <button
+                      className="btn btn-sm btn-outline-danger rounded-pill px-3"
+                      onClick={() =>
+                        setDisabled({
+                          ...disabled,
+                          recruiter: !disabled.recruiter,
+                        })
+                      }
+                    >
+                      {disabled.recruiter ? "Edit" : "Cancel"}
+                    </button>
+                  </div>
 
-          <Input label="Mobile" value={company.mobile}
-            onChange={(v) => setCompany({ ...company, mobile: v })} disabled={disabled.company} />
+                  <fieldset disabled={disabled.recruiter}>
+                    <div className="row g-3">
+                      <Input
+                        label="Full Name"
+                        value={recruiter.fullName}
+                        onChange={(v) =>
+                          setRecruiter({ ...recruiter, fullName: v })
+                        }
+                      />
+                      <Input
+                        label="Position"
+                        value={recruiter.position}
+                        onChange={(v) =>
+                          setRecruiter({ ...recruiter, position: v })
+                        }
+                      />
+                      <Input
+                        label="Email"
+                        value={recruiter.email}
+                        onChange={(v) =>
+                          setRecruiter({ ...recruiter, email: v })
+                        }
+                      />
+                      <Input
+                        label="Mobile"
+                        value={recruiter.mobile}
+                        onChange={(v) =>
+                          setRecruiter({ ...recruiter, mobile: v })
+                        }
+                      />
+                    </div>
+                    {!disabled.recruiter && (
+                      <button
+                        className="btn btn-primary mt-4"
+                        onClick={handleRecruiter}
+                      >
+                        Save Changes
+                      </button>
+                    )}
+                  </fieldset>
+                </form>
+              )}
 
-          <Textarea label="Address" value={company.address}
-            onChange={(v) => setCompany({ ...company, address: v })} disabled={disabled.company} />
+              {/* PROFILE */}
+              {activeTab === "profile" && (
+                <div>
+                  <h5 className="fw-bold mb-4">Company Logo</h5>
+                  <div className="d-flex align-items-center gap-4 p-3 bg-light rounded-4">
+                    {profile && (
+                      <img
+                        src={profile}
+                        className="rounded-circle"
+                        height="80"
+                      />
+                    )}
+                    <div>
+                      <input
+                        type="file"
+                        id="profile"
+                        className="form-control mb-2"
+                      />
+                      <button
+                        className="btn btn-dark btn-sm rounded-pill px-4"
+                        onClick={handleLogo}
+                      >
+                        Upload
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-          <Textarea label="Overview" value={company.overview}
-            onChange={(v) => setCompany({ ...company, overview: v })} disabled={disabled.company} />
-        </Row>
-      </SectionCard>
+              {/* ACCOUNT */}
+              {activeTab === "account" && (
+                <div className="container" style={{ maxWidth: "600px" }}>
+                  <h5 className="fw-bold mb-4 text-center">Account Security</h5>
 
-      <SectionCard
-        title="👤 Recruiter"
-        editable={disabled.recruiter}
-        onEdit={() => setDisabled((p) => ({ ...p, recruiter: false }))}
-        onSave={handleRecruiter}
-      >
-        <Row>
-          <Input label="Full Name" value={recruiter.fullName}
-            onChange={(v) => setRecruiter({ ...recruiter, fullName: v })} disabled={disabled.recruiter} />
+                  <div className="row g-3">
+                    <div className="col-12 form-floating">
+                      <input
+                        className="form-control"
+                        value={username || ""}
+                        onChange={(e) => setUsername(e.target.value)}
+                      />
+                      <label>Username</label>
+                    </div>
 
-          <Input label="Position" value={recruiter.position}
-            onChange={(v) => setRecruiter({ ...recruiter, position: v })} disabled={disabled.recruiter} />
+                    <div className="col-12 form-floating">
+                      <input
+                        type="password"
+                        className="form-control"
+                        value={prevPassword || ""}
+                        onChange={(e) => setPrevPassword(e.target.value)}
+                      />
+                      <label>Current Password</label>
+                    </div>
 
-          <Input label="Mobile" value={recruiter.mobile}
-            onChange={(v) => setRecruiter({ ...recruiter, mobile: v })} disabled={disabled.recruiter} />
+                    <div className="col-12 form-floating">
+                      <input
+                        type="password"
+                        className="form-control"
+                        value={newPassword || ""}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                      <label>New Password</label>
+                    </div>
+                  </div>
 
-          <Input label="Email" value={recruiter.email}
-            onChange={(v) => setRecruiter({ ...recruiter, email: v })} disabled={disabled.recruiter} />
+                  <div className="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                    <button
+                      className="btn btn-primary px-4"
+                      onClick={handleUsername}
+                    >
+                      Update Username
+                    </button>
 
-          <Input label="LinkedIn" value={recruiter.linkedIn}
-            onChange={(v) => setRecruiter({ ...recruiter, linkedIn: v })} disabled={disabled.recruiter} />
-        </Row>
-      </SectionCard>
-
-      <SectionCard title="🖼 Profile">
-        <div className="d-flex align-items-center gap-4">
-          {profile && (
-            <img src={profile} className="rounded-circle" height="100" alt="profile" />
-          )}
-
-          <div>
-            <input type="file" id="profile" className="form-control mb-2" />
-            <button onClick={handleLogo} className="btn btn-primary">
-              Upload
-            </button>
+                    <button
+                      className="btn btn-success px-4"
+                      onClick={handlePassword}
+                    >
+                      Reset Password
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </SectionCard>
-
-      <SectionCard
-        title="🔐 Account"
-        editable={disabled.account}
-        onEdit={() => setDisabled((p) => ({ ...p, account: false }))}
-      >
-        <Row>
-          <Input label="Username" value={username}
-            onChange={setUsername} disabled={disabled.account} />
-
-          <Input label="Previous Password" value={prevPassword}
-            onChange={setPrevPassword} type="password" disabled={disabled.account} />
-
-          <Input label="New Password" value={newPassword}
-            onChange={setNewPassword} type="password" disabled={disabled.account} />
-        </Row>
-
-        <div className="mt-3 d-flex gap-3">
-          <button onClick={handleUsername} className="btn btn-primary">
-            Update Username
-          </button>
-          <button onClick={handlePassword} className="btn btn-warning">
-            Change Password
-          </button>
-        </div>
-      </SectionCard>
-
+      </div>
     </div>
   );
 };
 
-/* 🔥 REUSABLE COMPONENTS */
-
-const SectionCard = ({ title, children, editable, onEdit, onSave }) => (
-  <div className="card shadow-sm border-0 rounded-4 p-4 mb-4">
-    <div className="d-flex justify-content-between mb-3">
-      <h5 className="fw-semibold">{title}</h5>
-      {editable && <button onClick={onEdit} className="btn btn-outline-dark btn-sm">Edit</button>}
-      {!editable && onSave && <button onClick={onSave} className="btn btn-primary btn-sm">Save</button>}
-    </div>
-    {children}
-  </div>
-);
-
-const Row = ({ children }) => <div className="row g-3">{children}</div>;
-
-const Input = ({ label, value, onChange, disabled, type = "text" }) => (
-  <div className="col-md-6">
-    <label className="form-label">{label}</label>
+const Input = ({ label, value, onChange, type = "text" }) => (
+  <div className="col-md-6 form-floating">
     <input
-      type={type}
       className="form-control"
       value={value || ""}
-      disabled={disabled}
+      type={type}
       onChange={(e) => onChange(e.target.value)}
     />
+    <label className="ms-2">{label}</label>
   </div>
 );
 
-const Textarea = ({ label, value, onChange, disabled }) => (
-  <div className="col-md-12">
-    <label className="form-label">{label}</label>
+const Textarea = ({ label, value, onChange }) => (
+  <div className="col-12 form-floating">
     <textarea
       className="form-control"
-      rows="3"
+      style={{ height: "100px" }}
       value={value || ""}
-      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
     />
+    <label className="ms-2">{label}</label>
   </div>
 );
 
