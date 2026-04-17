@@ -1,416 +1,242 @@
 import React, { useState } from 'react';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import { notify } from '../Toast';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const RecruiterRegister = () => {
-    const disabledDefault = {
-        company: false,
-        recruiterDetail: false
+  const axios = useAxiosPrivate();
+
+  const [step, setStep] = useState(1);
+
+  const nextStep = () => setStep(prev => prev + 1);
+  const prevStep = () => setStep(prev => prev - 1);
+  const navigate = useNavigate();
+
+  const [company, setCompany] = useState({
+    name: '',
+    industry: '',
+    size: '',
+    website: '',
+    address: '',
+    mobile: '',
+    overview: ''
+  });
+
+  const [recruiterDetail, setRecruiterDetail] = useState({
+    fullName: '',
+    position: '',
+    mobile: '',
+    email: '',
+    linkedIn: ''
+  });
+
+  const handleCompany = async () => {
+    try {
+      const res = await axios.post('/recruiter/company', {
+        ...company,
+        size: parseInt(company.size),
+        mobile: parseInt(company.mobile) || company.mobile
+      });
+      notify('success', res?.data?.success);
+    } catch (err) {
+      notify('failed', err?.response?.data?.message);
     }
-    const companyDefault = {
-        name: '',
-        industry: '',
-        size: '',
-        website: '',
-        address: '',
-        mobile: '',
-        overview: ''
+  };
+
+  const handleRecruiterDetail = async () => {
+    try {
+      const res = await axios.post('/recruiter/recruiterDetails', {
+        ...recruiterDetail,
+        mobile: parseInt(recruiterDetail.mobile) || recruiterDetail.mobile
+      });
+      notify('success', res?.data?.success);
+    } catch (err) {
+      notify('failed', err?.response?.data?.message);
     }
-    const recruiterDetailDefault = {
-        fullName: '',
-        position: '',
-        mobile: '',
-        email: '',
-        linkedIn: ''
+  };
+
+  const handleLogo = async () => {
+    try {
+      const file = document.getElementById("profile").files[0];
+      if (!file) return;
+
+      const fd = new FormData();
+      fd.append('profile', file);
+
+      const res = await axios.post('/recruiter/profile', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      notify('success', res?.data?.success);
+    } catch (err) {
+      notify('failed', err?.response?.data?.message);
     }
+  };
 
-    const [disabled, setDisabled] = useState(disabledDefault);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await handleCompany();
+    await handleRecruiterDetail();
+    await handleLogo();
+    notify('success', 'Recruiter Registration Successful');
+    navigate('/user/recruiter/');
+  };
 
-    const axios = useAxiosPrivate();
-    const [company, setCompany] = useState(companyDefault);
-    const [recruiterDetail, setRecruiterDetail] = useState(recruiterDetailDefault);
+  return (
+    <div className="container-fluid py-4 bg-light min-vh-100">
+      <div className="card shadow-sm border-0 rounded-4 mx-auto" style={{ maxWidth: '900px' }}>
 
-    const handleCompany = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await axios.post('/recruiter/company', {
-                ...company,
-                size: parseInt(company.size),
-                mobile: parseInt(company.mobile) || company.mobile
-            });
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+        <div className="bg-primary text-white text-center p-4">
+          <h2 className="fw-bold">Recruiter Registration</h2>
+          <p className="opacity-75 mb-0">Set up your company and start hiring</p>
+        </div>
 
-            setCompany(companyDefault);
-            setDisabled(prev => ({ ...prev, company: true }));
-        } catch (err) {
-            notify('failed', err?.response?.data?.message);
-        }
-    }
+        <div className="card-body p-4">
 
-    const handleRecruiterDetail = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await axios.post('/recruiter/recruiterDetails', {
-                ...recruiterDetail,
-                mobile: parseInt(recruiterDetail.mobile) || recruiterDetail.mobile
-            });
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
+          {/* Step Indicator */}
+          <div className="d-flex justify-content-between mb-5 position-relative">
+            <div className="position-absolute top-50 start-0 end-0 border-top"></div>
+            {[1, 2, 3].map(n => (
+              <div key={n}
+                className={`rounded-circle d-flex align-items-center justify-content-center border 
+                ${step >= n ? 'bg-primary text-white' : 'bg-white text-muted'}`}
+                style={{ width: 40, height: 40, zIndex: 1 }}>
+                {n}
+              </div>
+            ))}
+          </div>
 
-            setRecruiterDetail(recruiterDetailDefault);
-            setDisabled(prev => ({ ...prev, recruiterDetail: true }));
-        } catch (err) {
-            notify('failed', err?.response?.data?.message);
-        }
-    }
+          {/* STEP 1 */}
+          {step === 1 && (
+            <form onSubmit={(e) => { e.preventDefault(); nextStep(); }}>
+              <h4 className="mb-4 text-primary">Company Details</h4>
 
-    const handleLogo = async (e) => {
-        e.preventDefault();
-        try {
-            const profile = document.getElementById("profile");
-            const fd = new FormData();
-            fd.append('profile', profile.files[0]);
-            if (!fd) return
-
-            const response = await axios.post('/recruiter/profile', fd,
-                {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-
-            const success = response?.data?.success;
-            if (success)
-                notify('success', success);
-
-        } catch (err) {
-            notify('failed', err?.response?.data?.message);
-        }
-    }
-
-    return (
-        <>
-
-            <div className='d-flex justify-content-center mt-4'>
-                <h2>Provide all details</h2>
-            </div>
-
-            {/* Compay */}
-            <div className='d-flex justify-content-center m-3'>
-                {/* <div className='d-inline-flex p-2'> */}
-                {/* <div className='row'> */}
-                <div className="card container h-100 shadow-2-strong mt-5 p-4 shadow-sm mb-5" style={{ backgroundColor: '#fff' }}>
-                    <form className="card-body">
-
-                        <fieldset disabled={disabled.company}>
-
-                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Company</h3>
-                            <div className='row form-row'>
-
-                                <div className='col-md-6'>
-                                    <div className="card-body">
-                                        <div className="flex-nowrap form-floating">
-                                            <input
-                                                id='cn'
-                                                className="form-control"
-                                                type="text"
-                                                placeholder='Name'
-                                                autoComplete='off'
-                                                value={company.name}
-                                                onChange={(e) => setCompany(prev => ({ ...prev, name: e.target.value }))}
-                                                required
-                                            />
-                                            <label htmlFor='cn'>Name</label>
-                                        </div>
-                                    </div>
-
-                                    <div className="card-body">
-                                        <div className="flex-nowrap form-floating">
-                                            <input
-                                                id='ci'
-                                                className="form-control"
-                                                type="text"
-                                                placeholder='Industry'
-                                                autoComplete='off'
-                                                value={company.industry}
-                                                onChange={(e) => setCompany(prev => ({ ...prev, industry: e.target.value }))}
-                                                required
-                                            />
-                                            <label htmlFor='ci'>Industry</label>
-                                        </div>
-                                    </div>
-
-                                    <div className="card-body">
-                                        <div className="flex-nowrap form-floating">
-                                            <input
-                                                id='cs'
-                                                className="form-control"
-                                                type="text"
-                                                placeholder='Size'
-                                                autoComplete='off'
-                                                value={company.size}
-                                                onChange={(e) => setCompany(prev => ({ ...prev, size: e.target.value }))}
-                                                required
-                                            />
-                                            <label htmlFor='cs'>Size</label>
-                                        </div>
-                                    </div>
-
-
-                                </div>
-
-                                <div className='col-md-6'>
-
-                                    <div className="card-body">
-                                        <div className="flex-nowrap form-floating">
-                                            <input
-                                                id='cw'
-                                                className="form-control"
-                                                type="text"
-                                                placeholder='Website'
-                                                autoComplete='off'
-                                                value={company.website}
-                                                onChange={(e) => setCompany(prev => ({ ...prev, website: e.target.value }))}
-                                                required
-                                            />
-                                            <label htmlFor='cw'>Website</label>
-                                        </div>
-                                    </div>
-
-                                    <div className="card-body">
-                                        <div className="flex-nowrap form-floating">
-                                            <input
-                                                id='cm'
-                                                className="form-control"
-                                                type="text"
-                                                placeholder='Mobile'
-                                                minLength={10}
-                                                maxLength={10}
-                                                autoComplete='off'
-                                                value={company.mobile}
-                                                onChange={(e) => setCompany(prev => ({ ...prev, mobile: e.target.value }))}
-                                                required
-                                            />
-                                            <label htmlFor='cm'>Mobile</label>
-                                        </div>
-                                    </div>
-
-
-                                </div>
-
-                            </div>
-                            <div className='form-row row'>
-                                <div className='col-md-12'>
-                                    <div className="card-body">
-                                        <div className="flex-nowrap form-floating">
-                                            <textarea
-                                                id='ca'
-                                                className="form-control"
-                                                type="text"
-                                                placeholder='Address'
-                                                autoComplete='off'
-                                                value={company.address}
-                                                onChange={(e) => setCompany(prev => ({ ...prev, address: e.target.value }))}
-                                                required
-                                                style={{ height: "150px" }}
-                                            />
-                                            <label htmlFor='ca'>Address</label>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                            <div className='form-row row'>
-                                <div className='col-md-12'>
-                                    <div className="card-body">
-                                        <div className="flex-nowrap form-floating">
-                                            <textarea
-                                                id='co'
-                                                className="form-control"
-                                                type="text"
-                                                placeholder='Overview'
-                                                autoComplete='off'
-                                                value={company.overview}
-                                                onChange={(e) => setCompany(prev => ({ ...prev, overview: e.target.value }))}
-                                                required
-                                                style={{ height: "150px" }}
-
-                                            />
-                                            <label htmlFor='co'>Overview</label>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-
-                            <div className="card-body">
-                                <button className="btn btn-primary" onClick={handleCompany}>submit</button>
-                            </div>
-
-                        </fieldset>
-
-                    </form>
-                </div>
-                {/* </div> */}
-            </div>
-
-            {/* Recruiter Detail */}
-            <div className='d-flex justify-content-center m-3'>
-                {/* <div className='d-inline-flex p-2'> */}
-                    <div className="card container h-100 shadow-2-strong mt-5 p-4 shadow-sm mb-5" style={{ backgroundColor: '#fff' }}>
-                        <form className="card-body">
-
-                            <fieldset disabled={disabled.recruiterDetail}>
-
-                            <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Recruiter</h3>
-
-                                <div className='row form-row'>
-
-                                    <div className='col-md-6'>
-                                        <div className="card-body">
-                                            <div className="flex-nowrap form-floating">
-                                                <input
-                                                    id='rf'
-                                                    className="form-control"
-                                                    type="text"
-                                                    placeholder='Full name'
-                                                    autoComplete='off'
-                                                    value={recruiterDetail.fullName}
-                                                    onChange={(e) => setRecruiterDetail(prev => ({ ...prev, fullName: e.target.value }))}
-                                                    required
-                                                />
-                                                <label htmlFor='rf'>Full name</label>
-                                            </div>
-                                        </div>
-
-                                        <div className="card-body">
-                                            <div className="flex-nowrap form-floating">
-                                                <input
-                                                    id='rp'
-                                                    className="form-control"
-                                                    type="text"
-                                                    placeholder='Position'
-                                                    autoComplete='off'
-                                                    value={recruiterDetail.position}
-                                                    onChange={(e) => setRecruiterDetail(prev => ({ ...prev, position: e.target.value }))}
-                                                    required
-                                                />
-                                                <label htmlFor='rp'>Position</label>
-                                            </div>
-                                        </div>
-
-                                        <div className="card-body">
-                                            <div className="flex-nowrap form-floating">
-                                                <input
-                                                    id='rm'
-                                                    className="form-control"
-                                                    type="text"
-                                                    placeholder='Mobile'
-                                                    minLength={10}
-                                                    maxLength={10}
-                                                    autoComplete='off'
-                                                    value={recruiterDetail.mobile}
-                                                    onChange={(e) => setRecruiterDetail(prev => ({ ...prev, mobile: e.target.value }))}
-                                                    required
-                                                />
-                                                <label htmlFor='rm'>Mobile</label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className='col-md-6'>
-                                        <div className="card-body">
-                                            <div className="flex-nowrap form-floating">
-                                                <input
-                                                    id='re'
-                                                    className="form-control"
-                                                    type="email"
-                                                    placeholder='Email'
-                                                    autoComplete='off'
-                                                    value={recruiterDetail.email}
-                                                    onChange={(e) => setRecruiterDetail(prev => ({ ...prev, email: e.target.value }))}
-                                                    required
-                                                />
-                                                <label htmlFor='re'>Email</label>
-                                            </div>
-                                        </div>
-
-                                        <div className="card-body">
-                                            <div className="flex-nowrap form-floating">
-                                                <input
-                                                    id='rl'
-                                                    className="form-control"
-                                                    type="text"
-                                                    placeholder='Linked in'
-                                                    autoComplete='off'
-                                                    value={recruiterDetail.linkedIn}
-                                                    onChange={(e) => setRecruiterDetail(prev => ({ ...prev, linkedIn: e.target.value }))}
-                                                    required
-                                                />
-                                                <label htmlFor='rl'>Linked in</label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </div>
-
-                                <div className="card-body">
-                                    <button className="btn btn-primary" onClick={handleRecruiterDetail}>submit</button>
-                                </div>
-
-                            </fieldset>
-
-                        </form>
-                    </div>
-                {/* </div> */}
-            </div>
-
-            {/* Profile */}
-            <div className='d-flex justify-content-center align-items-end m-3'>
-                {/* <div className='d-inline-flex p-2'> */}
-                    <div className="card container h-100 shadow-2-strong mt-5 p-4 shadow-sm mb-5" style={{ backgroundColor: '#fff' }}>
-                        <form className="card-body">
-
-                        <h3 className="mb-4 pb-2 pb-md-0 mb-md-4">Profile</h3>
-
-                        <div className="form-row row mb-4">
-                                <div className="form-group col-md-9">
-                                    <label htmlFor="profile" className="form-label">
-                                        <b>Profile pic </b>
-                                        (File should be less than 2mb and
-                                        only jpeg, jpg and png's allowed)
-                                    </label>
-                                    <input
-                                        className="form-control mt-lg-4"
-                                        type="file"
-                                        id="profile"
-                                        name="profile"
-                                    />
-                                </div>
-                                <div className="form-group col-md-2 mt-4 mt-md-5">
-                                <button
-                                        className="btn btn-primary m-2"
-                                        onClick={handleLogo}
-                                    >
-                                        upload
-                                    </button>   
-                                </div>
-                            </div>
-
-                        </form>
-                    {/* </div> */}
+              <div className="row g-3">
+                <div className="col-md-6 form-floating">
+                  <input className="form-control" placeholder="Name"
+                    value={company.name}
+                    onChange={e => setCompany({ ...company, name: e.target.value })} required />
+                  <label>Name</label>
                 </div>
 
-                {/* <div className='d-inline-flex p-2'>
-                    <Link className="btn btn-primary" to="/recruiter">Home</Link>
-                </div> */}
+                <div className="col-md-6 form-floating">
+                  <input className="form-control" placeholder="Industry"
+                    value={company.industry}
+                    onChange={e => setCompany({ ...company, industry: e.target.value })} required />
+                  <label>Industry</label>
+                </div>
 
-            </div>
+                <div className="col-md-6 form-floating">
+                  <input className="form-control" placeholder="Website"
+                    value={company.website}
+                    onChange={e => setCompany({ ...company, website: e.target.value })} />
+                  <label>Website</label>
+                </div>
 
-        </>
-    )
-}
+                <div className="col-md-6 form-floating">
+                  <input className="form-control" placeholder="Mobile"
+                    value={company.mobile}
+                    onChange={e => setCompany({ ...company, mobile: e.target.value })} required />
+                  <label>Mobile</label>
+                </div>
+
+                <div className="col-md-6 form-floating">
+                  <input className="form-control" placeholder="Size"
+                    value={company.size}
+                    onChange={e => setCompany({ ...company, size: e.target.value })} required />
+                  <label>Company Size</label>
+                </div>
+
+                <div className="col-12 form-floating">
+                  <textarea className="form-control" style={{ height: 100 }}
+                    value={company.address}
+                    onChange={e => setCompany({ ...company, address: e.target.value })} required />
+                  <label>Address</label>
+                </div>
+
+                <div className="col-12 form-floating">
+                  <textarea className="form-control" style={{ height: 100 }}
+                    value={company.overview}
+                    onChange={e => setCompany({ ...company, overview: e.target.value })} />
+                  <label>Overview</label>
+                </div>
+              </div>
+
+              <div className="text-end mt-4">
+                <button className="btn btn-primary px-5">Next</button>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <form onSubmit={(e) => { e.preventDefault(); nextStep(); }}>
+              <h4 className="mb-4 text-primary">Recruiter Details</h4>
+
+              <div className="row g-3">
+                <div className="col-md-6 form-floating">
+                  <input className="form-control"
+                    value={recruiterDetail.fullName}
+                    onChange={e => setRecruiterDetail({ ...recruiterDetail, fullName: e.target.value })} required />
+                  <label>Full Name</label>
+                </div>
+
+                <div className="col-md-6 form-floating">
+                  <input className="form-control"
+                    value={recruiterDetail.position}
+                    onChange={e => setRecruiterDetail({ ...recruiterDetail, position: e.target.value })} required />
+                  <label>Position</label>
+                </div>
+
+                <div className="col-md-6 form-floating">
+                  <input className="form-control"
+                    value={recruiterDetail.email}
+                    onChange={e => setRecruiterDetail({ ...recruiterDetail, email: e.target.value })} required />
+                  <label>Email</label>
+                </div>
+
+                <div className="col-md-6 form-floating">
+                  <input className="form-control"
+                    value={recruiterDetail.mobile}
+                    onChange={e => setRecruiterDetail({ ...recruiterDetail, mobile: e.target.value })} required />
+                  <label>Mobile</label>
+                </div>
+
+                <div className="col-12 form-floating">
+                  <input className="form-control"
+                    value={recruiterDetail.linkedIn}
+                    onChange={e => setRecruiterDetail({ ...recruiterDetail, linkedIn: e.target.value })} />
+                  <label>LinkedIn</label>
+                </div>
+              </div>
+
+              <div className="d-flex justify-content-between mt-4">
+                <button type="button" className="btn btn-outline-secondary" onClick={prevStep}>Back</button>
+                <button className="btn btn-primary px-5">Next</button>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 3 */}
+          {step === 3 && (
+            <form onSubmit={handleSubmit} className="text-center">
+              <h4 className="mb-4 text-primary">Finish Setup</h4>
+
+              <div className="mb-4">
+                <input type="file" id="profile" className="form-control" />
+              </div>
+
+              <div className="d-flex justify-content-between">
+                <button type="button" className="btn btn-outline-secondary" onClick={prevStep}>Back</button>
+                <button className="btn btn-success px-5">Complete Registration</button>
+              </div>
+            </form>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default RecruiterRegister;
