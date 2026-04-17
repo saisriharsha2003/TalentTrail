@@ -13,6 +13,12 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+  const [errorMsg, setErrorMsg] = useState("");
+  useEffect(() => {
+    if (errorMsg) {
+      notify("failed", errorMsg);
+    }
+  }, [errorMsg]);
   const from = location.state?.from?.pathname;
 
   useEffect(() => {
@@ -28,16 +34,23 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post("/login", { username, password, role });
+      localStorage.removeItem("accessToken");
+      const res = await axios.post(
+        "/login",
+        { username, password, role },
+        { withCredentials: true }
+      );
 
-      login(res?.data?.accessToken); // ✅ IMPORTANT FIX
+      const token = res?.data?.accessToken;
+      if (!token) throw new Error("No token received");
 
-      if (res?.data?.success) notify("success", res.data.success);
+      login(token);
+
+      notify("success", res?.data?.success || "Login successful");
 
       navigate(from || "/user/" + role, { replace: true });
-
     } catch (err) {
-      notify("failed", err?.response?.data?.message);
+      setErrorMsg(err?.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -46,30 +59,47 @@ const Login = () => {
   return (
     <div className="container-fluid min-vh-100 p-0 overflow-hidden bg-white">
       <div className="row g-0 min-vh-100">
-        {/* Left Side: Visual Content */}
-        <div className="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center bg-primary text-white p-5 position-relative">
-          <div className="position-absolute top-0 start-0 w-100 h-100 opacity-25" 
-               style={{ background: 'radial-gradient(circle at 20% 30%, #ffffff 0%, transparent 50%)' }}></div>
-          
-          <div className="text-center z-1 animate__animated animate__fadeInLeft">
-            <div className="mb-4">
-              <i className="bi bi-rocket-takeoff display-1"></i>
-            </div>
-            <h1 className="display-4 fw-bold mb-3">TalentTrail</h1>
-            <p className="fs-4 opacity-75 mb-5">Where top talent meets <br/>world-class opportunities.</p>
-            
-            <div className="row g-4 text-start mt-4 px-5">
-              <div className="col-12 d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-check2"></i></div>
-                <span>AI-Powered Resume Analysis</span>
+        <div className="col-lg-6 d-none d-lg-flex align-items-center justify-content-center position-relative modern-login-left">
+          <div className="overlay-bg"></div>
+
+          <div className="content-wrapper text-white">
+            <h1 className="fw-bold display-5 mb-3">Welcome to TalenTrail 🚀</h1>
+
+            <p className="lead opacity-75 mb-5">
+              Smart hiring. Faster placements. Better careers.
+            </p>
+
+            <div className="login-feature-grid">
+              <div className="login-feature-card">
+                <i className="bi bi-robot"></i>
+                <div>
+                  <h5>Resume Parsing</h5>
+                  <p>Extract key details instantly from resumes</p>
+                </div>
               </div>
-              <div className="col-12 d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-check2"></i></div>
-                <span>Verified Campus Placements</span>
+
+              <div className="login-feature-card">
+                <i className="bi bi-people"></i>
+                <div>
+                  <h5>Compatibility Score</h5>
+                  <p>Match candidates with the right opportunities</p>
+                </div>
               </div>
-              <div className="col-12 d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-white bg-opacity-20 p-2"><i className="bi bi-check2"></i></div>
-                <span>Direct Recruiter Interaction</span>
+
+              <div className="login-feature-card">
+                <i className="bi bi-bar-chart"></i>
+                <div>
+                  <h5>Analytics</h5>
+                  <p>Track placements and performance insights</p>
+                </div>
+              </div>
+
+              <div className="login-feature-card">
+                <i className="bi bi-shield-lock"></i>
+                <div>
+                  <h5>Secure Profiles</h5>
+                  <p>Safe and verified user data protection</p>
+                </div>
               </div>
             </div>
           </div>
@@ -77,7 +107,10 @@ const Login = () => {
 
         {/* Right Side: Login Form */}
         <div className="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5">
-          <div className="w-100 animate__animated animate__fadeInRight" style={{ maxWidth: '450px' }}>
+          <div
+            className="w-100 animate__animated animate__fadeInRight"
+            style={{ maxWidth: "450px" }}
+          >
             <div className="mb-5 text-center text-lg-start">
               <h2 className="fw-bold text-dark display-6 mb-2">Welcome Back</h2>
               <p className="text-muted">Sign in to your professional trail</p>
@@ -109,11 +142,11 @@ const Login = () => {
                 <label htmlFor="password">Password</label>
               </div>
               <div className="form-floating mb-4 shadow-sm">
-                <select 
-                  className="form-select border-0 rounded-3 bg-light" 
+                <select
+                  className="form-select border-0 rounded-3 bg-light"
                   id="role"
                   value={role}
-                  onChange={(e) => setRole(e.target.value)} 
+                  onChange={(e) => setRole(e.target.value)}
                   required
                 >
                   <option value="">Select Role</option>
@@ -126,16 +159,27 @@ const Login = () => {
               </div>
 
               <div className="d-grid mb-4">
-                <button className="btn btn-primary btn-lg rounded-3 fw-bold shadow-sm py-3" type="submit" disabled={loading}>
+                <button
+                  className="btn btn-primary btn-lg rounded-3 fw-bold shadow-sm py-3"
+                  type="submit"
+                  disabled={loading}
+                >
                   {loading ? (
                     <div className="spinner-border spinner-border-sm me-2"></div>
-                  ) : 'Sign In Now'}
+                  ) : (
+                    "Sign In Now"
+                  )}
                 </button>
               </div>
 
               <div className="text-center">
-                <span className="text-muted">New to TalentTrail? </span>
-                <Link to="/register" className="text-primary fw-bold text-decoration-none border-bottom border-primary">Create Account</Link>
+                <span className="text-muted">New to TalenTrail? </span>
+                <Link
+                  to="/register"
+                  className="text-primary fw-bold text-decoration-none border-bottom border-primary"
+                >
+                  Create Account
+                </Link>
               </div>
             </form>
           </div>
