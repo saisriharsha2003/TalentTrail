@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
 import { notify } from '../Toast';
-import '../../styles/dash.css'
+import '../../assets/styles/dash.css'
 import { useNavigate } from 'react-router-dom';
 import { Chart as ChartJs, defaults } from 'chart.js/auto'
 import { Bar, Doughnut, PolarArea } from 'react-chartjs-2'
