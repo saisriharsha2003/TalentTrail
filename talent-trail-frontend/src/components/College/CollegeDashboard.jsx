@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useAxiosPrivate from '../../hooks/useAxiosPrivate';
-import '../../styles/dash.css';
+import '../../assets/styles/dash.css';
 import { notify } from '../Toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Chart as ChartJs, defaults } from 'chart.js/auto'
