@@ -9,17 +9,17 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const [errorMsg, setErrorMsg] = useState("");
+
   useEffect(() => {
     if (errorMsg) {
       notify("failed", errorMsg);
     }
   }, [errorMsg]);
-  const from = location.state?.from?.pathname;
 
   useEffect(() => {
     const stored = localStorage.getItem("acctype");
@@ -34,7 +34,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // 🔥 CLEAR OLD SESSION (VERY IMPORTANT)
+      // 🔥 Clear old session (important for role switching)
       await axios.post("/logout", {}, { withCredentials: true });
 
       localStorage.removeItem("accessToken");
@@ -42,7 +42,7 @@ const Login = () => {
       const res = await axios.post(
         "/login",
         { username, password, role },
-        { withCredentials: true },
+        { withCredentials: true }
       );
 
       const token = res?.data?.accessToken;
@@ -63,11 +63,15 @@ const Login = () => {
   return (
     <div className="container-fluid min-vh-100 p-0 overflow-hidden bg-white">
       <div className="row g-0 min-vh-100">
+
+        {/* LEFT SIDE */}
         <div className="col-lg-6 d-none d-lg-flex align-items-center justify-content-center position-relative modern-login-left">
           <div className="overlay-bg"></div>
 
           <div className="content-wrapper text-white">
-            <h1 className="fw-bold display-5 mb-3">Welcome to TalenTrail 🚀</h1>
+            <h1 className="fw-bold display-5 mb-3">
+              Welcome to TalenTrail 🚀
+            </h1>
 
             <p className="lead opacity-75 mb-5">
               Smart hiring. Faster placements. Better careers.
@@ -109,18 +113,23 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Right Side: Login Form */}
+        {/* RIGHT SIDE */}
         <div className="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5">
           <div
             className="w-100 animate__animated animate__fadeInRight"
             style={{ maxWidth: "450px" }}
           >
             <div className="mb-5 text-center text-lg-start">
-              <h2 className="fw-bold text-dark display-6 mb-2">Welcome Back</h2>
-              <p className="text-muted">Sign in to your professional trail</p>
+              <h2 className="fw-bold text-dark display-6 mb-2">
+                Welcome Back
+              </h2>
+              <p className="text-muted">
+                Login to your professional trail
+              </p>
             </div>
 
             <form onSubmit={handleLogin}>
+              {/* Username */}
               <div className="form-floating mb-3 shadow-sm">
                 <input
                   type="text"
@@ -133,6 +142,8 @@ const Login = () => {
                 />
                 <label htmlFor="username">Username</label>
               </div>
+
+              {/* Password */}
               <div className="form-floating mb-3 shadow-sm">
                 <input
                   type="password"
@@ -145,6 +156,8 @@ const Login = () => {
                 />
                 <label htmlFor="password">Password</label>
               </div>
+
+              {/* Role */}
               <div className="form-floating mb-4 shadow-sm">
                 <select
                   className="form-select border-0 rounded-3 bg-light"
@@ -162,6 +175,7 @@ const Login = () => {
                 <label htmlFor="role">Role</label>
               </div>
 
+              {/* Button */}
               <div className="d-grid mb-4">
                 <button
                   className="btn btn-primary btn-lg rounded-3 fw-bold shadow-sm py-3"
@@ -171,20 +185,31 @@ const Login = () => {
                   {loading ? (
                     <div className="spinner-border spinner-border-sm me-2"></div>
                   ) : (
-                    "Sign In Now"
+                    "Login Now"
                   )}
                 </button>
               </div>
 
-              <div className="text-center">
-                <span className="text-muted">New to TalenTrail? </span>
+              {/* Links */}
+              <div className="text-center d-flex flex-column gap-2">
+                <div>
+                  <span className="text-muted">New to TalenTrail? </span>
+                  <Link
+                    to="/register"
+                    className="text-primary fw-bold text-decoration-underline"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+
                 <Link
-                  to="/register"
-                  className="text-primary fw-bold text-decoration-none border-bottom border-primary"
+                  to="/forgotPassword"
+                  className="text-danger fw-bold text-decoration-underline"
                 >
-                  Create Account
+                  Forgot Password?
                 </Link>
               </div>
+
             </form>
           </div>
         </div>

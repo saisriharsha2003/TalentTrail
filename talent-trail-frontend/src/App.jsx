@@ -45,6 +45,8 @@ import Home from "./components/Home";
 import Toast from "./components/Toast";
 import NotFound from './components/NotFound';
 import UserLayout from "./components/UserLayout";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 
 import { Route, Routes } from "react-router-dom";
 
@@ -63,6 +65,8 @@ const App = () => {
           <Route path="uploadJD" element={<UploadJD />} />
           <Route path="recruiterRegister" element={<RecruiterRegister />} />
           <Route path="collegeRegister" element={<CollegeRegister />} />
+          <Route path="forgotPassword" element={<ForgotPassword />} />
+          <Route path="resetPassword" element={<ResetPassword />} />
 
           <Route path='user/' element={<UserLayout />}>
 
