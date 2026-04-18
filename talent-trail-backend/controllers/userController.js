@@ -283,11 +283,143 @@ const putPassword = async (req, res, next) => {
     }
 };
 
+const sendOTP = require("../utils/sendMail");
+
+const handleForgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ message: "Email required" });
+    }
+
+    try {
+        let user = null;
+
+        // 🔹 STUDENT → contact model
+        const contact = await require("../models/student/contact")
+            .findOne({ email }).exec();
+
+        if (contact) {
+            const User = require("../models/student");
+            user = await User.findById(contact.userId).exec();
+        }
+
+        // 🔹 RECRUITER → recruiterDetails
+        if (!user) {
+            const recruiterDetails = await require("../models/recruiter/recruiterDetails")
+                .findOne({ email }).exec();
+
+            if (recruiterDetails) {
+                const User = require("../models/recruiter");
+                user = await User.findById(recruiterDetails.userId).exec();
+            }
+        }
+
+        // 🔹 COLLEGE → placement
+        if (!user) {
+            const placement = await require("../models/college/placement")
+                .findOne({ email }).exec();
+
+            if (placement) {
+                const User = require("../models/college");
+                user = await User.findById(placement.college).exec();
+            }
+        }
+
+        // 🔹 ADMIN
+        if (!user) {
+            const User = require("../models/admin");
+            user = await User.findOne({ email }).exec();
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        user.otp = otp;
+        user.otpExpiry = Date.now() + 10 * 60 * 1000;
+
+        await user.save();
+
+        await sendOTP(email, otp);
+
+        res.json({ success: "OTP sent to email" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+const handleResetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+        return res.status(400).json({ message: "All fields required" });
+    }
+
+    try {
+        let user = null;
+
+        const contact = await require("../models/student/contact")
+            .findOne({ email }).exec();
+
+        if (contact) {
+            const User = require("../models/student");
+            user = await User.findById(contact.userId).exec();
+        }
+
+        if (!user) {
+            const recruiterDetails = await require("../models/recruiter/recruiterDetails")
+                .findOne({ email }).exec();
+
+            if (recruiterDetails) {
+                const User = require("../models/recruiter");
+                user = await User.findById(recruiterDetails.userId).exec();
+            }
+        }
+
+        if (!user) {
+            const placement = await require("../models/college/placement")
+                .findOne({ email }).exec();
+
+            if (placement) {
+                const User = require("../models/college");
+                user = await User.findById(placement.college).exec();
+            }
+        }
+
+        if (!user) {
+            const User = require("../models/admin");
+            user = await User.findOne({ email }).exec();
+        }
+
+        if (!user || user.otp !== otp || user.otpExpiry < Date.now()) {
+            return res.status(400).json({ message: "Invalid or expired OTP" });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.otp = null;
+        user.otpExpiry = null;
+
+        await user.save();
+
+        res.json({ success: "Password reset successful" });
+
+    } catch (err) {
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
 module.exports = {
     handleRegister,
     handleLogin,
     handleRefreshToken,
     handleLogout,
     putUsername,
-    putPassword
+    putPassword,
+    handleForgotPassword,
+    handleResetPassword
 };
