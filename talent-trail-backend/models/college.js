@@ -10,6 +10,8 @@ const collegeSchema = new Schema({
         type: String,
         required: true
     },
+    otp: String,
+    otpExpiry: Date,    
     institution: {
         type: Schema.Types.ObjectId,
         ref: 'Institution'

@@ -15,4 +15,10 @@ router.put('/username', verifyJWT, userController.putUsername);
 
 router.put('/password', verifyJWT, userController.putPassword);
 
+router.post('/forgot-password', userController.handleForgotPassword);
+
+router.post('/reset-password', userController.handleResetPassword);
+
+
+
 module.exports = router;

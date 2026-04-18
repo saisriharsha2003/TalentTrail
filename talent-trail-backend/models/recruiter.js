@@ -24,6 +24,8 @@ const recruiterSchema = new Schema({
         requried: true,
         enum: ['recruiter']
     },
+    otp: String,
+    otpExpiry: Date,
     notification: [String],
     refreshToken: [String]
 });

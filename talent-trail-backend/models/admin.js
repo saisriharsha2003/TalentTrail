@@ -20,7 +20,9 @@ const adminSchema = new Schema({
         enum: ['admin']
     },
     notification: [String],
-    refreshToken: [String]
+    refreshToken: [String],
+    otp: String,
+    otpExpiry: Date,
 });
 
 module.exports = mongoose.model('Admin', adminSchema);

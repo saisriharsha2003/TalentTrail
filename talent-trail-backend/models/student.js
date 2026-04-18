@@ -69,6 +69,8 @@ const studentSchema = new Schema({
         default: 'student',
         enum: ['student']
     },
+    otp: String,
+    otpExpiry: Date,
     notification: [String],
     refreshToken: [String]
 });
