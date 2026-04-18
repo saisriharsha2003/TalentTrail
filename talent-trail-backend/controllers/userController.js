@@ -6,7 +6,8 @@ const ROLES = ['student', 'college', 'recruiter', 'admin'];
 const cookieOptions = {
     httpOnly: true,
     sameSite: 'Lax',
-    secure: false
+    secure: false,
+    path: '/'
 };
 
 const handleRegister = async (req, res, next) => {
@@ -137,25 +138,32 @@ const handleRefreshToken = async (req, res) => {
 
             if (err) return res.sendStatus(403);
 
-            const { username, role } = decoded;
+            let foundUser = null;
+            let roleFound = null;
 
-            if (!ROLES.includes(role)) return res.sendStatus(403);
+            // 🔥 SEARCH ACROSS ALL ROLES
+            for (const role of ROLES) {
+                const User = require('../models/' + role);
 
-            const User = require('../models/' + role);
+                const user = await User.findOne({
+                    username: decoded.username
+                }).exec();
 
-            const foundUser = await User.findOne({ username }).exec();
-            if (!foundUser) return res.sendStatus(403);
-
-            if (!foundUser.refreshToken.includes(refreshToken)) {
-                return res.sendStatus(403);
+                if (user && user.refreshToken.includes(refreshToken)) {
+                    foundUser = user;
+                    roleFound = role;
+                    break;
+                }
             }
+
+            if (!foundUser) return res.sendStatus(403);
 
             const accessToken = jwt.sign(
                 {
                     userInfo: {
                         id: foundUser._id,
                         username: foundUser.username,
-                        role: role
+                        role: roleFound
                     }
                 },
                 process.env.ACCESS_TOKEN_SECRET,
@@ -165,20 +173,24 @@ const handleRefreshToken = async (req, res) => {
             const newRefreshToken = jwt.sign(
                 {
                     username: foundUser.username,
-                    role: role
+                    role: roleFound
                 },
                 process.env.REFRESH_TOKEN_SECRET,
                 { expiresIn: '1d' }
             );
 
-            // rotate token safely
             foundUser.refreshToken = foundUser.refreshToken.map(rt =>
                 rt === refreshToken ? newRefreshToken : rt
             );
 
             await foundUser.save();
 
-            res.cookie('jwt', newRefreshToken, cookieOptions);
+            res.cookie('jwt', newRefreshToken, {
+                httpOnly: true,
+                sameSite: 'Lax',
+                secure: false,
+                path: '/'
+            });
 
             res.json({ accessToken });
         }

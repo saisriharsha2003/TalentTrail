@@ -34,11 +34,15 @@ const Login = () => {
     setLoading(true);
 
     try {
+      // 🔥 CLEAR OLD SESSION (VERY IMPORTANT)
+      await axios.post("/logout", {}, { withCredentials: true });
+
       localStorage.removeItem("accessToken");
+
       const res = await axios.post(
         "/login",
         { username, password, role },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       const token = res?.data?.accessToken;
@@ -48,7 +52,7 @@ const Login = () => {
 
       notify("success", res?.data?.success || "Login successful");
 
-      navigate(from || "/user/" + role, { replace: true });
+      navigate("/user/" + role, { replace: true });
     } catch (err) {
       setErrorMsg(err?.response?.data?.message || "Login failed");
     } finally {

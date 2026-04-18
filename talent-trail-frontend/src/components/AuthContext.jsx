@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
+import axios from "../api/axios"; 
 
 const AuthContext = createContext();
 
@@ -27,6 +28,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+
     const decoded = validateToken();
     setUser(decoded);
     setLoading(false);
@@ -34,11 +41,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = (token) => {
     localStorage.setItem("accessToken", token);
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     setUser(jwtDecode(token));
   };
 
   const logout = () => {
     localStorage.clear();
+    delete axios.defaults.headers.common["Authorization"];
     setUser(null);
   };
 
