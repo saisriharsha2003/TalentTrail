@@ -128,7 +128,7 @@ const Register = () => {
                   to="/login"
                   className="text-primary fw-bold text-decoration-none border-bottom border-primary"
                 >
-                  Sign In
+                  Login
                 </Link>
               </div>
             </form>
