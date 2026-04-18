@@ -15,7 +15,8 @@ const useRefreshToken = () => {
 
         } catch (err) {
             console.error("Refresh failed", err);
-            throw err;
+
+            return null;
         }
     };
 

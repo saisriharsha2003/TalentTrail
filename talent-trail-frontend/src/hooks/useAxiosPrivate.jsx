@@ -11,7 +11,7 @@ const useAxiosPrivate = () => {
             config => {
                 const token = localStorage.getItem('accessToken');
 
-                if (token) {
+                if (token && !config.headers['Authorization']) {
                     config.headers['Authorization'] = `Bearer ${token}`;
                 }
 
@@ -25,16 +25,30 @@ const useAxiosPrivate = () => {
             async (err) => {
                 const prevRequest = err?.config;
 
-                if (err?.response?.status === 401 && !prevRequest?.sent) {
+                if (!prevRequest || prevRequest.sent) {
+                    return Promise.reject(err);
+                }
+
+                if (err?.response?.status === 401) {
                     prevRequest.sent = true;
 
-                    const newAccessToken = await refresh();
+                    try {
+                        const newAccessToken = await refresh();
 
-                    localStorage.setItem("accessToken", newAccessToken);
+                        // ❗ If refresh failed → stop everything
+                        if (!newAccessToken) {
+                            localStorage.clear();
+                            return Promise.reject(err);
+                        }
 
-                    prevRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                        prevRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
 
-                    return axiosPrivate(prevRequest);
+                        return axiosPrivate(prevRequest);
+
+                    } catch (refreshErr) {
+                        localStorage.clear();
+                        return Promise.reject(refreshErr);
+                    }
                 }
 
                 return Promise.reject(err);

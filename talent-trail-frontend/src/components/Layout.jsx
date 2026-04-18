@@ -101,14 +101,12 @@ const Layout = () => {
 
   const handleLogout = async () => {
     try {
-      if (user?.userInfo?.role) {
-        await axios.post("/logout", {}, { withCredentials: true });
-      }
+      await axios.post("/logout", {}, { withCredentials: true });
 
       logout();
 
-      localStorage.removeItem("accessToken"); 
-
+      // 🔥 IMPORTANT CHANGES
+      localStorage.clear();
       delete axios.defaults.headers.common["Authorization"];
       setProfile("");
 
