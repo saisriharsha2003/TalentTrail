@@ -28,7 +28,7 @@ const RecruiterJobProfile = () => {
       const res = await axios.delete("/recruiter/job/" + id);
       if (res?.data?.success) {
         notify("success", res.data.success);
-        navigate(-1);
+        navigate('/recruiter/posted');
       }
     } catch (err) {
       notify("failed", err?.response?.data?.message);
