@@ -59,7 +59,7 @@ const getStudent = async (req, res, next) => {
             .populate('workExperiences')
             .populate('projects')
             .populate('certifications')
-            .select('username personal contact academic workExperiences projects certifications resume profile')
+            .select('username personal contact academic workExperiences projects certifications resume profile rollNo')
             .exec();
 
         if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
@@ -492,7 +492,7 @@ const parseResume = async (req, res, next) => {
             });
         }
 
-        const filePath = "/tmp/" + req.file.originalname;
+        const filePath = req.file.path;
 
         console.log("📤 Sending file to Flask...");
         console.log("URL:", process.env.RESUME_PARSER);
