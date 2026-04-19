@@ -4,26 +4,21 @@ import json
 from google import genai
 from dotenv import load_dotenv
 from pdfminer.high_level import extract_text
-import json
+from docx import Document
 
 with open("Test/mock_test_jd.json", "r") as f:
     MOCK_DATA = json.load(f)
-# -------------------------------
-# LOAD ENV
-# -------------------------------
+
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# -------------------------------
-# TEXT EXTRACTION
-# -------------------------------
 def extract_job_text(file_path):
     return extract_text(file_path)
 
+def extract_docx_text(file_path):
+    doc = Document(file_path)
+    return "\n".join([para.text for para in doc.paragraphs])
 
-# -------------------------------
-# STRICT SCHEMA (FINAL)
-# -------------------------------
 ALLOWED_KEYS = [
     "jobTitle","companyName","jobDescription",
     "location","workType","employmentType",
@@ -34,22 +29,14 @@ ALLOWED_KEYS = [
     "jobCategory","department"
 ]
 
-# -------------------------------
-# CLEAN PLACEHOLDER VALUES
-# -------------------------------
 def clean_placeholders(data):
     for key, value in data.items():
         if isinstance(value, str) and value.strip().lower() == key.lower():
             data[key] = None
     return data
 
-
-# -------------------------------
-# ENFORCE STRICT SCHEMA
-# -------------------------------
 def enforce_schema(data):
     final = {}
-
     for key in ALLOWED_KEYS:
         if key == "skills":
             final[key] = data.get(key) or []
@@ -57,16 +44,30 @@ def enforce_schema(data):
             final[key] = data.get(key) if data.get(key) is not None else None
         else:
             final[key] = data.get(key, None)
-
     return final
 
+def get_text_input(input_data):
+    if isinstance(input_data, str) and "\n" in input_data:
+        return input_data
 
-# -------------------------------
-# MAIN FUNCTION
-# -------------------------------
-def parse_job_description(file_path):
+    if isinstance(input_data, str):
+        ext = input_data.split(".")[-1].lower()
 
-    text = extract_job_text(file_path)
+        if ext == "pdf":
+            return extract_job_text(input_data)
+
+        if ext in ["doc", "docx"]:
+            return extract_docx_text(input_data)
+
+        if ext == "txt":
+            with open(input_data, "r", encoding="utf-8") as f:
+                return f.read()
+
+    return ""
+
+def parse_job_description(input_data):
+
+    text = get_text_input(input_data)
 
     prompt = f"""
         You are a job description parser.
@@ -242,9 +243,6 @@ def parse_job_description(file_path):
     if not result:
         return {}
 
-    # -------------------------------
-    # SAFE JSON PARSE
-    # -------------------------------
     try:
         data = json.loads(result)
     except:
@@ -253,9 +251,6 @@ def parse_job_description(file_path):
             data = json.loads(match.group())
         else:
             return {}
-    # -------------------------------
-    # CLEAN + ENFORCE
-    # -------------------------------
 
     data = clean_placeholders(data)
     data = enforce_schema(data)
