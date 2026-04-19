@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { notify } from "../Toast";
 import { useParams } from "react-router-dom";
@@ -9,66 +9,37 @@ const RecruiterStudentProfile = () => {
   const { id } = useParams();
   const axios = useAxiosPrivate();
 
-  const [jobs, setJobs] = useState([]);
-  const [resume, setResume] = useState("");
+  const [activeTab, setActiveTab] = useState("profile");
+  const [student, setStudent] = useState({});
+  const [applications, setApplications] = useState([]);
+  const bufferToBase64 = (bufferArray) => {
+    const chunkSize = 100000;
+    let base64String = "";
 
-  const [currentEducation, setCurrentEducation] = useState({
-    skills: [],
-    interests: []
-  });
+    for (let i = 0; i < bufferArray.length; i += chunkSize) {
+      const chunk = bufferArray.slice(i, i + chunkSize);
+      base64String += String.fromCharCode.apply(null, chunk);
+    }
 
-  const [previousEducation, setPreviousEducation] = useState({});
-  const [contact, setContact] = useState({});
-  const [personal, setPersonal] = useState({});
-  const [certifications, setCertifications] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [works, setWorks] = useState([]);
-
-  const [scores, setScores] = useState({});
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const [sent1, setSent1] = useState("");
-  const [sent2, setSent2] = useState("");
+    return btoa(base64String);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await axios.get(`/recruiter/studentProfile/${id}`);
 
-        const jobs = (res?.data?.jobs || []).map(j => ({
-          ...j.jobId,
-          applicationId: j._id
-        }));
+        let studentData = res.data.student || {};
+        console.log(studentData);
+        console.log("RESUME:", res.data.student.resume);
 
-        const student = res?.data?.student || {};
+        if (studentData?.profile?.data) {
+          const base64 = bufferToBase64(studentData.profile.data);
+          studentData.profileBase64 = `data:image/jpeg;base64,${base64}`;
+        }
 
-        const skills = student?.academic?.currentEducation?.skills || [];
-        const interests = student?.academic?.currentEducation?.interests || [];
-
-        setJobs(jobs);
-        setResume(student?.resume || "");
-
-        setCurrentEducation({
-          ...student?.academic?.currentEducation,
-          skills: Array.isArray(skills) ? skills : skills.split(",") || [],
-          interests: Array.isArray(interests) ? interests : interests.split(",") || []
-        });
-
-        setPreviousEducation(student?.academic?.previousEducation || {});
-        setContact(student?.contact || {});
-        setPersonal(student?.personal || {});
-        setCertifications(student?.certifications || []);
-        setProjects(student?.projects || []);
-        setWorks(student?.workExperiences || []);
-
-        setSent1(Array.isArray(skills) ? skills.join(",") : skills || "");
-
-        let certText = "";
-        (student?.certifications || []).forEach(c => {
-          certText += `${c.name} ${c.organization},`;
-        });
-        setSent2(certText);
-
+        setStudent(studentData);
+        setApplications(res.data.applications || []);
       } catch (err) {
         notify("failed", err?.response?.data?.message);
       }
@@ -77,214 +48,291 @@ const RecruiterStudentProfile = () => {
     fetchData();
   }, [axios, id]);
 
-
-  const handleSelect = async (i) => {
-    try {
-      await axios.post("/recruiter/application", {
-        applicationId: jobs[i].applicationId,
-        status: "selected"
-      });
-      notify("success", "Selected");
-    } catch (err) {
-      notify("failed", err?.response?.data?.message);
-    }
+  const handleSelect = async (appId) => {
+    await axios.post("/recruiter/application", {
+      applicationId: appId,
+      status: "selected",
+    });
+    notify("success", "Selected");
   };
 
-  const handleReject = async (i) => {
-    try {
-      await axios.post("/recruiter/application", {
-        applicationId: jobs[i].applicationId,
-        status: "rejected"
-      });
-      notify("success", "Rejected");
-    } catch (err) {
-      notify("failed", err?.response?.data?.message);
-    }
+  const handleReject = async (appId) => {
+    await axios.post("/recruiter/application", {
+      applicationId: appId,
+      status: "rejected",
+    });
+    notify("success", "Rejected");
   };
-
-  const computeCapability = async (job) => {
-    try {
-      const studentText =
-        "skills:\n" + sent1 + "\ncertifications:\n" + sent2;
-
-      const res = await axios.post("/recruiter/capabilityCal", {
-        sent1: studentText,
-        sent2: job.description
-      });
-
-      setScores(prev => ({
-        ...prev,
-        [job._id]: res.data.score.similarity_matrix
-      }));
-
-      notify("success", "Capability calculated");
-
-    } catch (err) {
-      notify("failed", err?.response?.data?.message);
-    }
-  };
-
-  const Field = ({ label, value }) => (
-    <p className="mb-2">
-      <strong>{label}:</strong> {value || "N/A"}
-    </p>
-  );
-
-  const Section = ({ title, children }) => (
-    <div className="card shadow-sm border-0 rounded-4 p-4 mb-4">
-      <h5 className="fw-bold mb-3">{title}</h5>
-      {children}
-    </div>
-  );
-
 
   return (
-    <div className="container my-5">
-
-      <Section title="Student Profile">
-        <a href={`${RESUMES_URL}/${resume}`} target="_blank">
-          📄 View Resume
-        </a>
-      </Section>
-
-      <Section title="Academic">
-        <div className="row">
-          <div className="col-md-6">
-            <h6>Current</h6>
-            <Field label="College" value={currentEducation.college} />
-            <Field label="Course" value={currentEducation.course} />
-            <Field label="CGPA" value={currentEducation.cgpa} />
-
-            <div className="mt-2">
-              {(currentEducation.skills || []).map((s, i) => (
-                <span key={i} className="badge bg-dark me-2 mb-2">
-                  {s}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="col-md-6">
-            <h6>Previous</h6>
-            <Field label="College" value={previousEducation.college} />
-            <Field label="Percentage" value={previousEducation.percentage} />
-          </div>
-        </div>
-      </Section>
-
-      <div className="row">
-        <div className="col-md-6">
-          <Section title="Personal">
-            <Field label="Name" value={personal.fullName} />
-            <Field label="Father" value={personal.fatherName} />
-            <Field label="Mother" value={personal.motherName} />
-            <Field label="DOB" value={personal.dateOfBirth} />
-            <Field label="Gender" value={personal.gender} />
-          </Section>
-        </div>
-
-        <div className="col-md-6">
-          <Section title="Contact">
-            <Field label="Email" value={contact.email} />
-            <Field label="Mobile" value={contact.mobile} />
-            <Field label="Current Address" value={contact.currentAddress} />
-            <Field label="Permanent Address" value={contact.permanentAddress} />
-          </Section>
-        </div>
-      </div>
-
-      <Section title="Certifications">
-        {(certifications || []).map((c, i) => (
-          <div key={i}>
-            <strong>{c.name}</strong> — {c.organization}
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Projects">
-        {(projects || []).map((p, i) => (
-          <div key={i}>
-            <strong>{p.name}</strong>
-            <p className="text-muted small">{p.description}</p>
-          </div>
-        ))}
-      </Section>
-
-      <Section title="Work Experience">
-        {(works || []).map((w, i) => (
-          <div key={i}>
-            <strong>{w.organization}</strong> — {w.role}
-            <p className="text-muted small">{w.description}</p>
-          </div>
-        ))}
-      </Section>
-
-      {jobs.length > 0 && (
-        <Section title="Applications">
-
-          <div className="d-flex justify-content-between mb-3">
-            <button className="btn btn-dark"
-              onClick={() =>
-                setActiveIndex(p => (p - 1 + jobs.length) % jobs.length)
-              }>
-              ←
-            </button>
-
-            <button className="btn btn-dark"
-              onClick={() =>
-                setActiveIndex(p => (p + 1) % jobs.length)
-              }>
-              →
-            </button>
-          </div>
-
-          {jobs[activeIndex] && (
-            <div className="card p-4">
-
-              <h5>{jobs[activeIndex].jobTitle}</h5>
-              <p>{jobs[activeIndex].companyName}</p>
-
-              <p className="text-muted">
-                {jobs[activeIndex].description}
-              </p>
-
-              <div className="d-flex gap-2">
-                <button
-                  onClick={() => handleSelect(activeIndex)}
-                  className="btn btn-success"
+    <div className="container-fluid py-4 bg-light min-vh-100">
+      <div className="row justify-content-center">
+        <div className="col-12 px-md-4">
+          <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div className="bg-primary p-4 text-white d-flex align-items-center gap-3">
+              {student?.profileBase64 ? (
+               <img
+                src={student.profileBase64}
+                alt="profile"
+                className="rounded-circle border border-3 border-white shadow-sm"
+                style={{
+                  width: "70px",
+                  height: "70px",
+                  objectFit: "cover",
+                  imageRendering: "auto"
+                }}
+              />
+              ) : (
+                <div
+                  className="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center"
+                  style={{ width: "70px", height: "70px" }}
                 >
-                  Select
-                </button>
-
-                <button
-                  onClick={() => handleReject(activeIndex)}
-                  className="btn btn-danger"
-                >
-                  Reject
-                </button>
-              </div>
-
-              <button
-                className="btn btn-outline-dark mt-3"
-                onClick={() => computeCapability(jobs[activeIndex])}
-              >
-                Match ⚡
-              </button>
-
-              {scores[jobs[activeIndex]._id] && (
-                <div className="mt-2 fw-bold">
-                  Score: {scores[jobs[activeIndex]._id]}%
+                  <i className="bi bi-person fs-2"></i>
                 </div>
               )}
 
+              <div>
+                <h3 className="fw-bold mb-0">
+                  {student?.personal?.fullName || "Student"}
+                </h3>
+                <small className="opacity-75">{student?.contact?.email}</small>
+              </div>
             </div>
-          )}
 
-        </Section>
-      )}
+            <div className="card-header bg-white border-bottom-0 p-0">
+              <ul className="nav nav-tabs nav-fill border-0">
+                {[
+                  { id: "profile", label: "Profile", icon: "bi-person" },
+                  { id: "academic", label: "Academic", icon: "bi-mortarboard" },
+                  { id: "skills", label: "Skills", icon: "bi-lightning" },
+                  {
+                    id: "experience",
+                    label: "Experience",
+                    icon: "bi-briefcase",
+                  },
+                  { id: "projects", label: "Projects", icon: "bi-kanban" },
+                  {
+                    id: "applications",
+                    label: "Applications",
+                    icon: "bi-graph-up",
+                  },
+                ].map((tab) => (
+                  <li key={tab.id} className="nav-item">
+                    <button
+                      className={`nav-link py-3 border-0 d-flex align-items-center justify-content-center gap-2 
+                      ${
+                        activeTab === tab.id
+                          ? "active border-bottom border-primary border-3 text-primary fw-bold"
+                          : "text-muted"
+                      }`}
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      <i className={`bi ${tab.icon}`}></i>
+                      {tab.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
+            <div className="card-body p-4 p-md-5 bg-white">
+              {activeTab === "profile" && (
+                <>
+                  <SectionTitle title="Basic Information" />
+
+                  <div className="row g-4">
+                    <Field
+                      label="Full Name"
+                      value={student?.personal?.fullName}
+                    />
+                    <Field label="Email" value={student?.contact?.email} />
+                    <Field label="Gender" value={student?.personal?.gender} />
+                    <Field label="Mobile" value={student?.contact?.mobile} />
+                    <Field
+                      label="Date of Birth"
+                      value={student?.personal?.dateOfBirth?.split("T")[0]}
+                    />
+                    <Field
+                      label="Address"
+                      value={student?.contact?.currentAddress}
+                    />
+                  </div>
+
+                  <div className="mt-5">
+                    <SectionTitle title="Resume" />
+
+                    <div className="d-flex justify-content-between align-items-center p-4 border rounded-4 bg-light">
+                      <div>
+                        <h6 className="fw-bold mb-1">Candidate Resume</h6>
+                        <small className="text-muted">
+                          Download or preview
+                        </small>
+                      </div>
+
+                      <a
+                        href={`${RESUMES_URL}/${student?.resume}`}
+                        target="_blank"
+                        className="btn btn-dark rounded-pill px-4"
+                      >
+                        View Resume
+                      </a>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab === "academic" && (
+                <>
+                  <SectionTitle title="Academic Details" />
+
+                  <p>
+                    <b>College:</b>{" "}
+                    {student?.academic?.currentEducation?.college}
+                  </p>
+                  <p>
+                    <b>Course:</b> {student?.academic?.currentEducation?.course}
+                  </p>
+                </>
+              )}
+
+              {activeTab === "skills" && (
+                <>
+                  <SectionTitle title="Skills & Technologies" />
+
+                  <div className="d-flex flex-wrap gap-3">
+                    {(student?.academic?.currentEducation?.skills || []).map(
+                      (s, i) => (
+                        <div
+                          key={i}
+                          className="px-4 py-2 rounded-pill border bg-white shadow-sm fw-semibold"
+                        >
+                          {s}
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </>
+              )}
+
+              {activeTab === "experience" && (
+                <>
+                  <SectionTitle title="Work Experience" />
+
+                  {(student?.workExperiences || []).map((w, i) => (
+                    <CardItem
+                      key={i}
+                      title={`${w.organization} — ${w.role}`}
+                      desc={w.description}
+                    />
+                  ))}
+                </>
+              )}
+
+              {activeTab === "projects" && (
+                <>
+                  <SectionTitle title="Projects" />
+
+                  {(student?.projects || []).map((p, i) => (
+                    <CardItem key={i} title={p.name} desc={p.description} />
+                  ))}
+                </>
+              )}
+              {activeTab === "applications" && (
+                <>
+                  <SectionTitle title="Applications" />
+
+                  {applications.length === 0 && (
+                    <p className="text-muted">No applications</p>
+                  )}
+
+                  <div className="d-flex flex-column gap-4">
+                    {applications.map((app, i) => (
+                      <div
+                        key={i}
+                        className="p-4 border rounded-4 bg-white shadow-sm d-flex justify-content-between align-items-start"
+                      >
+                        <div>
+                          <h5 className="fw-bold mb-1">
+                            {app.jobId?.jobTitle}
+                          </h5>
+
+                          <div className="text-muted mb-2">
+                            {app.jobId?.companyName}
+                          </div>
+
+                          <div className="small text-secondary mb-3">
+                            {app.jobId?.location} • {app.jobId?.employmentType}
+                          </div>
+
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-success btn-sm px-3 rounded-pill"
+                              onClick={() => handleSelect(app._id)}
+                            >
+                              Select
+                            </button>
+
+                            <button
+                              className="btn btn-outline-danger btn-sm px-3 rounded-pill"
+                              onClick={() => handleReject(app._id)}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span
+                            className={`px-3 py-2 rounded-pill fw-semibold text-uppercase small ${
+                              app.status === "selected"
+                                ? "bg-success-subtle text-success"
+                                : app.status === "rejected"
+                                  ? "bg-danger-subtle text-danger"
+                                  : "bg-warning-subtle text-warning"
+                            }`}
+                          >
+                            {app.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
+
+/* COMPONENTS */
+
+const SectionTitle = ({ title }) => (
+  <h5 className="fw-bold mb-4 d-flex align-items-center gap-2">
+    <span
+      className="bg-primary rounded-pill"
+      style={{ width: "6px", height: "24px" }}
+    ></span>
+    {title}
+  </h5>
+);
+
+const Field = ({ label, value }) => (
+  <div className="col-md-6">
+    <div className="p-4 border rounded-4 bg-white shadow-sm h-100">
+      <div className="fw-bold text-dark">{label}</div>
+      <div className="text-muted mt-1">{value || "—"}</div>
+    </div>
+  </div>
+);
+
+const CardItem = ({ title, desc }) => (
+  <div className="mb-3 p-3 border rounded-4 bg-light">
+    <div className="fw-semibold">{title}</div>
+    <div className="text-muted small">{desc}</div>
+  </div>
+);
 
 export default RecruiterStudentProfile;
