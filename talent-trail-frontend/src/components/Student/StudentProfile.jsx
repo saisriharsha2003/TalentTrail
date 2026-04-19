@@ -28,7 +28,32 @@ const StudentProfile = () => {
     }
     return btoa(base64String);
   };
+  const formatMonthYear = (date) => {
+    // If no date OR "Present" → use current date
+    if (!date || date === "Present") {
+      const now = new Date();
+      return now.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+    }
 
+    const d = new Date(date);
+
+    // Handle invalid date safely
+    if (isNaN(d.getTime())) {
+      const now = new Date();
+      return now.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+    }
+
+    return d.toLocaleString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+  };
   const currentDefault = {
     college: "",
     collegeId: "",
@@ -69,6 +94,10 @@ const StudentProfile = () => {
   const projectDefault = {
     name: "",
     description: "",
+    startDate: "",
+    endDate: "",
+    githubLink: "",
+    associated: "",
   };
   const workDefault = {
     organization: "",
@@ -242,26 +271,45 @@ const StudentProfile = () => {
 
   const handleAddProject = async (e) => {
     e.preventDefault();
+
+    const formatDate = (date) => {
+      if (!date) return null;
+      return new Date(date).toISOString().split("T")[0];
+    };
+
+    const payload = {
+      name: newProj.name,
+      description: newProj.description,
+      associated: newProj.associated?.toLowerCase(), // 🔥 CRITICAL FIX
+      startDate: formatDate(newProj.startDate),
+      endDate: newProj.endDate ? formatDate(newProj.endDate) : null,
+      githubLink: newProj.githubLink,
+    };
+
     try {
       if (editingProjectId) {
         await axios.put("/student/project", {
-          ...newProj,
+          ...payload,
           pId: editingProjectId,
         });
         notify("success", "Project updated");
       } else {
-        await axios.post("/student/project", newProj);
+        await axios.post("/student/project", payload);
         notify("success", "Project added");
       }
+
+      const modalEl = document.getElementById("projectModal");
+      const modal = window.bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
 
       setNewProj(projectDefault);
       setEditingProjectId(null);
       fetchStudent();
     } catch (err) {
+      console.log("ERROR:", err.response?.data); // 👈 VERY IMPORTANT
       notify("failed", err?.response?.data?.message);
     }
   };
-
   const handleDeleteProject = async (id) => {
     try {
       await axios.delete(`/student/project/${id}`);
@@ -274,12 +322,42 @@ const StudentProfile = () => {
 
   const handleAddWork = async (e) => {
     e.preventDefault();
+
+    const formatDate = (date) => {
+      if (!date) return null;
+      return new Date(date).toISOString().split("T")[0];
+    };
+
+    const payload = {
+      organization: newWork.organization,
+      role: newWork.role,
+      description: newWork.description,
+      startDate: formatDate(newWork.startDate),
+      endDate: newWork.endDate ? formatDate(newWork.endDate) : null,
+    };
+
     try {
-      await axios.post("/student/work", newWork);
-      notify("success", "Work experience added");
+      if (editingWorkId) {
+        await axios.put("/student/work", {
+          ...payload,
+          wId: editingWorkId,
+        });
+        notify("success", "Work updated");
+      } else {
+        await axios.post("/student/work", payload);
+        notify("success", "Work added");
+      }
+
+      // ✅ CLOSE MODAL
+      const modalEl = document.getElementById("workModal");
+      const modal = window.bootstrap.Modal.getInstance(modalEl);
+      modal.hide();
+
       setNewWork(workDefault);
+      setEditingWorkId(null);
       fetchStudent();
     } catch (err) {
+      console.log(err.response?.data);
       notify("failed", err?.response?.data?.message);
     }
   };
@@ -819,40 +897,109 @@ const StudentProfile = () => {
             <div className="row g-4">
               <div className="col-12">
                 <div className="card shadow-sm border-0 rounded-4 p-4">
-                  <h5 className="fw-bold mb-4 text-success d-flex justify-content-between">
+                  {/* Header */}
+                  <h5 className="fw-bold mb-4 text-success d-flex justify-content-between align-items-center">
                     <span>
                       <i className="bi bi-briefcase-fill me-2"></i>Work
                       Experience
                     </span>
+
                     <button
-                      className="btn btn-sm btn-outline-success rounded-pill"
+                      className="btn btn-sm btn-success rounded-pill px-3 fw-semibold"
                       data-bs-toggle="modal"
                       data-bs-target="#workModal"
+                      onClick={() => {
+                        setNewWork(workDefault);
+                        setEditingWorkId(null);
+                      }}
                     >
-                      + Add
+                      + Add Work
                     </button>
                   </h5>
 
-                  {works.map((work, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-light rounded-4 p-3 mb-3 position-relative"
-                    >
-                      <button
-                        className="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-2"
-                        onClick={() => handleDeleteWork(work._id)}
-                      >
-                        <i className="bi bi-trash-fill"></i>
-                      </button>
-                      <h6 className="fw-bold">{work.role}</h6>
-                      <p className="small text-muted">{work.organization}</p>
-                      <small className="text-success">
-                        {work.startDate} - {work.endDate || "Present"}
-                      </small>
+                  {/* Empty State */}
+                  {works.length === 0 ? (
+                    <div className="text-center text-muted py-5">
+                      <i className="bi bi-briefcase fs-1 d-block mb-2"></i>
+                      No work experience added yet
                     </div>
-                  ))}
+                  ) : (
+                    <div className="row g-3">
+                      {works.map((work, idx) => (
+                        <div key={idx} className="col-12">
+                          <div className="card border-0 shadow-sm rounded-4 p-3 position-relative work-card h-100">
+                            {/* ✏️ Edit */}
+                            <button
+                              className="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
+                              onClick={() => {
+                                setNewWork({
+                                  ...work,
+                                  startDate:
+                                    work.startDate?.split("T")[0] || "",
+                                  endDate: work.endDate?.split("T")[0] || "",
+                                });
+                                setEditingWorkId(work._id);
+
+                                const modal = new window.bootstrap.Modal(
+                                  document.getElementById("workModal"),
+                                );
+                                modal.show();
+                              }}
+                            >
+                              ✏️
+                            </button>
+
+                            {/* 🗑 Delete */}
+                            <button
+                              className="btn btn-sm btn-light position-absolute top-0 end-0 me-5 mt-2 rounded-circle shadow-sm"
+                              onClick={() => handleDeleteWork(work._id)}
+                            >
+                              <i className="bi bi-trash text-danger"></i>
+                            </button>
+
+                            <div className="mt-2">
+                              <h6 className="fw-bold mb-1 d-flex align-items-center gap-2">
+                                <i className="bi bi-briefcase-fill text-success"></i>
+                                {work.role}
+                              </h6>
+
+                              <div className="small text-primary fw-semibold mb-2 d-flex align-items-center gap-1">
+                                <i className="bi bi-building"></i>
+                                {work.organization}
+                              </div>
+
+                              <div className="small text-secondary mb-2 d-flex align-items-center gap-1">
+                                <i className="bi bi-calendar-event"></i>
+                                {formatMonthYear(work.startDate)} -{" "}
+                                {formatMonthYear(work.endDate)}
+                              </div>
+
+                              {/* Description */}
+                              {work.description && (
+                                <p className="small text-muted mt-2 mb-0">
+                                  {work.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Hover Styling */}
+              <style>{`
+      .work-card {
+        transition: all 0.25s ease;
+      }
+
+      .work-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      }
+    `}</style>
             </div>
           )}
 
@@ -860,50 +1007,113 @@ const StudentProfile = () => {
             <div className="row g-4">
               <div className="col-12">
                 <div className="card shadow-sm border-0 rounded-4 p-4">
-                  <h5 className="fw-bold mb-4 text-primary d-flex justify-content-between">
+                  {/* Header */}
+                  <h5 className="fw-bold mb-4 text-primary d-flex justify-content-between align-items-center">
                     <span>
                       <i className="bi bi-kanban-fill me-2"></i>Projects
                     </span>
+
                     <button
-                      className="btn btn-sm btn-outline-primary rounded-pill"
+                      className="btn btn-sm btn-primary rounded-pill px-3 fw-semibold"
                       data-bs-toggle="modal"
                       data-bs-target="#projectModal"
+                      onClick={() => {
+                        setNewProj(projectDefault);
+                        setEditingProjectId(null);
+                      }}
                     >
-                      + Add
+                      + Add Project
                     </button>
                   </h5>
 
-                  {projects.map((proj, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-light rounded-4 p-3 mb-3 position-relative"
-                    >
-                      <button
-                        className="btn btn-sm btn-outline-secondary border-0 position-absolute top-0 end-0 me-5 mt-2"
-                        onClick={() => {
-                          setNewProj(proj);
-                          setEditingProjectId(proj._id);
-                          const modal = new window.bootstrap.Modal(
-                            document.getElementById("projectModal"),
-                          );
-                          modal.show();
-                        }}
-                      >
-                        ✏️
-                      </button>
-
-                      <button
-                        className="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-2"
-                        onClick={() => handleDeleteProject(proj._id)}
-                      >
-                        <i className="bi bi-trash-fill"></i>
-                      </button>
-                      <h6 className="fw-bold">{proj.name}</h6>
-                      <p className="small text-muted">{proj.description}</p>
+                  {/* Projects List */}
+                  {projects.length === 0 ? (
+                    <div className="text-center text-muted py-5">
+                      <i className="bi bi-folder2-open fs-1 d-block mb-2"></i>
+                      No projects added yet
                     </div>
-                  ))}
+                  ) : (
+                    <div className="row g-3">
+                      {projects.map((proj, idx) => (
+                        <div key={idx} className="col-6">
+                          <div className="card border-0 shadow-sm rounded-4 h-100 p-3 position-relative project-card">
+                            {/* Edit Button */}
+                            <button
+                              className="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
+                              onClick={() => {
+                                setNewProj(proj);
+                                setEditingProjectId(proj._id);
+                                const modal = new window.bootstrap.Modal(
+                                  document.getElementById("projectModal"),
+                                );
+                                modal.show();
+                              }}
+                            >
+                              ✏️
+                            </button>
+
+                            <button
+                              className="btn btn-sm btn-light position-absolute top-0 end-0 me-5 mt-2 rounded-circle shadow-sm"
+                              onClick={() => handleDeleteProject(proj._id)}
+                            >
+                              <i className="bi bi-trash text-danger"></i>
+                            </button>
+
+                            {/* Content */}
+                            <div className="mt-2">
+                              <h6 className="fw-bold mb-2">{proj.name}</h6>
+
+                              <p className="small text-muted mb-3">
+                                {proj.description}
+                              </p>
+                              {proj.associated && (
+                                <div className="small text-primary fw-semibold mb-2">
+                                  <i className="bi bi-building me-1"></i>
+                                  {proj.associated}
+                                </div>
+                              )}
+
+                              {/* Dates */}
+                              <div className="small text-secondary mb-3">
+                                <i className="bi bi-calendar-event me-1"></i>
+                                {proj.startDate || "N/A"} -{" "}
+                                {proj.endDate || "Present"}
+                              </div>
+
+                              {/* Actions */}
+                              <div className="d-flex gap-2 flex-wrap">
+                                {proj.githubLink && (
+                                  <a
+                                    href={proj.githubLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn btn-sm btn-dark rounded-pill px-3"
+                                  >
+                                    <i className="bi bi-github me-1"></i>
+                                    View Code
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Extra Styling */}
+              <style>{`
+      .project-card {
+        transition: all 0.25s ease;
+      }
+
+      .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      }
+    `}</style>
             </div>
           )}
           {activeTab === "certifications" && (
@@ -1079,11 +1289,10 @@ const StudentProfile = () => {
         </div>
       </div>
 
-      {/* Modals for Adding Content */}
-      {/* Project Modal */}
       <div className="modal fade" id="projectModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content border-0 rounded-4 shadow">
+            {/* Header */}
             <div className="modal-header border-0 p-4">
               <h5 className="modal-title fw-bold text-primary">
                 {editingProjectId ? "Edit Project" : "Add New Project"}
@@ -1094,13 +1303,16 @@ const StudentProfile = () => {
                 data-bs-dismiss="modal"
               ></button>
             </div>
+
+            {/* Form */}
             <form onSubmit={handleAddProject}>
               <div className="modal-body p-4 pt-0">
+                {/* Project Name */}
                 <div className="form-floating mb-3">
                   <input
                     type="text"
                     className="form-control rounded-3"
-                    value={newProj.name}
+                    value={newProj.name || ""}
                     onChange={(e) =>
                       setNewProj({ ...newProj, name: e.target.value })
                     }
@@ -1108,11 +1320,13 @@ const StudentProfile = () => {
                   />
                   <label>Project Name</label>
                 </div>
+
+                {/* Description */}
                 <div className="form-floating mb-3">
                   <textarea
                     className="form-control rounded-3"
                     style={{ height: "100px" }}
-                    value={newProj.description}
+                    value={newProj.description || ""}
                     onChange={(e) =>
                       setNewProj({ ...newProj, description: e.target.value })
                     }
@@ -1120,17 +1334,80 @@ const StudentProfile = () => {
                   ></textarea>
                   <label>Description</label>
                 </div>
-                
-                
+
+                <div className="form-floating mb-3">
+                  <select
+                    className="form-select rounded-3"
+                    value={newProj.associated || ""}
+                    onChange={(e) =>
+                      setNewProj({ ...newProj, associated: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="" disabled hidden></option>
+                    <option value="self">Self</option>
+                    <option value="college">College</option>
+                    <option value="work">Work / Internship</option>
+                  </select>
+                  <label>Associated With</label>
+                </div>
+
+                {/* Dates */}
+                <div className="row g-2 mb-3">
+                  <div className="col-6 form-floating">
+                    <input
+                      type="date"
+                      className="form-control rounded-3"
+                      value={newProj.startDate || ""}
+                      onChange={(e) =>
+                        setNewProj({ ...newProj, startDate: e.target.value })
+                      }
+                      required
+                    />
+                    <label>Start Date</label>
+                  </div>
+
+                  <div className="col-6 form-floating">
+                    <input
+                      type="date"
+                      className="form-control rounded-3"
+                      value={newProj.endDate || ""}
+                      onChange={(e) =>
+                        setNewProj({ ...newProj, endDate: e.target.value })
+                      }
+                    />
+                    <label>End Date</label>
+                  </div>
+                </div>
+
+                {/* GitHub Link */}
+                <div className="form-floating mb-3">
+                  <input
+                    type="url"
+                    className="form-control rounded-3"
+                    value={newProj.githubLink || ""}
+                    onChange={(e) =>
+                      setNewProj({ ...newProj, githubLink: e.target.value })
+                    }
+                  />
+                  <label>GitHub Link</label>
+                </div>
               </div>
+
+              {/* Footer */}
               <div className="modal-footer border-0 p-4 pt-0">
                 <button
                   type="button"
                   className="btn btn-light rounded-pill px-4"
                   data-bs-dismiss="modal"
+                  onClick={() => {
+                    setNewProj(projectDefault);
+                    setEditingProjectId(null);
+                  }}
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
                   className="btn btn-primary rounded-pill px-4 fw-bold"
@@ -1142,14 +1419,13 @@ const StudentProfile = () => {
           </div>
         </div>
       </div>
-
       {/* Work Modal */}
       <div className="modal fade" id="workModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content border-0 rounded-4 shadow">
             <div className="modal-header border-0 p-4">
               <h5 className="modal-title fw-bold text-success">
-                Add Work Experience
+                {editingWorkId ? "Edit Work Experience" : "Add Work Experience"}
               </h5>
               <button
                 type="button"
@@ -1232,9 +1508,8 @@ const StudentProfile = () => {
                 <button
                   type="submit"
                   className="btn btn-success rounded-pill px-4 fw-bold"
-                  data-bs-dismiss="modal"
                 >
-                  Add Work
+                  {editingWorkId ? "Update" : "Add Work"}
                 </button>
               </div>
             </form>

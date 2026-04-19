@@ -804,74 +804,104 @@ const putPersonal = async (req, res, next) => {
 }
 
 const putProject = async (req, res, next) => {
-    const { name, startDate, endDate, currentlyWorking, description, associated, projectId } = req.body;
-    if (!name || !startDate || !description || !associated || !projectId) return res.status(400).json({ 'message': 'All fields required' });
+  let { name, startDate, endDate, description, associated, githubLink, pId } = req.body;
 
-    const { id } = req;
-    try {
-        const foundStudent = await Student.findById(id).exec();
-        if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
+  if (!name || !startDate || !description || !associated || !pId) {
+    return res.status(400).json({ message: "All fields required" });
+  }
 
-        const foundProject = await Project.findById(projectId).exec();
-        if (!foundProject) return res.status(400).json({ 'message': 'Project details not found' });
+  const allowed = ["self", "college", "work"];
+  if (!allowed.includes(associated)) {
+    return res.status(400).json({ message: "Invalid associated type" });
+  }
 
-        if (!foundStudent.projects.includes(projectId)) return res.status(401).json({ 'message': 'unauthorized' });
+  if (githubLink && !githubLink.startsWith("http")) {
+    githubLink = "https://" + githubLink;
+  }
 
-        if (!endDate) {
-            foundProject.name = name;
-            foundProject.startDate = startDate;
-            foundProject.description = description;
-            foundProject.associated = associated;
-            foundProject.endDate = '';
-            foundProject.currentlyWorking = true;
-            await foundProject.save();
+  let currentlyWorking = false;
+  if (!endDate) {
+    currentlyWorking = true;
+  }
 
-        } else {
-            foundProject.name = name;
-            foundProject.startDate = startDate;
-            foundProject.description = description;
-            foundProject.associated = associated;
-            foundProject.endDate = endDate;
-            foundProject.currentlyWorking = false;
-            await foundProject.save();
-        }
+  try {
+    const project = await Project.findById(pId).exec();
 
-        res.status(201).json({ 'success': 'Projects info updated' });
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
     }
-    catch (err) {
-        next(err);
+
+    project.name = name;
+    project.description = description;
+    project.startDate = startDate;
+    project.associated = associated;
+    project.githubLink = githubLink || null;
+    project.currentlyWorking = currentlyWorking;
+
+    if (!currentlyWorking && endDate) {
+      project.endDate = endDate;
+    } else {
+      project.endDate = null;
     }
-}
+
+    await project.save();
+
+    res.json({ success: "Project updated successfully" });
+
+  } catch (err) {
+    next(err);
+  }
+};
 
 const putWork = async (req, res, next) => {
-    const { organization, role, description, startDate, endDate, workId } = req.body;
-    if (!organization || !role || !description || !startDate || !endDate || !workId) return res.status(400).json({ 'message': 'All fields required' });
+    const { organization, role, description, startDate, endDate, wId } = req.body;
+
+    console.log("PUT WORK BODY:", req.body); // 🔥 debug
+
+    // ✅ Required validation (NO endDate here)
+    if (!organization || !role || !description || !startDate || !wId) {
+        return res.status(400).json({ message: "All fields required" });
+    }
 
     const { id } = req;
+
     try {
         const foundStudent = await Student.findById(id).exec();
-        if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
+        if (!foundStudent) {
+            return res.status(401).json({ message: "unauthorized" });
+        }
 
-        const foundWork = await Work.findById(workId).exec();
-        if (!foundWork) return res.status(400).json({ 'message': 'Work details not found' });
+        const foundWork = await Work.findById(wId).exec();
+        if (!foundWork) {
+            return res.status(400).json({ message: "Work details not found" });
+        }
 
-        if (!foundStudent.workExperiences.includes(workId)) return res.status(401).json({ 'message': 'unauthorized' });
+        if (!foundStudent.workExperiences.includes(wId)) {
+            return res.status(401).json({ message: "unauthorized" });
+        }
 
+        // ✅ Update fields
         foundWork.organization = organization;
         foundWork.role = role;
         foundWork.description = description;
         foundWork.startDate = startDate;
-        foundWork.endDate = endDate;
+
+        if (endDate) {
+            foundWork.endDate = endDate;
+            foundWork.currentlyWorking = false;
+        } else {
+            foundWork.endDate = null;
+            foundWork.currentlyWorking = true;
+        }
 
         await foundWork.save();
 
-        res.status(201).json({ 'success': 'Work experience info updated' });
-    }
-    catch (err) {
+        res.json({ success: "Work experience updated" });
+
+    } catch (err) {
         next(err);
     }
-}
-
+};
 const deleteCertification = async (req, res, next) => {
     const { id } = req;
     const { cId } = req.params;
