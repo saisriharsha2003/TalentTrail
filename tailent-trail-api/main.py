@@ -8,23 +8,21 @@ from resume_parser import resume_ner_gpt
 from job_parser import parse_job_description
 from Test.mock_data import resume_data_mock
 # from compute_score import compute_similarity
+from docx import Document
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 
-# Configure upload folder
 UPLOAD_FOLDER = tempfile.gettempdir()
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc'}
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'txt'}
 
 def allowed_file(filename):
-    """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route('/health', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def health_check():
-    """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
         'message': 'TalenTrail API is running',
@@ -35,12 +33,6 @@ def health_check():
 @app.route('/parse_resume', methods=['POST'])
 @cross_origin(supports_credentials=True)
 def parse_resume():
-    """
-    Parse resume file and extract structured candidate information.
-    
-    Accepts: PDF, DOCX, DOC files
-    Returns: Extracted resume data with candidate details, education, experience, skills, etc.
-    """
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
@@ -59,14 +51,11 @@ def parse_resume():
         
         try:
             resume_data = resume_ner_gpt(temp_path)
-            # resume_data = resume_data_mock
-            
             return jsonify({
                 'success': True,
                 'resume_data': resume_data,
                 'filename': filename
             }), 200
-            
         finally:
             if os.path.exists(temp_path):
                 try:
@@ -90,8 +79,8 @@ def parse_job():
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
         
-        if not file.filename.lower().endswith('.pdf'):
-            return jsonify({'error': 'Job parser requires PDF files only'}), 400
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'Invalid file format. Allowed: PDF, DOCX, DOC, TXT'}), 400
         
         filename = secure_filename(file.filename)
         temp_path = os.path.join(UPLOAD_FOLDER, filename)
@@ -100,19 +89,31 @@ def parse_job():
         try:
             print("📄 Parsing file:", filename)
 
-            job_data = parse_job_description(temp_path)
+            ext = filename.rsplit('.', 1)[1].lower()
+
+            if ext == "pdf":
+                job_data = parse_job_description(temp_path)
+
+            elif ext == "txt":
+                with open(temp_path, "r", encoding="utf-8") as f:
+                    text = f.read()
+                job_data = parse_job_description(text)
+
+            elif ext in ["doc", "docx"]:
+                doc = Document(temp_path)
+                text = "\n".join([p.text for p in doc.paragraphs])
+                job_data = parse_job_description(text)
+
+            else:
+                return jsonify({'error': 'Unsupported format'}), 400
 
             print("🧠 Parsed Output:", job_data)
 
             if not job_data or not isinstance(job_data, dict):
-                return jsonify({
-                    'error': 'Parser returned invalid data'
-                }), 500
+                return jsonify({'error': 'Parser returned invalid data'}), 500
 
             if "jobTitle" not in job_data:
-                return jsonify({
-                    'error': 'Parser failed to extract required fields'
-                }), 500
+                return jsonify({'error': 'Parser failed to extract required fields'}), 500
 
             return jsonify({
                 "success": True,
@@ -146,27 +147,15 @@ def parse_job():
 # @app.route('/compute_score', methods=['POST'])
 # @cross_origin(supports_credentials=True)
 # def compute_score():
-#     """
-#     Compute semantic similarity between two text inputs using BGEM3 embeddings.
-    
-#     Expected params:
-#         - sent1 (string): First text input
-#         - sent2 (string): Second text input
-    
-#     Returns: Similarity score as percentage (0-100)
-#     """
 #     try:
-#         # Extract sentences from request
 #         sent1 = request.form.get('sent1')
 #         sent2 = request.form.get('sent2')
         
-#         # Validate inputs
 #         if not sent1 or not sent2:
 #             return jsonify({
 #                 'error': 'Both sent1 and sent2 parameters are required'
 #             }), 400
         
-#         # Compute similarity score
 #         similarity_score = compute_similarity(sent1, sent2)
         
 #         return jsonify({
@@ -183,58 +172,26 @@ def parse_job():
 @app.route('/api/endpoints', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def list_endpoints():
-    """List all available API endpoints and their specifications"""
     endpoints = {
         'health': {
             'path': '/health',
             'method': 'GET',
-            'description': 'Health check endpoint',
-            'response': {'status': 'healthy', 'message': '...', 'version': '1.0.0'}
+            'description': 'Health check endpoint'
         },
         'parse_resume': {
             'path': '/parse_resume',
             'method': 'POST',
-            'description': 'Parse resume file (PDF, DOCX, DOC)',
-            'content_type': 'multipart/form-data',
-            'parameters': {'file': 'Resume document (PDF, DOCX, or DOC)'},
-            'response': {
-                'success': True,
-                'resume_data': ['list of parsed resume information'],
-                'filename': 'original_filename'
-            }
+            'description': 'Parse resume file (PDF, DOCX, DOC)'
         },
         'parse_job': {
             'path': '/parse_job',
             'method': 'POST',
-            'description': 'Parse job description (PDF only)',
-            'content_type': 'multipart/form-data',
-            'parameters': {'file': 'Job description (PDF only)'},
-            'response': {
-                'success': True,
-                'job_data': {'job_title': '...', 'company': '...', 'skills': ['...']},
-                'filename': 'original_filename'
-            }
+            'description': 'Parse job description (PDF, DOCX, DOC, TXT)'
         },
         'compute_score': {
             'path': '/compute_score',
             'method': 'POST',
-            'description': 'Compute semantic similarity between two texts',
-            'content_type': 'application/x-www-form-urlencoded',
-            'parameters': {
-                'sent1': 'First text input',
-                'sent2': 'Second text input'
-            },
-            'response': {
-                'success': True,
-                'similarity_score': 85.42,
-                'sent1_preview': 'preview of first text...',
-                'sent2_preview': 'preview of second text...'
-            }
-        },
-        'list_endpoints': {
-            'path': '/api/endpoints',
-            'method': 'GET',
-            'description': 'List all available endpoints with specifications'
+            'description': 'Compute semantic similarity between two texts'
         }
     }
     
@@ -244,35 +201,21 @@ def list_endpoints():
 @app.route('/', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def index():
-    """Welcome endpoint - shows API information"""
     return jsonify({
         'name': 'TalenTrail Unified API',
-        'version': '1.0.0',
-        'description': 'Unified API for resume parsing, job parsing, and similarity scoring',
-        'author': 'TalenTrail Team',
-        'endpoints': {
-            'list_all_endpoints': '/api/endpoints',
-            'health_check': '/health',
-            'parse_resume': '/parse_resume',
-            'parse_job': '/parse_job',
-            'compute_score': '/compute_score'
-        },
-        'documentation': 'Visit /api/endpoints for detailed endpoint specifications'
+        'version': '1.0.0'
     }), 200
 
 
 @app.errorhandler(404)
 def not_found(error):
-    """Handle 404 errors"""
     return jsonify({
-        'error': 'Endpoint not found',
-        'available_endpoints': '/api/endpoints'
+        'error': 'Endpoint not found'
     }), 404
 
 
 @app.errorhandler(500)
 def server_error(error):
-    """Handle 500 errors"""
     return jsonify({
         'error': 'Internal server error',
         'message': str(error)
