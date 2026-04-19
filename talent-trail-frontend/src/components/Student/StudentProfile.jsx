@@ -79,10 +79,12 @@ const StudentProfile = () => {
             const response = await axios.get('/student/details');
             const student = response?.data;
             if (!student?.academic || !student?.contact || !student?.personal) return navigate('/studentRegister');
-
+            console.log(student);
+            
             setCurrentEducation({
                 ...student?.academic?.currentEducation,
-                academicId: student?.academic?._id
+                academicId: student?.academic?._id,
+                rollNo: student?.rollNo
             });
             setPreviousEducation(student?.academic?.previousEducation);
             setContact(student?.contact);
@@ -447,7 +449,6 @@ const StudentProfile = () => {
                                                 </button>
                                                 <h6 className="fw-bold mb-1">{proj.name}</h6>
                                                 <p className="small text-muted mb-2">{proj.description}</p>
-                                                <small className="text-primary fw-medium">{proj.startDate} - {proj.endDate || 'Present'}</small>
                                             </div>
                                         ))}
                                     </div>
