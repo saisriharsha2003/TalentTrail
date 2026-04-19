@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const recruiterController = require('../controllers/recruiterController');
 const verifyRole = require('../middleware/verifyRole');
-const { profileUpload, resumeUpload } = require('../middleware/upload');
+const { profileUpload, resumeUpload, jdUpload } = require('../middleware/upload');
 
 router.use(verifyRole('recruiter'));
 
@@ -32,7 +32,7 @@ router.post('/capabilityCal', recruiterController.capabilityCal);
 
 router.post('/company', recruiterController.postCompany);
 
-router.post('/parseJD', resumeUpload.single('file'), recruiterController.parseJD);
+router.post('/parseJD', jdUpload.single('file'), recruiterController.parseJD);
 
 router.post('/profile', profileUpload.single('profile'), recruiterController.postProfile);
 
