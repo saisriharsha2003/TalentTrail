@@ -62,7 +62,6 @@ const App = () => {
           <Route path='register' element={<Register />} />
           <Route path="studentRegister" element={<StudentRegister />} />
           <Route path="uploadResume" element={<UploadResume />} />
-          <Route path="uploadJD" element={<UploadJD />} />
           <Route path="recruiterRegister" element={<RecruiterRegister />} />
           <Route path="collegeRegister" element={<CollegeRegister />} />
           <Route path="forgotPassword" element={<ForgotPassword />} />
@@ -86,6 +85,7 @@ const App = () => {
               <Route path="applications" element={<RecruiterApplications />} />
               <Route path="applications/:id" element={<RecruiterStudentProfile />} />
               <Route path="profile" element={<RecruiterProfile />} />
+              <Route path="uploadJD" element={<UploadJD />} />
             </Route>
 
             <Route path="college/" element={<CollegeLayout />}>
