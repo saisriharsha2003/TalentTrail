@@ -1,110 +1,132 @@
-import React, { useState } from 'react';
-import useAxiosPrivate from '../../hooks/useAxiosPrivate';
-import { notify } from '../Toast';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { notify } from "../Toast";
+import { useNavigate } from "react-router-dom";
 
 const UploadJD = () => {
+  const axios = useAxiosPrivate();
+  const navigate = useNavigate();
 
-    const axios = useAxiosPrivate();
-    const navigate = useNavigate();
+  const [process, setProcess] = useState(false);
+  const [fileName, setFileName] = useState("");
 
-    const [process, setProcess] = useState(false);
+  const handleJD = async (e) => {
+    e.preventDefault();
+    setProcess(true);
 
-    const handleJD = async (e) => {
-        e.preventDefault();
-        setProcess(true);
+    try {
+      const jd = document.getElementById("jd");
 
-        try {
-            const jd = document.getElementById("jd");
+      if (!jd.files[0]) {
+        notify("failed", "Please upload a file");
+        setProcess(false);
+        return;
+      }
 
-            if (!jd.files[0]) {
-                notify("failed", "Please upload a file");
-                return;
-            }
+      const fd = new FormData();
+      fd.append("file", jd.files[0]);
 
-            const fd = new FormData();
-            fd.append("file", jd.files[0]); // ✅ correct key
+      const response = await axios.post("/recruiter/parseJD", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-            const response = await axios.post("/recruiter/parseJD", fd, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+      const success = response?.data?.success;
+      const jobData = response?.data?.job_data;
 
-            console.log("FULL RESPONSE:", response.data);
+      if (success && jobData) {
+        notify("success", "JD parsed successfully");
 
-            const success = response?.data?.success;
-            const jobData = response?.data?.job_data;
+        localStorage.setItem("jdOutput", JSON.stringify(response.data));
 
-            if (success && jobData) {
-                notify("success", "JD parsed successfully");
+        // 🔥 send flag to trigger autofill UI
+        navigate("/user/recruiter/new", { state: { fromJD: true } });
+      } else {
+        notify("failed", "Parsing failed");
+      }
+    } catch (err) {
+      console.error(err);
+      notify("failed", err?.response?.data?.message || "Parsing failed");
+    } finally {
+      setProcess(false);
+    }
+  };
 
-                console.log("Parsed output:", jobData);
+  return (
+    <div className="container py-4">
 
-                // ✅ store FULL response (required for next page)
-                localStorage.setItem("jdOutput", JSON.stringify(response.data));
+      <div className="mb-4">
+        <h2 className="fw-bold">Upload Job Description</h2>
+        <p className="text-muted">
+          Upload a JD file to auto-fill job details
+        </p>
+      </div>
 
-                navigate('/user/recruiter/new');
-            } else {
-                notify("failed", "Parsing failed");
-            }
+      <div className="card shadow-sm border-0 rounded-4 p-5 text-center">
 
-        } catch (err) {
-            console.error("Upload Error:", err);
-            notify("failed", err?.response?.data?.message || "Parsing failed");
-        } finally {
-            setProcess(false); // ✅ always stop loader
-        }
-    };
+        <form onSubmit={handleJD}>
 
-    return (
-        <div className='d-flex justify-content-center m-3'>
-            <div
-                className="card container p-4 h-100 shadow-2-strong shadow-sm"
-                style={{ backgroundColor: "#fff" }}
+          <div
+            className="border border-2 border-dashed rounded-4 p-5 mb-4"
+            style={{ cursor: "pointer", background: "#fafafa" }}
+            onClick={() => document.getElementById("jd").click()}
+          >
+            <input
+              type="file"
+              id="jd"
+              accept=".pdf,.txt,.doc,.docx"
+              className="d-none"
+              onChange={(e) =>
+                setFileName(e.target.files[0]?.name || "")
+              }
+            />
+
+            {fileName ? (
+              <>
+                <div className="fs-1 mb-3">✅</div>
+                <h5 className="fw-semibold">{fileName}</h5>
+                <p className="text-muted small">File selected</p>
+              </>
+            ) : (
+              <>
+                <div className="fs-1 mb-3">📄</div>
+                <h5 className="fw-semibold">
+                  Click to upload JD (PDF, TXT, DOC, DOCX)
+                </h5>
+                <p className="text-muted small">
+                  Max size 2MB
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="d-flex justify-content-center gap-3">
+
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => navigate(-1)}
             >
-                <div className='card-body'>
-                    <form onSubmit={handleJD}>
-                        <div className="form-row row mb-4">
+              Back
+            </button>
 
-                            <div className="form-group col-md-9">
-                                <label htmlFor="jd" className="form-label">
-                                    <b>Job Description</b>
-                                    (File should be less than 2 mb and only PDFs are allowed)
-                                </label>
+            <button
+              type="submit"
+              className="btn btn-primary px-4"
+              disabled={process}
+            >
+              {process ? (
+                <span className="spinner-border spinner-border-sm"></span>
+              ) : (
+                "Upload & Parse ⚡"
+              )}
+            </button>
 
-                                <input
-                                    className="form-control mt-lg-4"
-                                    type="file"
-                                    id="jd"
-                                    name="jd"
-                                    accept=".pdf"
-                                />
-                            </div>
+          </div>
 
-                            <div className="form-group col-md-2 mt-4 mt-md-5">
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary m-2"
-                                    style={{ minWidth: "100px" }}
-                                    disabled={process}
-                                >
-                                    {process ? (
-                                        <span
-                                            className="spinner-border spinner-border-sm"
-                                            role="status"
-                                            aria-hidden="true"
-                                        ></span>
-                                    ) : (
-                                        "Upload"
-                                    )}
-                                </button>
-                            </div>
-
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default UploadJD;
