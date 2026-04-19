@@ -119,37 +119,50 @@ const getJobProfile = async (req, res, next) => {
 }
 
 const getStudentProfile = async (req, res, next) => {
-    const { studentId } = req.params;
-    const { id } = req;
-    try {
-        const foundStudent = await Student.findById(studentId)
-            .populate('personal')
-            .populate('contact')
-            .populate('academic')
-            .populate('workExperiences')
-            .populate('projects')
-            .populate('certifications')
-            .select('personal contact academic workExperiences projects certifications resume')
-            .exec();
-        if (!foundStudent) return res.status(404).json({ 'message': 'Student not found' });
+  const { studentId } = req.params;
+  const { id } = req; // recruiter id
 
-        const foundJobs = await Job.find({ recruiter: id }).exec();
-        if (!foundJobs) return res.status(400).json({ 'message': 'Jobs info not found' });
+  try {
+    const foundStudent = await Student.findById(studentId)
+      .populate('personal')
+      .populate('contact')
+      .populate('academic')
+      .populate('workExperiences')
+      .populate('projects')
+      .populate('certifications')
+      .populate('college')
+      .select(
+        'personal contact academic workExperiences projects certifications resume jobsApplied jobsSelected jobsRejected college profile'
+      )
+      .exec();
 
-        const jobIds = foundJobs.map((job) => job._id.toString());
-        const foundAppliedJobs = await AppliedJob.find({ userId: studentId, jobId: { $in: jobIds }, status: 'pending' })
-            .populate('jobId')
-            .exec();
+    if (!foundStudent)
+      return res.status(404).json({ message: 'Student not found' });
 
-        res.json({
-            student: foundStudent,
-            jobs: foundAppliedJobs
-        });
-    }
-    catch (err) {
-        next(err);
-    }
-}
+    const recruiterJobs = await Job.find({ recruiter: id }).select('_id');
+    const jobIds = recruiterJobs.map(j => j._id);
+
+    const applications = await AppliedJob.find({
+      userId: studentId,
+      jobId: { $in: jobIds }
+    })
+      .populate({
+        path: 'jobId',
+        select:
+          'jobTitle companyName location employmentType salaryRange'
+      })
+      .sort({ createdAt: -1 }) // latest first
+      .exec();
+
+    res.json({
+      student: foundStudent,
+      applications: applications
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
 
 const getApplications = async (req, res, next) => {
     const { id } = req;
@@ -265,7 +278,6 @@ const postNewJob = async (req, res, next) => {
     department
   } = req.body;
 
-  // ✅ Required validation
   if (
     !jobTitle ||
     !jobDescription ||
@@ -287,12 +299,10 @@ const postNewJob = async (req, res, next) => {
       return res.status(401).json({ message: 'unauthorized' });
     }
 
-    // ✅ Clean skills (preserve casing)
     const cleanedSkills = (skills || [])
       .map(s => s.trim())
       .filter(Boolean);
 
-    // ✅ Normalized version (for matching/search)
     const normalizedSkills = cleanedSkills.map(s => s.toLowerCase());
 
     await Job.create({
@@ -310,9 +320,8 @@ const postNewJob = async (req, res, next) => {
       role,
       responsibilities,
 
-      // ✅ Store both versions
-      skills: [...new Set(cleanedSkills)],               // UI display
-      skillsNormalized: [...new Set(normalizedSkills)],  // search/matching
+      skills: [...new Set(cleanedSkills)],               
+      skillsNormalized: [...new Set(normalizedSkills)],  
 
       eligibleBatch,
       jobCategory,
@@ -322,7 +331,6 @@ const postNewJob = async (req, res, next) => {
       recruiter: recruiterId
     });
 
-    // 🔔 Notify students
     await Student.updateMany(
       {},
       {
@@ -332,7 +340,6 @@ const postNewJob = async (req, res, next) => {
       }
     ).exec();
 
-    // 🔔 Recruiter notification
     foundRecruiter.notification = [
       ...(foundRecruiter.notification || []),
       `Posted new job for role ${jobTitle}`
@@ -349,7 +356,7 @@ const postNewJob = async (req, res, next) => {
 
 const parseJD = async (req, res, next) => {
     const { id } = req;
-
+    console.log("FILE:", req.file);
     try {
         const foundRecruiter = await Recruiter.findById(id).populate('company').exec();
         if (!foundRecruiter) {
@@ -358,7 +365,7 @@ const parseJD = async (req, res, next) => {
 
         if (!req.file) {
             return res.status(400).json({
-                message: 'Only pdf or docx under 2MB allowed'
+                message: 'File upload failed. Only PDF, DOC, DOCX, TXT under 2MB allowed'
             });
         }
         const filePath = req.file.path;
