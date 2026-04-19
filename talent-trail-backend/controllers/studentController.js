@@ -558,44 +558,70 @@ const postPersonal = async (req, res, next) => {
 }
 
 const postProject = async (req, res, next) => {
-    const { name, startDate, endDate, description, associated } = req.body;
-    if (!name || !startDate || !description || !associated) return res.status(400).json({ 'message': 'All fields required' });
+    let { name, startDate, endDate, description, associated, githubLink } = req.body;
+
+    // ✅ Required validation
+    if (!name || !startDate || !description || !associated) {
+        return res.status(400).json({ message: "All fields required" });
+    }
+
+    // ✅ Allowed associated values
+    const allowed = ["self", "college", "work"];
+    if (!allowed.includes(associated)) {
+        return res.status(400).json({ message: "Invalid associated type" });
+    }
+
+    // ✅ Normalize "Present"
+    let currentlyWorking = false;
+
+    if (endDate === "Present") {
+        currentlyWorking = true;
+        endDate = null;
+    }
+
+    // ✅ Date validation (optional but important)
+    if (endDate && new Date(endDate) < new Date(startDate)) {
+        return res.status(400).json({ message: "End date cannot be before start date" });
+    }
+
+    // ✅ Normalize github link
+    if (githubLink && !githubLink.startsWith("http")) {
+        githubLink = "https://" + githubLink;
+    }
 
     const { id } = req;
+
     try {
         const foundStudent = await Student.findById(id).exec();
-        if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
-
-        let query;
-        if (!endDate) {
-            query = await Project.create({
-                name,
-                startDate,
-                description,
-                associated,
-                userId: id
-            });
-        } else {
-            query = await Project.create({
-                name,
-                startDate,
-                description,
-                associated,
-                endDate,
-                currentlyWorking: false,
-                userId: id
-            });
+        if (!foundStudent) {
+            return res.status(401).json({ message: "unauthorized" });
         }
+
+        const projectData = {
+            name,
+            startDate,
+            description,
+            associated,
+            githubLink: githubLink || null,
+            currentlyWorking,
+            userId: id,
+        };
+
+        if (!currentlyWorking && endDate) {
+            projectData.endDate = endDate;
+        }
+
+        const query = await Project.create(projectData);
 
         foundStudent.projects = [query._id, ...foundStudent.projects];
         await foundStudent.save();
 
-        res.status(201).json({ 'success': 'Projects info added' });
-    }
-    catch (err) {
+        res.status(201).json({ success: "Project info added" });
+
+    } catch (err) {
         next(err);
     }
-}
+};
 
 const postWork = async (req, res, next) => {
     const { organization, role, description, startDate, endDate } = req.body;

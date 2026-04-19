@@ -28,7 +28,7 @@ const StudentJobProfile = () => {
       const res = await axios.post("/student/application", { jobId: id });
       if (res?.data?.success) {
         notify("success", res.data.success);
-        navigate('/student/applied');
+        navigate('/user/student/applied');
       }
     } catch (err) {
       notify("failed", err?.response?.data?.message);

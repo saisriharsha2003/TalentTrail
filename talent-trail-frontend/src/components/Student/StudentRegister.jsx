@@ -111,7 +111,9 @@ const StudentRegister = () => {
     description: "",
     startDate: "",
     endDate: "",
-    associated: "Self",
+    associated: "self",
+    githubLink: "",
+    currentlyWorking: false,
   });
   const [newExp, setNewExp] = useState({
     company: "",
@@ -289,8 +291,11 @@ const StudentRegister = () => {
             startDate:
               formatDate(proj.startDate || proj.start_date) ||
               new Date().toISOString().split("T")[0], // Ensure startDate is sent
-            endDate: formatDate(proj.endDate || proj.end_date) || null,
-            associated: proj.associated || "Self",
+            endDate: proj.currentlyWorking
+              ? "Present"
+              : formatDate(proj.endDate || proj.end_date) || null,
+            associated: proj.associated || "self",
+            githubLink: proj.githubLink || null,
             currentlyWorking: !(proj.endDate || proj.end_date),
           });
         }
@@ -308,7 +313,6 @@ const StudentRegister = () => {
           });
         }
       }
-      // Certifications
       for (let cert of certifications) {
         if (cert.name) {
           await axios.post("/student/certification", {
@@ -1004,102 +1008,233 @@ const StudentRegister = () => {
                 Experience
               </h4>
 
-              {/* ================= PROJECTS ================= */}
-              <div className="mb-5">
-                <h5 className="section-title">🚀 Projects</h5>
+             {/* ================= PROJECTS ================= */}
+<div className="mb-5">
+  <h5 className="section-title">🚀 Projects</h5>
 
-                {projects.map((proj, idx) => (
-                  <div key={idx} className="clean-card">
-                    <div className="card-header-row">
-                      <h6 className="card-title">
-                        {proj.name || "New Project"}
-                      </h6>
+  {projects.map((proj, idx) => (
+    <div key={idx} className="project-card-pro">
 
-                      <div className="card-actions">
-                        <button
-                          type="button"
-                          onClick={() => setEditingProjIndex(idx)}
-                          className="icon-btn"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeItem(projects, setProjects, idx)}
-                          className="icon-btn delete"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
+      {/* HEADER */}
+      <div className="project-header">
+        <div>
+          <h6 className="project-title">
+            {proj.name || "Untitled Project"}
+          </h6>
 
-                    {editingProjIndex === idx ? (
-                      <>
-                        <label className="form-label">📌 Project Name</label>
-                        <input
-                          className="clean-input"
-                          placeholder="Enter project name"
-                          value={proj.name}
-                          onChange={(e) => {
-                            const updated = [...projects];
-                            updated[idx].name = e.target.value;
-                            setProjects(updated);
-                          }}
-                        />
+          <div className="project-tags">
+            <span className="project-badge">
+              {proj.associated === "self"
+                ? "Self"
+                : proj.associated === "college"
+                ? "College"
+                : "Work"}
+            </span>
 
-                        <label className="form-label">📝 Description</label>
-                        <textarea
-                          className="clean-input"
-                          placeholder="Describe your project"
-                          value={proj.description}
-                          onChange={(e) => {
-                            const updated = [...projects];
-                            updated[idx].description = e.target.value;
-                            setProjects(updated);
-                          }}
-                        />
+            {(proj.startDate || proj.endDate) && (
+              <span className="project-date">
+                📅 {proj.startDate || ""}
+                {proj.startDate &&
+                  (proj.endDate || proj.currentlyWorking) &&
+                  " — "}
+                {proj.currentlyWorking
+                  ? "Present"
+                  : proj.endDate || ""}
+              </span>
+            )}
+          </div>
+        </div>
 
-                        <div className="d-flex gap-2 mt-3">
-                          <button
-                            type="button"
-                            className="btn-save"
-                            onClick={() => setEditingProjIndex(null)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-cancel"
-                            onClick={() => {
-                              if (!proj.name && !proj.description) {
-                                removeItem(projects, setProjects, idx);
-                              }
-                              setEditingProjIndex(null);
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="card-desc">{proj.description}</p>
-                    )}
-                  </div>
-                ))}
+        <div className="card-actions">
+          <button
+            type="button"
+            onClick={() => setEditingProjIndex(idx)}
+            className="icon-btn"
+          >
+            ✏️
+          </button>
+          <button
+            type="button"
+            onClick={() => removeItem(projects, setProjects, idx)}
+            className="icon-btn delete"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
 
-                <button
-                  type="button"
-                  className="btn-add"
-                  onClick={() => {
-                    const newItem = { name: "", description: "" };
-                    setProjects([...projects, newItem]);
-                    setEditingProjIndex(projects.length);
-                  }}
-                >
-                  + Add Project
+      {/* EDIT MODE */}
+      {editingProjIndex === idx ? (
+        <>
+          <label className="form-label">Project Name</label>
+          <input
+            className="clean-input"
+            value={proj.name}
+            onChange={(e) => {
+              const updated = [...projects];
+              updated[idx].name = e.target.value;
+              setProjects(updated);
+            }}
+          />
+
+          <label className="form-label">Description</label>
+          <textarea
+            className="clean-input"
+            value={proj.description}
+            onChange={(e) => {
+              const updated = [...projects];
+              updated[idx].description = e.target.value;
+              setProjects(updated);
+            }}
+          />
+
+          <div className="row g-2 mt-2">
+            <div className="col-md-6">
+              <label className="form-label">Start Date</label>
+              <input
+                type="date"
+                className="clean-input"
+                value={proj.startDate || ""}
+                onChange={(e) => {
+                  const updated = [...projects];
+                  updated[idx].startDate = e.target.value;
+                  setProjects(updated);
+                }}
+              />
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">End Date</label>
+              <input
+                type="date"
+                className="clean-input"
+                disabled={proj.currentlyWorking}
+                value={proj.currentlyWorking ? "" : proj.endDate || ""}
+                onChange={(e) => {
+                  const updated = [...projects];
+                  updated[idx].endDate = e.target.value;
+                  setProjects(updated);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="form-check mt-2">
+            <input
+              type="checkbox"
+              className="form-check-input"
+              checked={proj.currentlyWorking || false}
+              onChange={(e) => {
+                const updated = [...projects];
+                updated[idx].currentlyWorking = e.target.checked;
+                if (e.target.checked) updated[idx].endDate = "";
+                setProjects(updated);
+              }}
+            />
+            <label className="form-check-label">
+              Currently Working
+            </label>
+          </div>
+
+          <label className="form-label mt-2">Associated With</label>
+          <select
+            className="clean-input"
+            value={proj.associated || "self"}
+            onChange={(e) => {
+              const updated = [...projects];
+              updated[idx].associated = e.target.value;
+              setProjects(updated);
+            }}
+          >
+            <option value="self">Self</option>
+            <option value="college">College</option>
+            <option value="work">Work</option>
+          </select>
+
+          <label className="form-label mt-2">GitHub Link</label>
+          <input
+            className="clean-input"
+            value={proj.githubLink || ""}
+            onChange={(e) => {
+              const updated = [...projects];
+              updated[idx].githubLink = e.target.value;
+              setProjects(updated);
+            }}
+          />
+
+          <div className="d-flex gap-2 mt-3">
+            <button
+              type="button"
+              className="btn-save"
+              onClick={() => setEditingProjIndex(null)}
+            >
+              Save
+            </button>
+
+            <button
+              type="button"
+              className="btn-cancel"
+              onClick={() => {
+                if (!proj.name && !proj.description) {
+                  removeItem(projects, setProjects, idx);
+                }
+                setEditingProjIndex(null);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* DESCRIPTION */}
+          <p className="project-description">
+            {proj.description}
+          </p>
+
+          {/* ACTION */}
+          {proj.githubLink && (
+            <div className="project-footer">
+              <a
+                href={
+                  proj.githubLink.startsWith("http")
+                    ? proj.githubLink
+                    : `https://${proj.githubLink}`
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                <button className="btn-view-code">
+                  🔗 View Code
                 </button>
-              </div>
+              </a>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  ))}
 
+  <button
+    type="button"
+    className="btn-add"
+    onClick={() => {
+      const newItem = {
+        name: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        associated: "self",
+        githubLink: "",
+        currentlyWorking: false,
+      };
+      setProjects([...projects, newItem]);
+      setEditingProjIndex(projects.length);
+    }}
+  >
+    + Add Project
+  </button>
+</div>
               {/* ================= EXPERIENCE ================= */}
               <div className="mb-4">
                 <h5 className="section-title">💼 Work Experience</h5>

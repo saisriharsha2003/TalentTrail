@@ -407,3 +407,78 @@ html {
   padding: 6px 12px;
   border-radius: 8px;
 }
+
+.project-card-pro {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  border: 1px solid #e5e7eb;
+  transition: 0.25s ease;
+}
+
+.project-card-pro:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.project-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.project-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.project-badge {
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.project-date {
+  background: #f3f4f6;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.project-description {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.project-footer {
+  margin-top: 12px;
+}
+
+.btn-view-code {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-view-code:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(37,99,235,0.3);
+}

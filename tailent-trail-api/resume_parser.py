@@ -194,6 +194,7 @@ def resume_ner_gpt(file_path):
         "start_date": null,
         "end_date": null,
         "associated": null,
+        "github_link": null,
         "currently_working": false
         }}
     ],

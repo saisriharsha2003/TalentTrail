@@ -29,6 +29,10 @@ const projectSchema = new Schema({
         type: Schema.Types.ObjectId,
         required: true,
         ref: 'Student'
+    },
+    githubLink: {
+        type: String,
+        required: true
     }
 });
 
