@@ -20,9 +20,13 @@ const UploadResume = () => {
         try {
             const fd = new FormData();
             fd.append("resume", resumeFile);
-    
+
+            await axios.post("/student/resume", fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+            });
+
             const response = await axios.post("/student/parseResume", fd, {
-                headers: { "Content-Type": "multipart/form-data" },
+            headers: { "Content-Type": "multipart/form-data" },
             });
     
             const success = response?.data?.success;
