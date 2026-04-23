@@ -1,205 +1,255 @@
-import React, { useEffect, useState } from 'react';
-import useAxiosPrivate from '../../hooks/useAxiosPrivate';
-import { notify } from '../Toast';
-import '../../assets/styles/dash.css'
-import { useNavigate } from 'react-router-dom';
-import { Chart as ChartJs, defaults } from 'chart.js/auto'
-import { Bar, Doughnut, PolarArea } from 'react-chartjs-2'
+import React, { useEffect, useState } from "react";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import "../../assets/styles/dash.css";
+import { notify } from "../Toast";
+import { Chart as ChartJs, defaults } from "chart.js/auto";
+import { Bar, Doughnut } from "react-chartjs-2";
+import { useNavigate } from "react-router-dom";
 
 const RecruiterDashboard = () => {
-    const [posted, setPosted] = useState(0);
-    const [applicantsSelected, setApplicantsSelected] = useState(0);
-    const [applicantsRejected, setApplicantsRejected] = useState(0);
-    const [applicants, setApplicants] = useState(0);
-    const [username, setUsername] = useState('');
-    const [profile, setProfile] = useState('');
+  const [posted, setPosted] = useState(0);
+  const [applicantsSelected, setApplicantsSelected] = useState(0);
+  const [applicantsRejected, setApplicantsRejected] = useState(0);
+  const [applicants, setApplicants] = useState(0);
+  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [profile, setProfile] = useState("");
 
-    const navigate = useNavigate();
-    const axios = useAxiosPrivate();
-    defaults.responsive = true;
+  const navigate = useNavigate();
+  const axios = useAxiosPrivate();
 
-    const bufferToBase64 = (bufferArray) => {
-        const chunkSize = 100000;
-        let base64String = '';
+  defaults.responsive = true;
 
-        for (let i = 0; i < bufferArray.length; i += chunkSize) {
-            const chunk = bufferArray.slice(i, i + chunkSize);
-            base64String += String.fromCharCode.apply(null, chunk);
+  useEffect(() => {
+    const fetchRecruiter = async () => {
+      try {
+        const response = await axios.get("/recruiter");
+        const recruiter = response?.data;
+
+        setPosted(recruiter?.posted || 0);
+        setApplicants(recruiter?.applicants || 0);
+        setApplicantsSelected(recruiter?.selected || 0);
+        setApplicantsRejected(recruiter?.rejected || 0);
+        setUsername(recruiter?.username || "");
+        setName(recruiter?.name || "");
+
+        if (recruiter?.profile) {
+          setProfile(`data:image/jpeg;base64,${recruiter.profile}`);
         }
-
-        return btoa(base64String);
-    }
-
-    useEffect(() => {
-        const fetchRecruiter = async () => {
-            try {
-                const response = await axios.get('/recruiter');
-                const recruiter = response?.data;
-
-                // ✅ Correct mapping
-                setPosted(recruiter?.posted || 0);
-                setApplicants(recruiter?.applicants || 0);
-                setApplicantsSelected(recruiter?.selected || 0);
-                setApplicantsRejected(recruiter?.rejected || 0);
-                setUsername(recruiter?.username || '');
-
-                if (recruiter?.profile)
-                    setProfile(`data:image/jpeg;base64,${bufferToBase64(recruiter?.profile?.data)}`);
-
-            } catch (err) {
-                notify('failed', err?.response?.data?.message);
-            }
-        }
-        fetchRecruiter();
-    }, [axios]);
-
-
-    const barChartData = {
-        labels: ['Applicants', 'Selected', 'Rejected'],
-        datasets: [
-            {
-                label: 'Candidates',
-                backgroundColor: [
-                    'rgba(99, 102, 241, 0.8)',
-                    'rgba(34, 197, 94, 0.8)',
-                    'rgba(239, 68, 68, 0.8)'
-                ],
-                borderWidth: 1,
-                data: [applicants, applicantsSelected, applicantsRejected]
-            }
-        ]
+      } catch (err) {
+        notify("failed", err?.response?.data?.message);
+      }
     };
 
-    const doughnutChartData = {
-        labels: ['Selected', 'Rejected', 'Remaining'],
-        datasets: [
-            {
-                label: 'Distribution',
-                backgroundColor: [
-                    'rgba(34, 197, 94, 0.8)',
-                    'rgba(239, 68, 68, 0.8)',
-                    'rgba(59, 130, 246, 0.8)'
-                ],
-                data: [
-                    applicantsSelected,
-                    applicantsRejected,
-                    Math.max(applicants - applicantsSelected - applicantsRejected, 0)
-                ]
-            }
-        ]
-    };
+    fetchRecruiter();
+  }, [axios]);
 
-    const chartOptions = {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-            },
-        },
-        aspectRatio: 1.3,
-    };
+  const barChartData = {
+    labels: ["Posted", "Applicants", "Selected", "Rejected"],
+    datasets: [
+      {
+        label: "Count",
+        backgroundColor: [
+          "rgba(99, 102, 241, 0.8)",
+          "rgba(59, 130, 246, 0.8)",
+          "rgba(34, 197, 94, 0.8)",
+          "rgba(239, 68, 68, 0.8)",
+        ],
+        borderWidth: 1,
+        data: [posted, applicants, applicantsSelected, applicantsRejected],
+      },
+    ],
+  };
 
-    return (
-        <>
-            <div className='d-flex flex-column ml-3'>
+  const doughnutChartData = {
+    labels: ["Selected", "Rejected"],
+    datasets: [
+      {
+        label: "Count",
+        backgroundColor: [
+          "rgba(34, 197, 94, 0.8)",
+          "rgba(239, 68, 68, 0.8)",
+        ],
+        borderWidth: 1,
+        data: [applicantsSelected, applicantsRejected],
+      },
+    ],
+  };
 
-                <div className="welcome-container my-5 mb-4 px-0 mx-0">
-                    <div className="welcome-content d-flex flex-row justify-content-center align-items-center p-3 shadow">
-                        <div className="profile-container pe-3">
-                            {profile ? (
-                                <img className="profile-image mx-auto d-block" src={profile} height={'125'} alt='' />
-                            ) : (
-                                <svg width="125" height="125" fill="#0f172a" viewBox="0 0 16 16">
-                                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
-                                    <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8" />
-                                </svg>
-                            )}
-                        </div>
-                        <div className="welcome-message text-center">
-                            <h2 className="welcome-title">Welcome back, {username}</h2>
-                        </div>
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: "top" },
+    },
+    aspectRatio: 1.3,
+  };
+
+  return (
+    <div className="container-fluid py-4 bg-light min-vh-100">
+
+        {/* 🔷 HEADER */}
+        <div className="row mb-4">
+            <div className="col-12">
+            <div
+                className="card border-0 rounded-4 overflow-hidden"
+                style={{
+                background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                boxShadow: "0 10px 40px rgba(37, 99, 235, 0.4)",
+                backdropFilter: "blur(10px)",
+                }}
+            >
+                <div className="card-body p-4 d-flex align-items-center text-white">
+
+                <div
+                    style={{
+                    width: "130px",
+                    height: "140px",
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: "4px solid rgba(255,255,255,0.5)",
+                    boxShadow:
+                        "0 0 0 4px rgba(255,255,255,0.2), 0 8px 30px rgba(0,0,0,0.3)",
+                    backgroundColor: "#fff",
+                    marginRight: "20px",
+                    }}
+                >
+                    {profile ? (
+                    <img
+                        src={profile}
+                        alt="Profile"
+                        style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center top",
+                        }}
+                    />
+                    ) : (
+                    <div className="d-flex justify-content-center align-items-center h-100">
+                        <i className="bi bi-person-circle text-secondary fs-1"></i>
                     </div>
+                    )}
                 </div>
 
-                <div className='d-flex justify-content-center align-items-center m-3'>
-                    <div className='row'>
-
-                        <StatCard
-                            title="📄 Jobs Posted"
-                            value={posted}
-                            color="#3b82f6"
-                            onClick={() => navigate('/user/recruiter/posted')}
-                        />
-
-                        <StatCard
-                            title="👥 Total Applicants"
-                            value={applicants}
-                            color="#8b5cf6"
-                            onClick={() => navigate('/user/recruiter/applications')}
-                        />
-
-                        <StatCard
-                            title="✅ Selected"
-                            value={applicantsSelected}
-                            color="#22c55e"
-                        />
-
-                        <StatCard
-                            title="❌ Rejected"
-                            value={applicantsRejected}
-                            color="#ef4444"
-                        />
-
-                    </div>
+                {/* Text */}
+                <div>
+                    <h2 className="fw-bold mb-1">
+                    Welcome back, {name}! 👋
+                    </h2>
+                    <p className="mb-0 opacity-75">
+                    Manage your hiring and track applicants efficiently.
+                    </p>
                 </div>
-
-                <div className='row mx-2 mb-5'>
-
-                    <div className='col-md-6 col-sm-12'>
-                        <div className='card m-4 shadow-sm'>
-                            <div className="card-body px-4 py-2">
-                                <h2 className="card-title mt-2 mb-3">Candidate Analytics</h2>
-                                <Bar data={barChartData} options={chartOptions} />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className='col-md-6 col-sm-12'>
-                        <div className='card m-4 shadow-sm'>
-                            <div className="card-body px-4 py-2">
-                                <h2 className="card-title mt-2 mb-3">Selection Breakdown</h2>
-                                <Doughnut data={doughnutChartData} options={chartOptions} />
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
-
             </div>
-        </>
-    )
-}
-
-/* 🔥 REUSABLE STAT CARD */
-
-const StatCard = ({ title, value, color, onClick }) => (
-    <div className='col-md-6 col-sm-12'>
-        <div
-            className="card m-3 shadow"
-            style={{ cursor: onClick ? "pointer" : "default" }}
-            onClick={onClick}
-        >
-            <div className="card-body">
-                <h5 className="card-title">{title}</h5>
-                <h3 style={{ color }}>{value}</h3>
             </div>
         </div>
+
+      {/* 🔷 STATS */}
+      <div className="row g-4 mb-4">
+        {[
+          {
+            label: "Jobs Posted",
+            value: posted,
+            color: "#4f46e5",
+            icon: "bi-briefcase",
+            path: "/user/recruiter/posted",
+          },
+          {
+            label: "Total Applicants",
+            value: applicants,
+            color: "#3b82f6",
+            icon: "bi-people",
+            path: "/user/recruiter/applications",
+          },
+          {
+            label: "Selected",
+            value: applicantsSelected,
+            color: "#10b981",
+            icon: "bi-check-circle",
+          },
+          {
+            label: "Rejected",
+            value: applicantsRejected,
+            color: "#ef4444",
+            icon: "bi-x-circle",
+          },
+        ].map((stat, i) => (
+          <div key={i} className="col-md-6 col-lg-3">
+            <div
+              className="card border-0 rounded-4 h-100"
+              onClick={() => stat.path && navigate(stat.path)}
+              style={{
+                cursor: stat.path ? "pointer" : "default",
+                transition: "all 0.3s ease",
+                boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "translateY(-5px)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
+            >
+              <div className="card-body p-4">
+                <div className="d-flex justify-content-between mb-3">
+                  <div
+                    className="rounded-3 p-3"
+                    style={{
+                      backgroundColor: `${stat.color}15`,
+                      color: stat.color,
+                    }}
+                  >
+                    <i className={`bi ${stat.icon} fs-4`}></i>
+                  </div>
+                </div>
+                <h3 className="fw-bold">{stat.value}</h3>
+                <p className="text-muted">{stat.label}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 🔷 CHARTS */}
+      <div className="row g-4">
+        <div className="col-lg-7">
+          <div
+            className="card border-0 rounded-4 h-100"
+            style={{ boxShadow: "0 6px 20px rgba(0,0,0,0.08)" }}
+          >
+            <div className="card-body p-4">
+              <h5 className="fw-bold mb-4">
+                <i className="bi bi-bar-chart-fill text-primary me-2"></i>
+                Hiring Overview
+              </h5>
+              <div style={{ height: "350px" }}>
+                <Bar data={barChartData} options={chartOptions} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-lg-5">
+          <div
+            className="card border-0 rounded-4 h-100"
+            style={{ boxShadow: "0 6px 20px rgba(0,0,0,0.08)" }}
+          >
+            <div className="card-body p-4">
+              <h5 className="fw-bold mb-4">
+                <i className="bi bi-pie-chart-fill text-warning me-2"></i>
+                Selection Status
+              </h5>
+              <div style={{ height: "350px" }}>
+                <Doughnut data={doughnutChartData} options={chartOptions} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
-);
+  );
+};
 
 export default RecruiterDashboard;
