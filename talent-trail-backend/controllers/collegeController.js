@@ -28,7 +28,8 @@ const getDashboard = async (req, res, next) => {
             upcomingDrives: foundUpcomingDrives.length,
             registeredCompanies: foundRegisteredRecruiters.length,
             profile: foundProfile.logo,
-            username: foundCollege.username
+            username: foundCollege.username,
+            institution_name: foundCollege.institution.name,
         })
     }
     catch (err) {
