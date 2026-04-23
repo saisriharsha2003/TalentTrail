@@ -13,12 +13,13 @@ const StudentDashboard = () => {
   const [jobsRejected, setJobsRejected] = useState(0);
   const [openings, setOpenings] = useState();
   const [username, setUsername] = useState();
+  const [name, setName] = useState();
   const [profile, setProfile] = useState("");
   const [jobs, setJobs] = useState([]);
   const [errorMsg, setErrorMsg] = useState("");
-  let jobre = 0;
-  let jobse = 0;
   const navigate = useNavigate();
+
+  const axios = useAxiosPrivate();
 
   useEffect(() => {
     if (errorMsg) {
@@ -27,71 +28,53 @@ const StudentDashboard = () => {
   }, [errorMsg]);
 
   defaults.responsive = true;
-  const bufferToBase64 = (bufferArray) => {
-    const chunkSize = 100000;
-    let base64String = "";
-
-    for (let i = 0; i < bufferArray.length; i += chunkSize) {
-      const chunk = bufferArray.slice(i, i + chunkSize);
-      base64String += String.fromCharCode.apply(null, chunk);
-    }
-
-    return btoa(base64String);
-  };
-
-  const axios = useAxiosPrivate();
 
   useEffect(() => {
-    const fetchStudent = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const response = await axios.get("/student");
+        const [studentRes, jobsRes, appliedRes] = await Promise.all([
+          axios.get("/student"),
+          axios.get("/student/jobs"),
+          axios.get("/student/applied"),
+        ]);
 
-        const student = response?.data;
-        // setJobsApplied(student?.jobsApplied || 0);
-        // setJobsRejected(student?.jobsRejected || 0);
-        // setJobsSelected(student?.jobsSelected || 0);
-        // setOpenings(student?.openings || 0);
-        setUsername(student?._doc?.username || "");
-        if (student?.profile)
-          setProfile(
-            `data:image/jpeg;base64,${bufferToBase64(student?.profile?.data)}`,
-          );
-      } catch (err) {
-        notify("failed", err?.response?.data?.message);
-      }
-    };
-    fetchStudent();
-    const fetchOpenings = async () => {
-      try {
-        const response = await axios.get("/student/jobs");
-        const jobs = response?.data;
+        // 🔹 Student Data
+        const student = studentRes?.data;
+        console.log("STUDENT:", student);
+
+        setUsername(student?.username || "");
+        setName(student?.personal?.fullName || "");
+
+        if (student?.profile) {
+          setProfile(`data:image/jpeg;base64,${student.profile}`);
+        }
+
+        // 🔹 Jobs (Openings)
+        const jobs = jobsRes?.data || [];
         setOpenings(jobs.length);
         setJobs(jobs);
-      } catch (err) {
-        notify("failed", err?.response?.data?.message);
-      }
-    };
-    fetchOpenings();
 
-    const fetchApplied = async () => {
-      try {
-        const response = await axios.get("/student/applied");
-        const appliedJobs = response?.data;
-        console.log(appliedJobs);
+        // 🔹 Applied Jobs
+        const appliedJobs = appliedRes?.data || [];
         setJobsApplied(appliedJobs.length);
-        const selectJobs = await appliedJobs.filter((job) =>
-          job.status.toLowerCase().includes("selected"),
+
+        const selectedJobs = appliedJobs.filter((job) =>
+          job.status?.toLowerCase().includes("selected")
         );
-        setJobsSelected(selectJobs.length);
-        const rejectedJobs = await appliedJobs.filter((job) =>
-          job.status.toLowerCase().includes("rejected"),
+
+        const rejectedJobs = appliedJobs.filter((job) =>
+          job.status?.toLowerCase().includes("rejected")
         );
+
+        setJobsSelected(selectedJobs.length);
         setJobsRejected(rejectedJobs.length);
+
       } catch (err) {
-        notify("failed", err?.response?.data?.message);
+        notify("failed", err?.response?.data?.message || "Something went wrong");
       }
     };
-    fetchApplied();
+
+    fetchDashboardData();
   }, [axios]);
 
   const barChartData = {
@@ -133,7 +116,10 @@ const StudentDashboard = () => {
           "rgba(153, 102, 255, 0.8)",
           "rgba(255, 159, 64, 0.8)",
         ],
-        borderColor: ["rgba(153, 102, 255, 0.7)", "rgba(255, 159, 64, 0.7)"],
+        borderColor: [
+          "rgba(153, 102, 255, 0.7)",
+          "rgba(255, 159, 64, 0.7)",
+        ],
         borderWidth: 1,
         hoverBackgroundColor: [
           "rgba(153, 102, 255, 1)",
@@ -146,7 +132,6 @@ const StudentDashboard = () => {
   };
 
   const barChartOptions = {
-    // maintainAspectRatio: false, // Disable aspect ratio so you can control width and height independently
     responsive: true,
     plugins: {
       legend: {
@@ -159,14 +144,9 @@ const StudentDashboard = () => {
       },
     },
     aspectRatio: 1.3,
-    // Adjust width and height as needed
-    // width: 600,
-    // height: 600,
   };
 
-  // For the Doughnut chart
   const doughnutChartOptions = {
-    // maintainAspectRatio: false, // Disable aspect ratio so you can control width and height independently
     responsive: true,
     plugins: {
       legend: {
@@ -174,9 +154,6 @@ const StudentDashboard = () => {
       },
     },
     aspectRatio: 1.3,
-    // Adjust width and height as needed
-    // width: 600,
-    // height: 600,
   };
 
   return (
@@ -191,27 +168,38 @@ const StudentDashboard = () => {
             }}
           >
             <div className="card-body p-4 d-flex align-items-center text-white">
-              <div className="me-4 profile-container">
-                {profile ? (
-                  <img
-                    src={profile}
-                    className="rounded-circle border border-4 border-white-50 shadow"
-                    height="100"
-                    width="100"
-                    style={{ objectFit: "cover" }}
-                    alt="Profile"
-                  />
-                ) : (
-                  <div
-                    className="bg-white-50 rounded-circle d-flex align-items-center justify-content-center"
-                    style={{ width: "100px", height: "100px" }}
-                  >
-                    <i className="bi bi-person-circle fs-1 text-white"></i>
-                  </div>
-                )}
-              </div>
+              <div
+                    style={{
+                    width: "130px",
+                    height: "140px",
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: "4px solid rgba(255,255,255,0.5)",
+                    boxShadow:
+                        "0 0 0 4px rgba(255,255,255,0.2), 0 8px 30px rgba(0,0,0,0.3)",
+                    backgroundColor: "#fff",
+                    marginRight: "20px",
+                    }}
+                >
+                    {profile ? (
+                    <img
+                        src={profile}
+                        alt="Profile"
+                        style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center top",
+                        }}
+                    />
+                    ) : (
+                    <div className="d-flex justify-content-center align-items-center h-100">
+                        <i className="bi bi-person-circle text-secondary fs-1"></i>
+                    </div>
+                    )}
+                </div>
               <div>
-                <h2 className="fw-bold mb-1">Welcome back, {username}! 👋</h2>
+                <h2 className="fw-bold mb-1">Welcome back, {name}! 👋</h2>
                 <p className="mb-0 opacity-75">
                   Your career journey starts here. Explore new opportunities.
                 </p>
