@@ -11,6 +11,7 @@ const AdminDashboard = () => {
     const [students, setStudents] = useState();
     const [recruiters, setRecruiters] = useState();
     const [username, setUsername] = useState();
+    const [name, setName] = useState();
     const [profile, setProfile] = useState('');
 
     const bufferToBase64 = (bufferArray) => {
@@ -39,6 +40,7 @@ const AdminDashboard = () => {
                 setStudents(admin?.students || 0);
                 setRecruiters(admin?.recruiters || 0);
                 setUsername(admin?.username || '');
+                setName(admin?.name || '');
                 if (admin?.profile)
                     setProfile(`data:image/jpeg;base64,${bufferToBase64(admin?.profile?.data)}`);
 
@@ -90,7 +92,6 @@ const AdminDashboard = () => {
     };
 
     const barChartOptions = {
-        // maintainAspectRatio: false, // Disable aspect ratio so you can control width and height independently
         responsive: true,
         plugins: {
             legend: {
@@ -103,14 +104,10 @@ const AdminDashboard = () => {
             },
         },
         aspectRatio: 1.3,
-        // Adjust width and height as needed
-        // width: 600,
-        // height: 600,
+        
     };
 
-    // For the Doughnut chart
     const doughnutChartOptions = {
-        // maintainAspectRatio: false, // Disable aspect ratio so you can control width and height independently
         responsive: true,
         plugins: {
             legend: {
@@ -118,9 +115,7 @@ const AdminDashboard = () => {
             },
         },
         aspectRatio: 1.3,
-        // Adjust width and height as needed
-        // width: 600,
-        // height: 600,
+       
     };
 
     return (
@@ -140,7 +135,7 @@ const AdminDashboard = () => {
                             )}
                         </div>
                         <div className="welcome-message text-center"> {/* Add text-center class */}
-                            <h2 className="welcome-title">Welcome back, {username}</h2>
+                            <h2 className="welcome-title">Welcome back, {name}</h2>
                 
                         </div>
                     </div>
