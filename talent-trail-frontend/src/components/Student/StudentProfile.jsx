@@ -29,7 +29,6 @@ const StudentProfile = () => {
     return btoa(base64String);
   };
   const formatMonthYear = (date) => {
-    // If no date OR "Present" → use current date
     if (!date || date === "Present") {
       const now = new Date();
       return now.toLocaleString("en-US", {
@@ -40,7 +39,6 @@ const StudentProfile = () => {
 
     const d = new Date(date);
 
-    // Handle invalid date safely
     if (isNaN(d.getTime())) {
       const now = new Date();
       return now.toLocaleString("en-US", {
@@ -54,6 +52,7 @@ const StudentProfile = () => {
       year: "numeric",
     });
   };
+
   const currentDefault = {
     college: "",
     collegeId: "",
@@ -127,6 +126,17 @@ const StudentProfile = () => {
   const [selectedCollegeCourses, setSelectedCollegeCourses] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const sortedWorks = [...works].sort((a, b) => {
+    const getTime = (item) => {
+      if (!item.endDate || item.endDate === "Present") {
+        return Number.MAX_SAFE_INTEGER;
+      }
+
+      return new Date(item.endDate).getTime();
+    };
+
+    return getTime(b) - getTime(a);
+  });
   useEffect(() => {
     const fetchColleges = async () => {
       try {
@@ -250,10 +260,26 @@ const StudentProfile = () => {
   const handleAddCert = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("/student/certification", newCert);
-      notify("success", "Certification added");
-      setNewCert(certificationDefault);
+      if (editingCertId) {
+        await axios.put("/student/certification", {
+          ...newCert,
+          cId: editingCertId,
+        });
+        notify("success", "Certification updated");
+      } else {
+        await axios.post("/student/certification", newCert);
+        notify("success", "Certification added");
+      }
+
+      // reset
+      setNewCert({ name: "", organization: "" });
+      setEditingCertId(null);
       fetchStudent();
+
+      // close modal
+      const modalEl = document.getElementById("certModal");
+      const modal = window.bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
     } catch (err) {
       notify("failed", err?.response?.data?.message);
     }
@@ -435,6 +461,15 @@ const StudentProfile = () => {
     }
   };
 
+  const formatToInputDate = (date) => {
+    if (!date) return new Date().toISOString().split("T")[0];
+
+    const d = new Date(date);
+
+    if (isNaN(d)) return new Date().toISOString().split("T")[0];
+
+    return d.toISOString().split("T")[0];
+  };
   return (
     <div className="container-fluid py-4 bg-light min-vh-100">
       <div className="mx-auto" style={{ width: "95%" }}>
@@ -897,7 +932,6 @@ const StudentProfile = () => {
             <div className="row g-4">
               <div className="col-12">
                 <div className="card shadow-sm border-0 rounded-4 p-4">
-                  {/* Header */}
                   <h5 className="fw-bold mb-4 text-success d-flex justify-content-between align-items-center">
                     <span>
                       <i className="bi bi-briefcase-fill me-2"></i>Work
@@ -917,7 +951,6 @@ const StudentProfile = () => {
                     </button>
                   </h5>
 
-                  {/* Empty State */}
                   {works.length === 0 ? (
                     <div className="text-center text-muted py-5">
                       <i className="bi bi-briefcase fs-1 d-block mb-2"></i>
@@ -925,19 +958,18 @@ const StudentProfile = () => {
                     </div>
                   ) : (
                     <div className="row g-3">
-                      {works.map((work, idx) => (
-                        <div key={idx} className="col-12">
+                      {sortedWorks.map((work, idx) => (
+                        <div key={work._id} className="col-12">
                           <div className="card border-0 shadow-sm rounded-4 p-3 position-relative work-card h-100">
-                            {/* ✏️ Edit */}
                             <button
                               className="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
                               onClick={() => {
                                 setNewWork({
                                   ...work,
-                                  startDate:
-                                    work.startDate?.split("T")[0] || "",
-                                  endDate: work.endDate?.split("T")[0] || "",
+                                  startDate: formatToInputDate(work.startDate),
+                                  endDate: formatToInputDate(work.endDate),
                                 });
+
                                 setEditingWorkId(work._id);
 
                                 const modal = new window.bootstrap.Modal(
@@ -949,7 +981,6 @@ const StudentProfile = () => {
                               ✏️
                             </button>
 
-                            {/* 🗑 Delete */}
                             <button
                               className="btn btn-sm btn-light position-absolute top-0 end-0 me-5 mt-2 rounded-circle shadow-sm"
                               onClick={() => handleDeleteWork(work._id)}
@@ -968,13 +999,14 @@ const StudentProfile = () => {
                                 {work.organization}
                               </div>
 
-                              <div className="small text-secondary mb-2 d-flex align-items-center gap-1">
-                                <i className="bi bi-calendar-event"></i>
+                              <div className="small text-secondary mb-2 d-flex align-items-center gap-2">
+                                <i className="fa-solid fa-calendar-days text-primary"></i>
                                 {formatMonthYear(work.startDate)} -{" "}
-                                {formatMonthYear(work.endDate)}
+                                {work.endDate
+                                  ? formatMonthYear(work.endDate)
+                                  : "Present"}
                               </div>
 
-                              {/* Description */}
                               {work.description && (
                                 <p className="small text-muted mt-2 mb-0">
                                   {work.description}
@@ -989,7 +1021,6 @@ const StudentProfile = () => {
                 </div>
               </div>
 
-              {/* Hover Styling */}
               <style>{`
       .work-card {
         transition: all 0.25s ease;
@@ -1075,7 +1106,7 @@ const StudentProfile = () => {
 
                               {/* Dates */}
                               <div className="small text-secondary mb-3">
-                                <i className="bi bi-calendar-event me-1"></i>
+                                <i className="bi bi-clock-history text-success me-1"></i>
                                 {proj.startDate || "N/A"} -{" "}
                                 {proj.endDate || "Present"}
                               </div>
@@ -1120,40 +1151,108 @@ const StudentProfile = () => {
             <div className="row g-4">
               <div className="col-12">
                 <div className="card shadow-sm border-0 rounded-4 p-4">
-                  <h5 className="fw-bold mb-4 text-info d-flex justify-content-between">
+                  {/* HEADER */}
+                  <h5 className="fw-bold mb-4 text-info d-flex justify-content-between align-items-center">
                     <span>
                       <i className="bi bi-patch-check-fill me-2"></i>
                       Certifications
                     </span>
+
                     <button
-                      className="btn btn-sm btn-outline-info rounded-pill"
+                      className="btn btn-sm btn-outline-info rounded-pill px-3 fw-semibold"
                       data-bs-toggle="modal"
                       data-bs-target="#certModal"
+                      onClick={() => {
+                        setNewCert({ name: "", organization: "" });
+                        setEditingCertId(null);
+                      }}
                     >
-                      + Add
+                      + Add Certification
                     </button>
                   </h5>
 
-                  <div className="row g-3">
-                    {certifications.map((cert, idx) => (
-                      <div key={idx} className="col-md-4">
-                        <div className="bg-light rounded-4 p-3 position-relative">
-                          <button
-                            className="btn btn-sm btn-outline-danger border-0 position-absolute top-0 end-0 m-2"
-                            onClick={() => handleDeleteCert(cert._id)}
-                          >
-                            <i className="bi bi-trash-fill"></i>
-                          </button>
-                          <h6 className="fw-bold">{cert.name}</h6>
-                          <small className="text-muted">
-                            {cert.organization}
-                          </small>
+                  {/* LIST */}
+                  {certifications.length === 0 ? (
+                    <div className="text-center text-muted py-5">
+                      <i className="bi bi-patch-check fs-1 d-block mb-2"></i>
+                      No certifications added yet
+                    </div>
+                  ) : (
+                    <div className="row g-3">
+                      {certifications.map((cert) => (
+                        <div key={cert._id} className="col-md-4">
+                          {/* 🔥 UPDATED CARD */}
+                          <div className="card border-0 shadow-sm rounded-4 p-3 cert-card h-100">
+                            {/* TOP ROW */}
+                            <div className="d-flex justify-content-between align-items-start">
+                              {/* LEFT CONTENT */}
+                              <div className="me-2" style={{ flex: 1 }}>
+                                <h6
+                                  className="fw-bold mb-1 d-flex align-items-center gap-2"
+                                  style={{
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <i className="bi bi-award-fill text-info"></i>
+                                  {cert.name}
+                                </h6>
+
+                                <div className="small text-secondary d-flex align-items-center gap-2">
+                                  <i className="bi bi-building text-primary"></i>
+                                  {cert.organization}
+                                </div>
+                              </div>
+
+                              {/* RIGHT BUTTONS */}
+                              <div className="d-flex gap-2">
+                                <button
+                                  className="btn btn-sm btn-light rounded-circle shadow-sm"
+                                  onClick={() => handleDeleteCert(cert._id)}
+                                >
+                                  <i className="bi bi-trash text-danger"></i>
+                                </button>
+
+                                <button
+                                  className="btn btn-sm btn-light rounded-circle shadow-sm"
+                                  onClick={() => {
+                                    setNewCert({
+                                      name: cert.name,
+                                      organization: cert.organization,
+                                    });
+                                    setEditingCertId(cert._id);
+
+                                    const modal = new window.bootstrap.Modal(
+                                      document.getElementById("certModal"),
+                                    );
+                                    modal.show();
+                                  }}
+                                >
+                                  ✏️
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* HOVER EFFECT */}
+              <style>{`
+      .cert-card {
+        transition: all 0.25s ease;
+      }
+
+      .cert-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      }
+    `}</style>
             </div>
           )}
           {activeTab === "resume" && (
@@ -1292,7 +1391,6 @@ const StudentProfile = () => {
       <div className="modal fade" id="projectModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content border-0 rounded-4 shadow">
-            {/* Header */}
             <div className="modal-header border-0 p-4">
               <h5 className="modal-title fw-bold text-primary">
                 {editingProjectId ? "Edit Project" : "Add New Project"}
@@ -1304,10 +1402,8 @@ const StudentProfile = () => {
               ></button>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleAddProject}>
               <div className="modal-body p-4 pt-0">
-                {/* Project Name */}
                 <div className="form-floating mb-3">
                   <input
                     type="text"
@@ -1518,12 +1614,13 @@ const StudentProfile = () => {
       </div>
 
       {/* Cert Modal */}
+      {/* Cert Modal */}
       <div className="modal fade" id="certModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content border-0 rounded-4 shadow">
             <div className="modal-header border-0 p-4">
               <h5 className="modal-title fw-bold text-info">
-                Add Certification
+                {editingCertId ? "Edit Certification" : "Add Certification"}
               </h5>
               <button
                 type="button"
@@ -1531,6 +1628,7 @@ const StudentProfile = () => {
                 data-bs-dismiss="modal"
               ></button>
             </div>
+
             <form onSubmit={handleAddCert}>
               <div className="modal-body p-4 pt-0">
                 <div className="form-floating mb-3">
@@ -1545,6 +1643,7 @@ const StudentProfile = () => {
                   />
                   <label>Certification Name</label>
                 </div>
+
                 <div className="form-floating mb-3">
                   <input
                     type="text"
@@ -1558,20 +1657,25 @@ const StudentProfile = () => {
                   <label>Issuing Organization</label>
                 </div>
               </div>
+
               <div className="modal-footer border-0 p-4 pt-0">
                 <button
                   type="button"
                   className="btn btn-light rounded-pill px-4"
                   data-bs-dismiss="modal"
+                  onClick={() => {
+                    setNewCert({ name: "", organization: "" });
+                    setEditingCertId(null);
+                  }}
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
                   className="btn btn-info text-white rounded-pill px-4 fw-bold"
-                  data-bs-dismiss="modal"
                 >
-                  Add Certification
+                  {editingCertId ? "Update" : "Add"}
                 </button>
               </div>
             </form>
