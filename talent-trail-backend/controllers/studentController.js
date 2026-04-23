@@ -31,23 +31,37 @@ const transporter = nodemailer.createTransport({
 
 const getDashboard = async (req, res, next) => {
     const { user } = req;
+
     try {
-        const foundStudent = await Student.findOne({ username: user }).populate('academic').select('jobsSelected jobsApplied jobsRejected profile username academic').exec();
-        if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
+        const foundStudent = await Student.findOne({ username: user })
+        .populate('academic')
+        .populate('personal')
+        .select('jobsSelected jobsApplied jobsRejected profile username academic personal')
+        .lean();
 
-        const foundJobs = await Job.find({ 
-            applicationFor: { $in: ['Everyone', foundStudent.academic.currentEducation.college] }, 
-            collegeApproved: true 
-        }).exec()
+        if (!foundStudent) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
 
-        const dashboard = { ...foundStudent, openings: foundJobs.length, profile: foundStudent.profile };
+        // ✅ safe access (avoid crash if academic missing)
+        const college = foundStudent?.academic?.currentEducation?.college;
+
+        const foundJobs = await Job.find({
+            applicationFor: { $in: ['Everyone', college] },
+            collegeApproved: true
+        }).lean();
+
+        const dashboard = {
+            ...foundStudent,
+            openings: foundJobs.length
+        };
 
         res.json(dashboard);
-    }
-    catch (err) {
+
+    } catch (err) {
         next(err);
     }
-}
+};
 
 const getStudent = async (req, res, next) => {
     const { id } = req;
@@ -539,11 +553,11 @@ const postPersonal = async (req, res, next) => {
         if (foundPersonal) return res.status(400).json({ 'message': 'Personal info already exists' });
 
         const query = await Personal.create({
-            fullName,
-            fatherName,
-            motherName,
-            dateOfBirth,
-            gender,
+            fullName: fullName,
+            fatherName: fatherName,
+            motherName: motherName || fatherName,
+            dateOfBirth: dateOfBirth || null,
+            gender: gender || null,
             userId: id
         });
 
