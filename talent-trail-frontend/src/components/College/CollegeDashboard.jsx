@@ -13,6 +13,7 @@ const CollegeDashboard = () => {
     const [upcomingDrives, setUpcomingDrives] = useState();
     const [companiesRegistered, setCompaniesRegistered] = useState();
     const [username, setUsername] = useState();
+    const [name, setName] = useState();
     const [profile, setProfile] = useState('');
     const navigate = useNavigate();
     defaults.responsive = true;
@@ -43,6 +44,7 @@ const CollegeDashboard = () => {
                 setUpcomingDrives(college?.upcomingDrives || 0);
                 setCompaniesRegistered(college?.registeredCompanies || 0);
                 setUsername(college?.username || '');
+                setName(college?.institution_name || '');
                 if (college?.profile)
                     setProfile(`data:image/jpeg;base64,${bufferToBase64(college?.profile?.data)}`);
 
@@ -93,7 +95,6 @@ const CollegeDashboard = () => {
     };
 
     const barChartOptions = {
-        // maintainAspectRatio: false, // Disable aspect ratio so you can control width and height independently
         responsive: true,
         plugins: {
             legend: {
@@ -106,14 +107,10 @@ const CollegeDashboard = () => {
             },
         },
         aspectRatio: 1.3,
-        // Adjust width and height as needed
-        // width: 600,
-        // height: 600,
+       
     };
 
-    // For the Doughnut chart
     const doughnutChartOptions = {
-        // maintainAspectRatio: false, // Disable aspect ratio so you can control width and height independently
         responsive: true,
         plugins: {
             legend: {
@@ -121,14 +118,10 @@ const CollegeDashboard = () => {
             },
         },
         aspectRatio: 1.3,
-        // Adjust width and height as needed
-        // width: 600,
-        // height: 600,
     };
 
     return (
         <div className="container-fluid py-4 bg-light min-vh-100">
-            {/* Header Section */}
             <div className="row mb-4">
                 <div className="col-12">
                     <div className="card border-0 shadow-sm rounded-4 overflow-hidden" 
@@ -146,7 +139,7 @@ const CollegeDashboard = () => {
                                 )}
                             </div>
                             <div>
-                                <h2 className="fw-bold mb-1">Welcome back, {username}! 👋</h2>
+                                <h2 className="fw-bold mb-1">Welcome back, {name}! 👋</h2>
                                 <p className="mb-0 opacity-75">Here's what's happening at your campus today.</p>
                             </div>
                         </div>
