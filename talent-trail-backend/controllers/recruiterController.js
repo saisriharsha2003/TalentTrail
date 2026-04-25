@@ -33,16 +33,22 @@ const getDashboard = async (req, res, next) => {
       return res.status(401).json({ message: "unauthorized" });
 
     const foundPostedJobs = await Job.find({ recruiter: id }).exec();
+    const recruiterJobs = await Job.find({ recruiter: id }).select("_id");
+
+    const jobIds = recruiterJobs.map((j) => j._id);
+
     const foundSelectedApplicants = await AppliedJob.find({
-      companyName: foundRecruiter.company.name,
+      jobId: { $in: jobIds },
       status: "selected",
     }).exec();
+
     const foundRejectedApplicants = await AppliedJob.find({
-      companyName: foundRecruiter.company.name,
+      jobId: { $in: jobIds },
       status: "rejected",
     }).exec();
+
     const foundApplicants = await AppliedJob.find({
-      companyName: foundRecruiter.company.name,
+      jobId: { $in: jobIds },
     }).exec();
     const response = {
       posted: foundPostedJobs.length,
@@ -154,7 +160,7 @@ const getStudentProfile = async (req, res, next) => {
       .populate("certifications")
       .populate("college")
       .select(
-        "personal contact academic workExperiences projects certifications resume jobsApplied jobsSelected jobsRejected college profile",
+        "personal contact academic workExperiences rollNo projects certifications resume jobsApplied jobsSelected jobsRejected college profile",
       )
       .exec();
 
@@ -186,22 +192,24 @@ const getStudentProfile = async (req, res, next) => {
 
 const getApplications = async (req, res, next) => {
   const { id } = req;
+
   try {
     const foundRecruiter = await Recruiter.findById(id)
       .populate("company")
       .exec();
+
     if (!foundRecruiter)
       return res.status(401).json({ message: "unauthorized" });
 
     const foundJobs = await Job.find({ recruiter: id }).exec();
-    if (!foundJobs)
-      return res.status(400).json({ message: "Jobs info not found" });
 
-    const jobIds = foundJobs.map((job) => job._id.toString());
+    if (!foundJobs || foundJobs.length === 0) return res.json([]); // no jobs = no applications
 
+    const jobIds = foundJobs.map((job) => job._id);
+
+    // ✅ REMOVE status filter (IMPORTANT)
     const foundApplications = await AppliedJob.find({
       jobId: { $in: jobIds },
-      status: "pending",
     })
       .populate({
         path: "userId",
@@ -212,31 +220,14 @@ const getApplications = async (req, res, next) => {
           select: "fullName",
         },
       })
+      .sort({ createdAt: -1 }) // latest first (nice UX)
       .exec();
 
-    const getStudentbasedApplications = (applications, user) => {
-      const students = new Set();
-      return applications.filter((application) => {
-        const userApplication = application[user]._id;
-        if (!students.has(userApplication)) {
-          students.add(userApplication);
-          return true;
-        }
-        return false;
-      });
-    };
-
-    const applications = getStudentbasedApplications(
-      foundApplications,
-      "userId",
-    );
-
-    res.json(applications);
+    res.json(foundApplications);
   } catch (err) {
     next(err);
   }
 };
-
 const getRecruiter = async (req, res, next) => {
   const { id } = req;
   try {
@@ -382,11 +373,13 @@ const postNewJob = async (req, res, next) => {
 
 const parseJD = async (req, res, next) => {
   const { id } = req;
-  console.log("FILE:", req.file);
+  let filePath;
+
   try {
     const foundRecruiter = await Recruiter.findById(id)
       .populate("company")
       .exec();
+
     if (!foundRecruiter) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -397,7 +390,8 @@ const parseJD = async (req, res, next) => {
           "File upload failed. Only PDF, DOC, DOCX, TXT under 2MB allowed",
       });
     }
-    const filePath = req.file.path;
+
+    filePath = req.file.path;
 
     const formData = new FormData();
     formData.append("file", fs.createReadStream(filePath));
@@ -408,44 +402,44 @@ const parseJD = async (req, res, next) => {
       maxBodyLength: Infinity,
     });
 
-    // ✅ validate response
     if (!response?.data?.job_data) {
       return res.status(500).json({
         message: "Parser failed to return valid data",
       });
     }
 
-    // ✅ delete file
-    fs.unlinkSync(filePath);
-
-    // ✅ clean response
     return res.status(200).json({
       success: true,
       job_data: response.data.job_data,
     });
+
   } catch (err) {
-    console.error("❌ ERROR:");
+    console.error("❌ parseJD ERROR:", err.message);
 
     if (err.response) {
-      console.error("Status:", err.response.status);
-      console.error("Data:", err.response.data);
-
       return res.status(err.response.status).json({
         message: err.response.data?.error || "Parser service failed",
       });
     }
 
-    console.error(err.message);
-
     return res.status(500).json({
       message: "Internal server error while parsing JD",
     });
+
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
   }
 };
-
 const postApplication = async (req, res, next) => {
   console.log("Request body:", req.body);
   const { applicationId, status } = req.body;
+  const allowedStatuses = ["pending", "selected", "rejected"];
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ message: "Invalid status" });
+  }
   const recruiterId = req.id; // adjust based on your auth middleware
 
   try {
@@ -556,12 +550,10 @@ const postProfile = async (req, res, next) => {
       return res.status(400).json({ message: "Company details missing" });
 
     if (!req.file)
-      return res
-        .status(400)
-        .json({
-          message:
-            "Only jpg, jpeg and png are allowed and should be less than 2 mb",
-        });
+      return res.status(400).json({
+        message:
+          "Only jpg, jpeg and png are allowed and should be less than 2 mb",
+      });
 
     foundCompany.logo = req.file.buffer;
     await foundCompany.save();
@@ -696,7 +688,12 @@ const deleteJob = async (req, res, next) => {
     if (!foundRecruiter)
       return res.status(401).json({ message: "unauthorized" });
 
-    const query = await Job.findByIdAndDelete(jobId).exec();
+    const job = await Job.findById(jobId);
+
+    if (!job || job.recruiter.toString() !== id)
+      return res.status(401).json({ message: "unauthorized" });
+
+    await job.deleteOne();
 
     res.json({ success: "Job deleted" });
   } catch (err) {
