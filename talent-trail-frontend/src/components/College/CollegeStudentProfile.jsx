@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { notify } from "../Toast";
 import { useParams, useNavigate } from "react-router-dom";
-import { BASE_URL } from "../../config";
+import { BASE_URL } from "../../assets/config.jsx";
 
 const RESUMES_URL = `${BASE_URL}resumes`;
 

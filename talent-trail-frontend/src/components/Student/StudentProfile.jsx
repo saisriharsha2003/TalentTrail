@@ -3,7 +3,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import axiosBase from "../../api/axios";
 import { notify } from "../Toast";
 import { useNavigate } from "react-router-dom";
-import { BASE_URL } from "../../config";
+import { BASE_URL } from "../../assets/config.jsx";
 
 const StudentProfile = () => {
   const [activeTab, setActiveTab] = useState("personal");
