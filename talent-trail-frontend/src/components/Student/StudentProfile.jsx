@@ -3,6 +3,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import axiosBase from "../../api/axios";
 import { notify } from "../Toast";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from "../../config";
 
 const StudentProfile = () => {
   const [activeTab, setActiveTab] = useState("personal");
@@ -1287,7 +1288,7 @@ const StudentProfile = () => {
                             className="btn btn-dark btn-sm rounded-pill px-3"
                             onClick={() =>
                               window.open(
-                                `http://localhost:3500/resumes/${resume}`,
+                                `${BASE_URL}/${resume}`,
                                 "_blank",
                               )
                             }
@@ -1296,7 +1297,7 @@ const StudentProfile = () => {
                           </button>
 
                           <a
-                            href={`http://localhost:3500/resumes/${resume}`}
+                            href={`${BASE_URL}/${resume}`}
                             download
                             className="btn btn-outline-secondary btn-sm rounded-pill px-3"
                           >

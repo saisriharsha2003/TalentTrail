@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { notify } from "../Toast";
 import { useParams, useNavigate } from "react-router-dom";
+import { BASE_URL } from "../../config";
 
-const RESUMES_URL = "http://localhost:3500/resumes";
+const RESUMES_URL = `${BASE_URL}resumes`;
 
 const CollegeStudentProfile = () => {
     const { studentId } = useParams();
