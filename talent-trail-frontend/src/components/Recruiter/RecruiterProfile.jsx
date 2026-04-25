@@ -111,264 +111,252 @@ const RecruiterProfile = () => {
 
   return (
     <div className="container-fluid py-4 bg-light min-vh-100">
-      <div className="row justify-content-center">
-        <div className="col-12 px-md-4">
-          <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
-            {/* HEADER (same as college) */}
-            <div className="bg-primary p-4 text-white d-flex align-items-center">
-              <div className="me-4">
-                {profile ? (
-                  <img
-                    src={profile}
-                    className="rounded-circle border border-3 border-white-50"
-                    height="80"
-                    width="80"
-                    style={{ objectFit: "cover" }}
-                  />
-                ) : (
-                  <div
-                    className="bg-white-50 rounded-circle d-flex align-items-center justify-content-center"
-                    style={{ width: "80px", height: "80px" }}
-                  >
-                    <i className="bi bi-building fs-1"></i>
-                  </div>
-                )}
+      <div className="mx-auto" style={{ width: "95%" }}>
+        {/* 🔷 HEADER CARD */}
+        <div className="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden">
+          <div className="bg-primary p-4 text-white d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center">
+              <div className="position-relative me-4">
+                <img
+                  src={profile || "https://via.placeholder.com/100"}
+                  alt="Company Logo"
+                  className="rounded-circle border border-3 border-white shadow"
+                  style={{
+                    width: "100px",
+                    height: "100px",
+                    objectFit: "cover",
+                  }}
+                />
               </div>
+
               <div>
-                <h3 className="fw-bold mb-1">
-                  {company.name || "Recruiter Profile"}
-                </h3>
-                <p className="mb-0 opacity-75">{username}</p>
+                <h3 className="fw-bold mb-1">{company?.name || "Company"}</h3>
+                <p className="mb-0 opacity-75">{recruiter?.fullName}</p>
+                <span className="badge bg-white text-primary rounded-pill mt-2">
+                  {company?.industry}
+                </span>
               </div>
             </div>
+          </div>
 
-            {/* TABS (same structure) */}
-            <div className="card-header bg-white border-bottom-0 p-0">
-              <ul className="nav nav-tabs nav-fill border-0">
-                {[
-                  { id: "company", label: "Company", icon: "bi-building" },
-                  { id: "recruiter", label: "Recruiter", icon: "bi-person" },
-                  { id: "profile", label: "Profile", icon: "bi-image" },
-                  { id: "account", label: "Account", icon: "bi-shield-lock" },
-                ].map((tab) => (
-                  <li key={tab.id} className="nav-item">
-                    <button
-                      className={`nav-link py-3 border-0 rounded-0 d-flex align-items-center justify-content-center gap-2 
-                      ${activeTab === tab.id ? "active border-bottom border-primary border-3 text-primary fw-bold" : "text-muted"}`}
-                      onClick={() => setActiveTab(tab.id)}
-                    >
-                      <i className={`bi ${tab.icon}`}></i>
-                      {tab.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {/* 🔷 TABS */}
+          <div className="card-body p-0 bg-white">
+            <ul className="nav nav-tabs border-0 px-4">
+              {["company", "recruiter", "account"].map((tab) => (
+                <li className="nav-item" key={tab}>
+                  <button
+                    className={`nav-link border-0 px-4 py-3 fw-semibold text-capitalize ${
+                      activeTab === tab
+                        ? "text-primary border-bottom border-primary border-3 active"
+                        : "text-muted"
+                    }`}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
 
-            {/* BODY */}
-            <div className="card-body p-4 p-md-5 bg-white">
-              {/* COMPANY */}
-              {activeTab === "company" && (
-                <form>
-                  <div className="d-flex justify-content-between mb-4">
-                    <h5 className="fw-bold mb-0">Company Details</h5>
-                    <button
-                      className="btn btn-sm btn-outline-danger rounded-pill px-3"
-                      onClick={() =>
-                        setDisabled({ ...disabled, company: !disabled.company })
-                      }
-                    >
-                      {disabled.company ? "Edit" : "Cancel"}
-                    </button>
-                  </div>
+        {/* 🔷 CONTENT */}
+        <div className="animate__animated animate__fadeIn">
+          {/* ================= COMPANY ================= */}
+          {activeTab === "company" && (
+            <div className="card shadow-sm border-0 rounded-4 p-4">
+              <h5 className="fw-bold mb-4 text-primary">
+                <i className="bi bi-building me-2"></i>Company Details
+              </h5>
 
-                  <fieldset disabled={disabled.company}>
-                    <div className="row g-3">
-                      <Input
-                        label="Name"
-                        value={company.name}
-                        onChange={(v) => setCompany({ ...company, name: v })}
-                      />
-                      <Input
-                        label="Industry"
-                        value={company.industry}
-                        onChange={(v) =>
-                          setCompany({ ...company, industry: v })
-                        }
-                      />
-                      <Input
-                        label="Website"
-                        value={company.website}
-                        onChange={(v) => setCompany({ ...company, website: v })}
-                      />
-                      <Input
-                        label="Mobile"
-                        value={company.mobile}
-                        onChange={(v) => setCompany({ ...company, mobile: v })}
-                      />
-                      <Textarea
-                        label="Address"
-                        value={company.address}
-                        onChange={(v) => setCompany({ ...company, address: v })}
-                      />
-                    </div>
-                    {!disabled.company && (
-                      <button
-                        className="btn btn-primary mt-4"
-                        onClick={handleCompany}
-                      >
-                        Save Changes
-                      </button>
-                    )}
-                  </fieldset>
-                </form>
-              )}
-
-              {/* RECRUITER */}
-              {activeTab === "recruiter" && (
-                <form>
-                  <div className="d-flex justify-content-between mb-4">
-                    <h5 className="fw-bold mb-0">Recruiter Details</h5>
-                    <button
-                      className="btn btn-sm btn-outline-danger rounded-pill px-3"
-                      onClick={() =>
-                        setDisabled({
-                          ...disabled,
-                          recruiter: !disabled.recruiter,
-                        })
-                      }
-                    >
-                      {disabled.recruiter ? "Edit" : "Cancel"}
-                    </button>
-                  </div>
-
-                  <fieldset disabled={disabled.recruiter}>
-                    <div className="row g-3">
-                      <Input
-                        label="Full Name"
-                        value={recruiter.fullName}
-                        onChange={(v) =>
-                          setRecruiter({ ...recruiter, fullName: v })
-                        }
-                      />
-                      <Input
-                        label="Position"
-                        value={recruiter.position}
-                        onChange={(v) =>
-                          setRecruiter({ ...recruiter, position: v })
-                        }
-                      />
-                      <Input
-                        label="Email"
-                        value={recruiter.email}
-                        onChange={(v) =>
-                          setRecruiter({ ...recruiter, email: v })
-                        }
-                      />
-                      <Input
-                        label="Mobile"
-                        value={recruiter.mobile}
-                        onChange={(v) =>
-                          setRecruiter({ ...recruiter, mobile: v })
-                        }
-                      />
-                    </div>
-                    {!disabled.recruiter && (
-                      <button
-                        className="btn btn-primary mt-4"
-                        onClick={handleRecruiter}
-                      >
-                        Save Changes
-                      </button>
-                    )}
-                  </fieldset>
-                </form>
-              )}
-
-              {/* PROFILE */}
-              {activeTab === "profile" && (
-                <div>
-                  <h5 className="fw-bold mb-4">Company Logo</h5>
-                  <div className="d-flex align-items-center gap-4 p-3 bg-light rounded-4">
-                    {profile && (
-                      <img
-                        src={profile}
-                        className="rounded-circle"
-                        height="80"
-                      />
-                    )}
-                    <div>
-                      <input
-                        type="file"
-                        id="profile"
-                        className="form-control mb-2"
-                      />
-                      <button
-                        className="btn btn-dark btn-sm rounded-pill px-4"
-                        onClick={handleLogo}
-                      >
-                        Upload
-                      </button>
-                    </div>
-                  </div>
+              <form onSubmit={handleCompany} className="row g-3">
+                <div className="col-md-6 form-floating">
+                  <input
+                    className="form-control"
+                    value={company.name}
+                    onChange={(e) =>
+                      setCompany({ ...company, name: e.target.value })
+                    }
+                    required
+                  />
+                  <label className="ms-2">Company Name</label>
                 </div>
-              )}
 
-              {/* ACCOUNT */}
-              {activeTab === "account" && (
-                <div className="container" style={{ maxWidth: "600px" }}>
-                  <h5 className="fw-bold mb-4 text-center">Account Security</h5>
+                <div className="col-md-6 form-floating">
+                  <input
+                    className="form-control"
+                    value={company.industry}
+                    onChange={(e) =>
+                      setCompany({ ...company, industry: e.target.value })
+                    }
+                    required
+                  />
+                  <label className="ms-2">Industry</label>
+                </div>
 
-                  <div className="row g-3">
-                    <div className="col-12 form-floating">
+                <div className="col-md-6 form-floating">
+                  <input
+                    className="form-control"
+                    value={company.size}
+                    onChange={(e) =>
+                      setCompany({ ...company, size: e.target.value })
+                    }
+                  />
+                  <label className="ms-2">Company Size</label>
+                </div>
+
+                <div className="col-md-6 form-floating">
+                  <input
+                    className="form-control"
+                    value={company.website}
+                    onChange={(e) =>
+                      setCompany({ ...company, website: e.target.value })
+                    }
+                  />
+                  <label className="ms-2">Website</label>
+                </div>
+
+                <div className="col-12 form-floating">
+                  <textarea
+                    className="form-control"
+                    style={{ height: "100px" }}
+                    value={company.overview}
+                    onChange={(e) =>
+                      setCompany({ ...company, overview: e.target.value })
+                    }
+                  />
+                  <label className="ms-2">Overview</label>
+                </div>
+
+                <div className="text-end mt-3">
+                  <button className="btn btn-primary px-5 rounded-pill fw-bold">
+                    Save Company
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ================= RECRUITER ================= */}
+          {activeTab === "recruiter" && (
+            <div className="card shadow-sm border-0 rounded-4 p-4">
+              <h5 className="fw-bold mb-4 text-success">
+                <i className="bi bi-person-badge-fill me-2"></i>Recruiter
+                Details
+              </h5>
+
+              <form onSubmit={handleRecruiter} className="row g-3">
+                <div className="col-md-6 form-floating">
+                  <input
+                    className="form-control"
+                    value={recruiter.fullName}
+                    onChange={(e) =>
+                      setRecruiter({ ...recruiter, fullName: e.target.value })
+                    }
+                    required
+                  />
+                  <label className="ms-2">Full Name</label>
+                </div>
+
+                <div className="col-md-6 form-floating">
+                  <input
+                    className="form-control"
+                    value={recruiter.position}
+                    onChange={(e) =>
+                      setRecruiter({ ...recruiter, position: e.target.value })
+                    }
+                  />
+                  <label className="ms-2">Position</label>
+                </div>
+
+                <div className="col-md-6 form-floating">
+                  <input
+                    className="form-control"
+                    value={recruiter.email}
+                    onChange={(e) =>
+                      setRecruiter({ ...recruiter, email: e.target.value })
+                    }
+                  />
+                  <label className="ms-2">Email</label>
+                </div>
+
+                <div className="col-md-6 form-floating">
+                  <input
+                    className="form-control"
+                    value={recruiter.mobile}
+                    onChange={(e) =>
+                      setRecruiter({ ...recruiter, mobile: e.target.value })
+                    }
+                  />
+                  <label className="ms-2">Mobile</label>
+                </div>
+
+                <div className="text-end mt-3">
+                  <button className="btn btn-success px-5 rounded-pill fw-bold">
+                    Save Recruiter
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ================= ACCOUNT ================= */}
+          {activeTab === "account" && (
+            <div className="row g-4">
+              <div className="col-md-6">
+                <div className="card shadow-sm border-0 rounded-4 p-4">
+                  <h5 className="fw-bold mb-4 text-primary">Username</h5>
+
+                  <form onSubmit={handleUsername}>
+                    <div className="form-floating mb-3">
                       <input
                         className="form-control"
-                        value={username || ""}
+                        value={username}
                         onChange={(e) => setUsername(e.target.value)}
                       />
                       <label>Username</label>
                     </div>
 
-                    <div className="col-12 form-floating">
+                    <button className="btn btn-primary w-100 rounded-pill fw-bold">
+                      Update Username
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <div className="col-md-6">
+                <div className="card shadow-sm border-0 rounded-4 p-4">
+                  <h5 className="fw-bold mb-4 text-danger">Password</h5>
+
+                  <form onSubmit={handlePassword}>
+                    <div className="form-floating mb-3">
                       <input
                         type="password"
                         className="form-control"
-                        value={prevPassword || ""}
+                        value={prevPassword}
                         onChange={(e) => setPrevPassword(e.target.value)}
                       />
-                      <label>Current Password</label>
+                      <label>Old Password</label>
                     </div>
 
-                    <div className="col-12 form-floating">
+                    <div className="form-floating mb-3">
                       <input
                         type="password"
                         className="form-control"
-                        value={newPassword || ""}
+                        value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                       />
                       <label>New Password</label>
                     </div>
-                  </div>
 
-                  <div className="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-                    <button
-                      className="btn btn-primary px-4"
-                      onClick={handleUsername}
-                    >
-                      Update Username
+                    <button className="btn btn-danger w-100 rounded-pill fw-bold">
+                      Update Password
                     </button>
-
-                    <button
-                      className="btn btn-success px-4"
-                      onClick={handlePassword}
-                    >
-                      Reset Password
-                    </button>
-                  </div>
+                  </form>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
