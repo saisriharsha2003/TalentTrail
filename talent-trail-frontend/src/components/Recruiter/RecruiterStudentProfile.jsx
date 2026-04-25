@@ -54,6 +54,7 @@ const RecruiterStudentProfile = () => {
       status: "selected",
     });
     notify("success", "Selected");
+    navigate("/user/recruiter/applications");
   };
 
   const handleReject = async (appId) => {
@@ -62,7 +63,8 @@ const RecruiterStudentProfile = () => {
       status: "rejected",
     });
     notify("success", "Rejected");
-  };
+    navigate("/user/recruiter/applications");
+   };
 
   return (
     <div className="container-fluid py-4 bg-light min-vh-100">
@@ -71,17 +73,17 @@ const RecruiterStudentProfile = () => {
           <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div className="bg-primary p-4 text-white d-flex align-items-center gap-3">
               {student?.profileBase64 ? (
-               <img
-                src={student.profileBase64}
-                alt="profile"
-                className="rounded-circle border border-3 border-white shadow-sm"
-                style={{
-                  width: "70px",
-                  height: "70px",
-                  objectFit: "cover",
-                  imageRendering: "auto"
-                }}
-              />
+                <img
+                  src={student.profileBase64}
+                  alt="profile"
+                  className="rounded-circle border border-3 border-white shadow-sm"
+                  style={{
+                    width: "70px",
+                    height: "70px",
+                    objectFit: "cover",
+                    imageRendering: "auto",
+                  }}
+                />
               ) : (
                 <div
                   className="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center"
@@ -103,6 +105,7 @@ const RecruiterStudentProfile = () => {
               <ul className="nav nav-tabs nav-fill border-0">
                 {[
                   { id: "profile", label: "Profile", icon: "bi-person" },
+                  { id: "contact", label: "Contact", icon: "bi-geo" },
                   { id: "academic", label: "Academic", icon: "bi-mortarboard" },
                   { id: "skills", label: "Skills", icon: "bi-lightning" },
                   {
@@ -111,6 +114,11 @@ const RecruiterStudentProfile = () => {
                     icon: "bi-briefcase",
                   },
                   { id: "projects", label: "Projects", icon: "bi-kanban" },
+                  {
+                    id: "certifications",
+                    label: "Certifications",
+                    icon: "bi-award",
+                  },
                   {
                     id: "applications",
                     label: "Applications",
@@ -145,16 +153,22 @@ const RecruiterStudentProfile = () => {
                       label="Full Name"
                       value={student?.personal?.fullName}
                     />
-                    <Field label="Email" value={student?.contact?.email} />
-                    <Field label="Gender" value={student?.personal?.gender} />
-                    <Field label="Mobile" value={student?.contact?.mobile} />
+                    <Field
+                      label="Father Name"
+                      value={student?.personal?.fatherName}
+                    />
+                    <Field
+                      label="Mother Name"
+                      value={student?.personal?.motherName}
+                    />
+                    <Field
+                      label="Gender"
+                      value={student?.personal?.gender.toUpperCase()}
+                    />
+
                     <Field
                       label="Date of Birth"
                       value={student?.personal?.dateOfBirth?.split("T")[0]}
-                    />
-                    <Field
-                      label="Address"
-                      value={student?.contact?.currentAddress}
                     />
                   </div>
 
@@ -180,21 +194,89 @@ const RecruiterStudentProfile = () => {
                   </div>
                 </>
               )}
-
-              {activeTab === "academic" && (
+              {activeTab === "contact" && (
                 <>
-                  <SectionTitle title="Academic Details" />
+                  <SectionTitle title="Contact Information" />
 
-                  <p>
-                    <b>College:</b>{" "}
-                    {student?.academic?.currentEducation?.college}
-                  </p>
-                  <p>
-                    <b>Course:</b> {student?.academic?.currentEducation?.course}
-                  </p>
+                  <div className="row g-4">
+                    <Field label="Email" value={student?.contact?.email} />
+                    <Field label="Mobile" value={student?.contact?.mobile} />
+                    <Field
+                      label="CurrentAddress"
+                      value={student?.contact?.currentAddress}
+                    />
+                    <Field
+                      label="Permanent Address"
+                      value={student?.contact?.permanentAddress}
+                    />
+                    <Field
+                      label="College Email"
+                      value={student?.contact?.collegeEmail}
+                    />
+                  </div>
                 </>
               )}
 
+              {activeTab === "academic" && (
+                <>
+                  <SectionTitle title="Current Education" />
+
+                  <div className="row g-4">
+                    <Field
+                      label="College"
+                      value={student?.academic?.currentEducation?.college}
+                    />
+                    <Field
+                      label="Course"
+                      value={student?.academic?.currentEducation?.course}
+                    />
+                    <Field
+                      label="Major"
+                      value={student?.academic?.currentEducation?.major}
+                    />
+                    <Field
+                      label="Study Year"
+                      value={student?.academic?.currentEducation?.studyYear}
+                    />
+                    <Field
+                      label="CGPA"
+                      value={student?.academic?.currentEducation?.cgpa}
+                    />
+                    <Field label="Roll No" value={student?.rollNo} />
+                    <Field
+                      label="Join Date"
+                      value={
+                        student?.academic?.currentEducation?.joinDate?.split(
+                          "T",
+                        )[0]
+                      }
+                    />
+                    <Field
+                      label="City"
+                      value={student?.academic?.currentEducation?.city}
+                    />
+                  </div>
+
+                  <div className="mt-5">
+                    <SectionTitle title="Previous Education" />
+
+                    <div className="row g-4">
+                      <Field
+                        label="Institution"
+                        value={student?.academic?.previousEducation?.college}
+                      />
+                      <Field
+                        label="Major"
+                        value={student?.academic?.previousEducation?.major}
+                      />
+                      <Field
+                        label="Percentage"
+                        value={student?.academic?.previousEducation?.percentage}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
               {activeTab === "skills" && (
                 <>
                   <SectionTitle title="Skills & Technologies" />
@@ -219,11 +301,18 @@ const RecruiterStudentProfile = () => {
                   <SectionTitle title="Work Experience" />
 
                   {(student?.workExperiences || []).map((w, i) => (
-                    <CardItem
-                      key={i}
-                      title={`${w.organization} — ${w.role}`}
-                      desc={w.description}
-                    />
+                    <div key={i} className="p-4 border rounded-4 bg-light mb-3">
+                      <h6 className="fw-bold">
+                        {w.role} — {w.organization}
+                      </h6>
+
+                      <div className="small text-muted mb-2">
+                        {w.startDate?.split("T")[0]} -{" "}
+                        {w.endDate ? w.endDate.split("T")[0] : "Present"}
+                      </div>
+
+                      <p className="small text-muted mb-0">{w.description}</p>
+                    </div>
                   ))}
                 </>
               )}
@@ -233,8 +322,48 @@ const RecruiterStudentProfile = () => {
                   <SectionTitle title="Projects" />
 
                   {(student?.projects || []).map((p, i) => (
-                    <CardItem key={i} title={p.name} desc={p.description} />
+                    <div key={i} className="p-4 border rounded-4 bg-light mb-3">
+                      <h6 className="fw-bold">{p.name}</h6>
+
+                      <div className="small text-muted mb-2">
+                        {p.startDate} - {p.endDate || "Present"}
+                      </div>
+
+                      <p className="small text-muted">{p.description}</p>
+
+                      {p.githubLink && (
+                        <a
+                          href={p.githubLink}
+                          target="_blank"
+                          className="btn btn-sm btn-dark rounded-pill"
+                        >
+                          View Code
+                        </a>
+                      )}
+                    </div>
                   ))}
+                </>
+              )}
+              {activeTab === "certifications" && (
+                <>
+                  <SectionTitle title="Certifications" />
+
+                  {(student?.certifications || []).length === 0 ? (
+                    <p className="text-muted">No certifications</p>
+                  ) : (
+                    <div className="row g-3">
+                      {student.certifications.map((cert, i) => (
+                        <div key={i} className="col-md-4">
+                          <div className="p-4 border rounded-4 bg-light h-100">
+                            <h6 className="fw-bold">{cert.name}</h6>
+                            <div className="text-muted small">
+                              {cert.organization}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
               {activeTab === "applications" && (
