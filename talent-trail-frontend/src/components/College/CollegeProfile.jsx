@@ -167,15 +167,13 @@ const CollegeProfile = () => {
       setEditingCourseId(null);
       fetchCollege();
 
-      const modal = window.bootstrap.Modal.getInstance(
-        document.getElementById("courseModal"),
-      );
-      modal.hide();
+      const modalEl = document.getElementById("courseModal");
+      const modal = window.bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
     } catch (err) {
       notify("failed", err?.response?.data?.message);
     }
   };
-
   const handleDeleteCourse = async (id) => {
     try {
       await axios.delete(`/college/course/${id}`);
@@ -187,9 +185,15 @@ const CollegeProfile = () => {
   };
 
   const handleEditCourse = (course) => {
-    setNewCourse(course);
+    setNewCourse({
+      name: course.name,
+      duration: course.duration,
+      specialization: course.specialization,
+    });
+
     setEditingCourseId(course._id);
 
+    // ✅ OPEN modal (correct)
     const modal = new window.bootstrap.Modal(
       document.getElementById("courseModal"),
     );
@@ -617,6 +621,8 @@ const CollegeProfile = () => {
                     Courses
                     <button
                       className="btn btn-sm btn-outline-dark rounded-pill px-3"
+                      data-bs-toggle="modal"
+                      data-bs-target="#courseModal"
                       onClick={() => {
                         setNewCourse({
                           name: "",
@@ -624,11 +630,6 @@ const CollegeProfile = () => {
                           specialization: "",
                         });
                         setEditingCourseId(null);
-
-                        const modal = new window.bootstrap.Modal(
-                          document.getElementById("courseModal"),
-                        );
-                        modal.show();
                       }}
                     >
                       + Add Course
@@ -766,7 +767,76 @@ const CollegeProfile = () => {
           </div>
         </div>
       </div>
+      <div className="modal fade" id="courseModal" tabIndex="-1">
+  <div className="modal-dialog modal-dialog-centered">
+    <div className="modal-content border-0 rounded-4 shadow">
+
+      <div className="modal-header border-0 p-4">
+        <h5 className="modal-title fw-bold">
+          {editingCourseId ? "Edit Course" : "Add Course"}
+        </h5>
+        <button className="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form onSubmit={handleSaveCourse}>
+        <div className="modal-body p-4 pt-0">
+
+          <div className="form-floating mb-3">
+            <input
+              className="form-control"
+              value={newCourse.name}
+              onChange={(e) =>
+                setNewCourse({ ...newCourse, name: e.target.value })
+              }
+              required
+            />
+            <label>Course Name</label>
+          </div>
+
+          <div className="form-floating mb-3">
+            <input
+              type="number"
+              className="form-control"
+              value={newCourse.duration}
+              onChange={(e) =>
+                setNewCourse({ ...newCourse, duration: e.target.value })
+              }
+              required
+            />
+            <label>Duration</label>
+          </div>
+
+          <div className="form-floating mb-3">
+            <input
+              className="form-control"
+              value={newCourse.specialization}
+              onChange={(e) =>
+                setNewCourse({
+                  ...newCourse,
+                  specialization: e.target.value,
+                })
+              }
+            />
+            <label>Specialization</label>
+          </div>
+
+        </div>
+
+        <div className="modal-footer border-0 p-4 pt-0">
+          <button className="btn btn-light" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button className="btn btn-dark">
+            {editingCourseId ? "Update" : "Add"}
+          </button>
+        </div>
+      </form>
+
     </div>
+  </div>
+</div>
+    </div>
+    
   );
 };
 
