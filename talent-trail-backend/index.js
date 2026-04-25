@@ -3,7 +3,7 @@ const app = express();
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const connectDB = require('./config/dbConn.js');
+const connectDB = require('./config/dbconn.js');
 const verifyJWT = require('./middleware/verifyJWT.js');
 const PORT = process.env.PORT || 3500;
 
