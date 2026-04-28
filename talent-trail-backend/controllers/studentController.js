@@ -73,7 +73,7 @@ const getStudent = async (req, res, next) => {
             .populate('workExperiences')
             .populate('projects')
             .populate('certifications')
-            .select('username personal contact academic workExperiences projects certifications resume profile rollNo')
+            .select('username personal contact academic workExperiences projects certifications resume profile rollNo skills interests')
             .exec();
 
         if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
@@ -347,15 +347,23 @@ const postAppliedJob = async (req, res, next) => {
 
 const postAcademic = async (req, res, next) => {
     const { currentEducation, previousEducation, rollNo, collegeId } = req.body;
-    if (!currentEducation || !previousEducation || !rollNo) return res.status(400).json({ 'message': 'All fields required' });
+
+    if (!currentEducation || !previousEducation || !rollNo) {
+        return res.status(400).json({ message: 'All fields required' });
+    }
 
     const { id } = req;
+
     try {
         const foundStudent = await Student.findById(id).exec();
-        if (!foundStudent) return res.status(401).json({ 'message': 'unauthorized' });
+        if (!foundStudent) {
+            return res.status(401).json({ message: 'unauthorized' });
+        }
 
         const foundAcademic = await Academic.findOne({ userId: id }).exec();
-        if (foundAcademic) return res.status(400).json({ 'message': 'Academic info already exists' });
+        if (foundAcademic) {
+            return res.status(400).json({ message: 'Academic info already exists' });
+        }
 
         const query = await Academic.create({
             currentEducation,
@@ -366,18 +374,70 @@ const postAcademic = async (req, res, next) => {
 
         foundStudent.academic = query._id;
         foundStudent.rollNo = rollNo;
+
         if (collegeId) {
             foundStudent.college = collegeId;
         }
+
         await foundStudent.save();
 
-        res.status(201).json({ 'success': 'Academic info added' });
-    }
-    catch (err) {
+        res.status(201).json({ success: 'Academic info added' });
+
+    } catch (err) {
         next(err);
     }
-}
+};
+const postSkills = async (req, res, next) => {
+    const { skills, interests } = req.body;
+    const { id } = req;
 
+    try {
+        const student = await Student.findById(id).exec();
+        if (!student) {
+            return res.status(401).json({ message: 'unauthorized' });
+        }
+
+        if (!Array.isArray(skills) || !Array.isArray(interests)) {
+            return res.status(400).json({ message: 'Skills & interests must be arrays' });
+        }
+
+        student.skills = [...new Set(skills.map(s => s.trim()))];
+        student.interests = [...new Set(interests.map(i => i.trim()))];
+
+        await student.save();
+
+        res.status(201).json({ success: 'Skills updated successfully' });
+
+    } catch (err) {
+        next(err);
+    }
+};
+const putSkills = async (req, res, next) => {
+    const { skills, interests } = req.body;
+    const { id } = req;
+
+    try {
+        const student = await Student.findById(id).exec();
+        if (!student) {
+            return res.status(401).json({ message: 'unauthorized' });
+        }
+
+        if (Array.isArray(skills)) {
+            student.skills = [...new Set(skills.map(s => s.trim()))];
+        }
+
+        if (Array.isArray(interests)) {
+            student.interests = [...new Set(interests.map(i => i.trim()))];
+        }
+
+        await student.save();
+
+        res.json({ success: 'Skills updated' });
+
+    } catch (err) {
+        next(err);
+    }
+};
 const postCertification = async (req, res, next) => {
     const { name, organization } = req.body;
     if (!name || !organization) return res.status(400).json({ 'message': 'All fields required' });
@@ -572,7 +632,7 @@ const postPersonal = async (req, res, next) => {
 }
 
 const postProject = async (req, res, next) => {
-    let { name, startDate, endDate, description, associated, githubLink } = req.body;
+    let { name, startDate, endDate, description, associated, githubLink, liveLink } = req.body;
 
     // ✅ Required validation
     if (!name || !startDate || !description || !associated) {
@@ -593,14 +653,16 @@ const postProject = async (req, res, next) => {
         endDate = null;
     }
 
-    // ✅ Date validation (optional but important)
     if (endDate && new Date(endDate) < new Date(startDate)) {
         return res.status(400).json({ message: "End date cannot be before start date" });
     }
 
-    // ✅ Normalize github link
     if (githubLink && !githubLink.startsWith("http")) {
         githubLink = "https://" + githubLink;
+    }
+
+    if (liveLink && !liveLink.startsWith("http")) {
+        liveLink = "https://" + liveLink;
     }
 
     const { id } = req;
@@ -617,6 +679,7 @@ const postProject = async (req, res, next) => {
             description,
             associated,
             githubLink: githubLink || null,
+            liveLink: liveLink || null,
             currentlyWorking,
             userId: id,
         };
@@ -818,7 +881,7 @@ const putPersonal = async (req, res, next) => {
 }
 
 const putProject = async (req, res, next) => {
-  let { name, startDate, endDate, description, associated, githubLink, pId } = req.body;
+  let { name, startDate, endDate, description, associated, githubLink, liveLink, pId } = req.body;
 
   if (!name || !startDate || !description || !associated || !pId) {
     return res.status(400).json({ message: "All fields required" });
@@ -831,6 +894,10 @@ const putProject = async (req, res, next) => {
 
   if (githubLink && !githubLink.startsWith("http")) {
     githubLink = "https://" + githubLink;
+  }
+
+  if (liveLink && !liveLink.startsWith("http")) {
+    liveLink = "https://" + liveLink;
   }
 
   let currentlyWorking = false;
@@ -850,6 +917,7 @@ const putProject = async (req, res, next) => {
     project.startDate = startDate;
     project.associated = associated;
     project.githubLink = githubLink || null;
+    project.liveLink = liveLink || null;
     project.currentlyWorking = currentlyWorking;
 
     if (!currentlyWorking && endDate) {
@@ -872,7 +940,6 @@ const putWork = async (req, res, next) => {
 
     console.log("PUT WORK BODY:", req.body); // 🔥 debug
 
-    // ✅ Required validation (NO endDate here)
     if (!organization || !role || !description || !startDate || !wId) {
         return res.status(400).json({ message: "All fields required" });
     }
@@ -1016,5 +1083,7 @@ module.exports = {
     putWork,
     deleteCertification,
     deleteProject,
-    deleteWork
+    deleteWork,
+    putSkills,
+    postSkills,
 };
