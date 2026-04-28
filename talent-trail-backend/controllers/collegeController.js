@@ -21,16 +21,16 @@ const getDashboard = async (req, res, next) => {
       jobsSelected: { $gt: 0 },
     }).exec();
     const foundOngoingDrives = await Job.find({
-      applicationFor: foundCollege.institution.name,
+      applicationFor: { $in: ["Everyone", foundCollege.institution.name] },
       collegeApproved: true,
     }).exec();
     const foundUpcomingDrives = await Job.find({
-      applicationFor: foundCollege.institution.name,
+      applicationFor: { $in: ["Everyone", foundCollege.institution.name] },
       collegeApproved: false,
     }).exec();
     const foundRegisteredRecruiters = await Job.distinct("recruiter", {
       collegeApproved: true,
-      applicationFor: foundCollege.institution.name,
+      applicationFor: { $in: ["Everyone", foundCollege.institution.name] },
     }).exec();
 
     const foundProfile = await College.findById(id).select("logo").exec();
@@ -91,7 +91,7 @@ const getCompanies = async (req, res, next) => {
 
     const recruiterIds = await Job.distinct("recruiter", {
       collegeApproved: true,
-      applicationFor: foundCollege.institution.name,
+      applicationFor: { $in: ["Everyone", foundCollege.institution.name] },
     }).exec();
     const foundRecruiters = await Recruiter.find({ _id: { $in: recruiterIds } })
       .populate("company")
@@ -180,7 +180,7 @@ const getDrives = async (req, res, next) => {
 
     const foundApprovedJobs = await Job.find({
       applicationFor: {
-        $in: [foundCollege.institution.name],
+        $in: ["Everyone", foundCollege.institution.name],
       },
       collegeApproved: true,
     })
@@ -189,7 +189,7 @@ const getDrives = async (req, res, next) => {
 
     const foundNotApprovedJobs = await Job.find({
       applicationFor: {
-        $in: [foundCollege.institution.name],
+        $in: ["Everyone", foundCollege.institution.name],
       },
       collegeApproved: false,
     })
@@ -228,8 +228,11 @@ const postJob = async (req, res, next) => {
     if (!foundCollege) return res.status(401).json({ message: "unauthorized" });
 
     const foundJob = await Job.findById(jobId).exec();
-    if (foundJob.applicationFor !== foundCollege.institution.name)
-      return res.status(401).json({ message: "Unauthorized" });
+    const isAllowed =
+      foundJob.applicationFor.includes("Everyone") ||
+      foundJob.applicationFor.includes(foundCollege.institution.name);
+
+    if (!isAllowed) return res.status(401).json({ message: "Unauthorized" });
 
     foundJob.collegeApproved = true;
     await foundJob.save();
@@ -368,12 +371,10 @@ const postProfile = async (req, res, next) => {
     if (!foundCollege) return res.status(401).json({ message: "unauthorized" });
 
     if (!req.file)
-      return res
-        .status(400)
-        .json({
-          message:
-            "Only jpg, jpeg and png are allowed and should be less than 2 mb",
-        });
+      return res.status(400).json({
+        message:
+          "Only jpg, jpeg and png are allowed and should be less than 2 mb",
+      });
 
     foundCollege.logo = req.file.buffer;
     await foundCollege.save();
