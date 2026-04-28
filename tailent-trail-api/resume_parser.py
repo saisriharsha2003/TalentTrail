@@ -138,155 +138,270 @@ def resume_ner_gpt(file_path):
     current_date = datetime.today().strftime("%Y-%m")
 
     prompt = f"""
-    Extract structured resume data and return ONLY valid JSON.
+You are an expert resume parser.
 
-    FORMAT (DO NOT CHANGE KEYS):
+Your task is to extract structured data from a resume and return ONLY valid JSON.
+Do NOT include any explanation, notes, or extra text.
 
+----------------------------------
+STRICT OUTPUT FORMAT (DO NOT MODIFY KEYS)
+----------------------------------
+
+{{
+"personal": {{
+    "full_name": "",
+    "date_of_birth": null,
+    "father_name": null,
+    "mother_name": null,
+    "gender": null
+}},
+"contact": {{
+    "email": "",
+    "mobile": "",
+    "college_email": null,
+    "current_address": "",
+    "permanent_address": null
+}},
+"current_education": {{
+    "college_name": "",
+    "study_year": null,
+    "major": "",
+    "course": "",
+    "join_date": null,
+    "roll_no": null,
+    "graduating_year": null,
+    "city": "",
+    "state": null,
+    "interests": [],
+    "cgpa": null
+}},
+"previous_education": {{
+    "college": null,
+    "major": null,
+    "state": null,
+    "percentage": null,
+    "city": null
+}},
+"experience": [
     {{
-    "personal": {{
-        "full_name": "",
-        "date_of_birth": null,
-        "father_name": null,
-        "mother_name": null,
-        "gender": null
-    }},
-    "contact": {{
-        "email": "",
-        "mobile": "",
-        "college_email": null,
-        "current_address": "",
-        "permanent_address": null
-    }},
-    "current_education": {{
-        "college_name": "",
-        "study_year": null,
-        "major": "",
-        "course": "",
-        "join_date": null,
-        "roll_no": null,
-        "graduating_year": null,
-        "skills": [],
-        "city": "",
-        "state": null,
-        "interests": [],
-        "cgpa": null
-    }},
-    "previous_education": {{
-        "college": null,
-        "major": null,
-        "state": null,
-        "percentage": null,
-        "city": null
-    }},
-    "experience": [
-        {{
-        "company": "",
-        "role": "",
-        "start_date": null,
-        "end_date": null,
-        "description": ""
-        }}
-    ],
-    "projects": [
-        {{
-        "name": "",
-        "description": "",
-        "start_date": null,
-        "end_date": null,
-        "associated": null,
-        "github_link": null,
-        "currently_working": false
-        }}
-    ],
-    "certifications": [
-        {{
-        "name": "",
-        "organization": null
-        }}
-    ]
+    "company": "",
+    "role": "",
+    "start_date": null,
+    "end_date": null,
+    "description": ""
     }}
+],
+"projects": [
+    {{
+    "name": "",
+    "description": "",
+    "start_date": null,
+    "end_date": null,
+    "associated": null,
+    "github_link": null,
+    "live_link": null,
+    "currently_working": false
+    }}
+],
+"certifications": [
+    {{
+    "name": "",
+    "organization": null
+    }}
+]
+}}
 
-    RULES:
+----------------------------------
+GLOBAL RULES (MANDATORY)
+----------------------------------
 
-    - Return ONLY JSON (no text, no explanation)
-    - NEVER omit any key from FORMAT
-    - Use:
-    - [] for empty arrays
-    - null for missing values
-    - DO NOT guess missing data
+- Return ONLY valid JSON
+- DO NOT omit any key
+- Use:
+- null → missing values
+- [] → empty arrays
+- DO NOT guess or infer missing data
+- DO NOT hallucinate
+- Trim all strings
+- Remove duplicate entries (skills, projects, etc.)
+- Keep values concise (no long sentences unless description)
 
-    DATE RULES:
-    - Format: yyyy-mm
-    - "Present" → keep as "Present"
-    - If missing → null
+----------------------------------
+DATE NORMALIZATION RULES
+----------------------------------
 
-    ADDRESS RULE:
-    - current_address = combine city + state + country
+- Format all dates as: yyyy-mm
+- If only year available → yyyy
+- If "Present" / "Current" → "Present"
+- If unclear → null
 
-    ----------------------------------
-    EXTRACTION LOGIC
-    ----------------------------------
+----------------------------------
+ADDRESS RULES
+----------------------------------
 
-    1. EXPERIENCE:
-    - Include ONLY real jobs, internships
-    - MUST have company name
-    - Exclude anything that looks like personal work
+- current_address = "city, state, country" (only if available)
+- Do NOT invent missing parts
+- permanent_address only if explicitly present
 
-    2. PROJECTS (CRITICAL):
-    - Include personal, academic, or self-built work
-    - Detect:
-    - "project", "built", "developed", "created"
-    - OR descriptions of apps/platforms/tools
-    - If something is excluded from experience → move it here
-    - Extract tech/tools if possible
+----------------------------------
+SECTION DETECTION LOGIC
+----------------------------------
 
-    3. EDUCATION:
-    - First → current_education
-    - Second → previous_education
+Identify sections even if headings vary:
+- "Work Experience", "Internship", "Employment" → experience
+- "Projects", "Personal Work", "Academic Work" → projects
+- "Education", "Academics" → education
+- "Skills", "Tech Stack" → skills
 
-    4. SKILLS:
-    - Extract ALL skills (languages, tools, frameworks, cloud, concepts)
-    - Keep as clean keywords
+----------------------------------
+EXTRACTION LOGIC
+----------------------------------
 
-    5. CERTIFICATIONS:
-    - Extract only if explicitly mentioned
-    - Otherwise return []
-    --------------------------------------------------
-    SKILL EXTRACTION RULES
-    --------------------------------------------------
+1. EXPERIENCE:
+- Include ONLY:
+✔ Jobs
+✔ Internships
+- MUST contain a company name
+- MUST NOT include personal or academic projects
+- If unclear → exclude
 
-    - Extract ALL skills mentioned in the resume.
-    - Include:
-    • Programming languages
-    • Frameworks
-    • Tools
-    • Databases
-    • Cloud & DevOps technologies
-    • Concepts (e.g., Data Structures, NLP)
+2. PROJECTS (CRITICAL):
+- Include:
+✔ Personal projects
+✔ Academic projects
+✔ Freelance/self-built work
+- Detect using keywords:
+"project", "built", "developed", "created", "designed"
+- If an entry is not a company job → classify as project
+- Extract:
+- github_link (if present)
+- live_link (if present)
+- technologies inside description
 
-    - DO NOT:
-    ✘ Merge multiple skills into one
-    ✘ Drop skills
-    ✘ Convert into sentences
+3. EDUCATION:
+- Most recent → current_education
+- Older → previous_education
+- Extract degree, major, institution, dates if available
 
-    - Keep skills as clean keywords only.
+4. SKILLS (STRICT EXTRACTION MODE - FINAL)
 
-    ----------------------------------
-    FINAL VALIDATION (MANDATORY)
-    ----------------------------------
+- PRIMARY SOURCE:
+  Extract skills ONLY from:
+  ✔ Skills section
+  ✔ Tech stack section
 
-    Before returning JSON:
-    - Ensure ALL keys exist
-    - Ensure experience contains ONLY jobs
-    - Ensure projects contains non-company work
-    - Ensure no hallucinated values
-    - Ensure valid JSON
+- FALLBACK:
+  If no skills section exists:
+  → Then extract from other sections
 
-    ----------------------------------
-    RESUME:
-    {text[:12000]}
-    """
+----------------------------------
+STRICT EXTRACTION RULES
+----------------------------------
 
+- Extract skills EXACTLY as written in the resume
+
+DO NOT:
+✘ Modify spelling  
+✘ Change casing  
+✘ Normalize names  
+✘ Expand abbreviations  
+✘ Merge skills  
+✘ Infer missing skills  
+✘ Generate new skills  
+
+- Preserve original format:
+✔ "React.js" stays "React.js"  
+✔ "Node.js" stays "Node.js"  
+✔ "C++" stays "C++"  
+
+----------------------------------
+SPLITTING RULE
+----------------------------------
+
+- If skills appear in grouped format:
+  Example: "HTML, CSS, JavaScript"
+
+→ Split into individual entries:
+["HTML", "CSS", "JavaScript"]
+
+- DO NOT alter individual skill text
+
+----------------------------------
+SOURCE RESTRICTION (VERY IMPORTANT)
+----------------------------------
+
+- DO NOT extract skills from:
+✘ Project descriptions  
+✘ Experience descriptions  
+
+(ONLY use them if no skills section exists)
+
+----------------------------------
+DEDUPLICATION RULE
+----------------------------------
+
+- Remove ONLY exact duplicates
+- "React" and "React.js" are DIFFERENT → keep both if present
+
+----------------------------------
+ORDER PRESERVATION
+----------------------------------
+
+- Maintain the same order as in the resume
+
+----------------------------------
+OUTPUT RULE
+----------------------------------
+
+- Output skills as a flat array of strings
+- No grouping
+- No categorization
+- No transformation
+
+----------------------------------
+
+5. CERTIFICATIONS:
+- Extract ONLY if clearly mentioned
+- Include certification name and organization
+
+----------------------------------
+CONFLICT RESOLUTION RULES
+----------------------------------
+
+If an item could be both experience and project:
+
+- If company name exists → EXPERIENCE
+- Otherwise → PROJECT
+
+----------------------------------
+NOISE HANDLING (IMPORTANT)
+----------------------------------
+
+- Ignore:
+✔ Decorative text
+✔ Icons/symbols
+✔ Repeated headers
+✔ Broken OCR text
+- Focus only on meaningful structured data
+
+----------------------------------
+FINAL VALIDATION (STRICT)
+----------------------------------
+
+Before returning JSON, ensure:
+
+✔ All keys exist  
+✔ Valid JSON format  
+✔ No extra keys  
+✔ No hallucinated data  
+✔ experience contains ONLY company roles  
+✔ projects contains ONLY non-company work  
+✔ skills strictly follow extraction rules  
+
+----------------------------------
+RESUME TEXT:
+{text[:12000]}
+"""
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
         contents=prompt
