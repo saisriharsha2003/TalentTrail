@@ -14,7 +14,6 @@ const RecruiterApplications = () => {
     const fetchApplications = async () => {
       try {
         const res = await axios.get("/recruiter/applications");
-        console.log(res?.data || []);
         setApplications(res?.data || []);
       } catch (err) {
         notify("failed", err?.response?.data?.message);
@@ -23,24 +22,43 @@ const RecruiterApplications = () => {
     fetchApplications();
   }, [axios]);
 
-  const filteredApplications = (applications || [])
-    .filter((app) => app.status === activeTab)
-    .filter((app) =>
-      (app?.userId?.personal?.fullName || "")
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()),
-    );
+  // ✅ GROUP BY STUDENT
+  const groupedApplications = Object.values(
+    applications.reduce((acc, app) => {
+      const studentId = app?.userId?._id;
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "selected":
-        return "bg-success";
-      case "rejected":
-        return "bg-danger";
-      default:
-        return "bg-warning text-dark";
-    }
-  };
+      if (!acc[studentId]) {
+        acc[studentId] = {
+          student: app.userId,
+          applications: [],
+        };
+      }
+
+      acc[studentId].applications.push(app);
+
+      return acc;
+    }, {}),
+  );
+
+  // ✅ FILTER
+  const filteredApplications = groupedApplications
+    .map((group) => {
+      const filteredApps = group.applications.filter(
+        (app) => app.status === activeTab,
+      );
+
+      return {
+        ...group,
+        applications: filteredApps,
+      };
+    })
+    .filter(
+      (group) =>
+        group.applications.length > 0 &&
+        (group?.student?.personal?.fullName || "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()),
+    );
 
   const getCount = (status) =>
     applications.filter((a) => a.status === status).length;
@@ -53,7 +71,7 @@ const RecruiterApplications = () => {
         <p className="text-muted">Review and manage student applications</p>
       </div>
 
-      {/* 🔥 TABS */}
+      {/* TABS */}
       <div className="mb-4">
         <ul className="nav nav-tabs border-0">
           {[
@@ -95,39 +113,48 @@ const RecruiterApplications = () => {
       {/* CARDS */}
       <div className="row g-4">
         {filteredApplications.length ? (
-          filteredApplications.map((app) => (
-            <div key={app._id} className="col-md-6">
-              <div className="card shadow-sm border-0 rounded-4 p-4 h-100 application-card">
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <h5 className="fw-bold mb-0">
-                    {app?.userId?.personal?.fullName || "N/A"}
-                  </h5>
+          filteredApplications.map((group) => {
+            // ✅ latest application date
+            const latestDate = new Date(
+              Math.max(
+                ...group.applications.map((a) =>
+                  new Date(a.appliedOn).getTime(),
+                ),
+              ),
+            );
 
-                  <span className={`badge ${getStatusBadge(app.status)}`}>
-                    <span>
-                      {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+            return (
+              <div key={group.student?._id} className="col-md-6">
+                <div className="card shadow-sm border-0 rounded-4 p-4 h-100 application-card">
+                  {/* HEADER */}
+                  <div className="d-flex justify-content-between align-items-start mb-2">
+                    <h5 className="fw-bold mb-0">
+                      {group.student?.personal?.fullName || "N/A"}
+                    </h5>
+
+                    {/* ✅ ONLY CHANGE: APPLICATION COUNT BADGE */}
+                    <span className="badge bg-primary">
+                      {group.applications.length} Applications
                     </span>
-                  </span>
-                </div>
+                  </div>
 
-                <div className="mb-3 text-muted small">
-                  <i className="bi bi-calendar me-1"></i>
-                  Applied on {new Date(app.appliedOn).toLocaleDateString()}
-                </div>
+                  {/* FOOTER */}
+                  <div className="mt-auto d-flex justify-content-between align-items-center">
+                    <small className="text-muted">
+                      {group.applications.length} roles
+                    </small>
 
-                <div className="mt-auto d-flex justify-content-between align-items-center">
-                  <small className="text-muted">ID: {app.applicationId}</small>
-
-                  <Link
-                    className="btn btn-outline-primary btn-sm rounded-pill px-3"
-                    to={app?.userId?._id}
-                  >
-                    View →
-                  </Link>
+                    <Link
+                      className="btn btn-outline-primary btn-sm rounded-pill px-3"
+                      to={`/user/recruiter/applications/${group.student?._id}?status=${activeTab}`}
+                    >
+                      View →
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="text-center text-muted mt-5">
             <h5>No applications found</h5>
@@ -136,7 +163,7 @@ const RecruiterApplications = () => {
         )}
       </div>
 
-      {/* 🔥 HOVER EFFECT */}
+      {/* HOVER EFFECT */}
       <style>{`
         .application-card {
           transition: all 0.25s ease;
