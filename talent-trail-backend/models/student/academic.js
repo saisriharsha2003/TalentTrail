@@ -38,14 +38,6 @@ const currentEducationSchema = new Schema({
         type: String,
         required: true
     },
-    skills: [{
-        type: String,
-        required: true
-    }],
-    interests: [{
-        type: String,
-        required: true
-    }],
     cgpa: {
         type: Number,
         required: true,
