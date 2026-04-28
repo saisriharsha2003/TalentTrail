@@ -160,7 +160,7 @@ const getStudentProfile = async (req, res, next) => {
       .populate("certifications")
       .populate("college")
       .select(
-        "personal contact academic workExperiences rollNo projects certifications resume jobsApplied jobsSelected jobsRejected college profile",
+        "personal contact academic workExperiences rollNo projects certifications resume jobsApplied jobsSelected jobsRejected college profile skills interests",
       )
       .exec();
 
@@ -207,7 +207,6 @@ const getApplications = async (req, res, next) => {
 
     const jobIds = foundJobs.map((job) => job._id);
 
-    // ✅ REMOVE status filter (IMPORTANT)
     const foundApplications = await AppliedJob.find({
       jobId: { $in: jobIds },
     })
@@ -412,7 +411,6 @@ const parseJD = async (req, res, next) => {
       success: true,
       job_data: response.data.job_data,
     });
-
   } catch (err) {
     console.error("❌ parseJD ERROR:", err.message);
 
@@ -425,7 +423,6 @@ const parseJD = async (req, res, next) => {
     return res.status(500).json({
       message: "Internal server error while parsing JD",
     });
-
   } finally {
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
