@@ -5,17 +5,18 @@ import { notify } from "../Toast";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../../assets/config.jsx";
 
-const StudentProfile = () => {
+const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
   const [activeTab, setActiveTab] = useState("personal");
   const [emailOTPSent, setEmailOTPSent] = useState(false);
-  const [mobileOTPSent, setMobileOTPSent] = useState(false);
   const [emailOTP, setEmailOTP] = useState("");
-  const [mobileOTP, setMobileOTP] = useState("");
   const [disableEmailOTP, setDisableEmailOTP] = useState(false);
-  const [disableMobileOTP, setDisableMobileOTP] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState(null);
   const [editingWorkId, setEditingWorkId] = useState(null);
   const [editingCertId, setEditingCertId] = useState(null);
+  const [skills, setSkills] = useState([]);
+  const [interests, setInterests] = useState([]);
+  const [skillInput, setSkillInput] = useState("");
+  const [interestInput, setInterestInput] = useState("");
 
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -97,6 +98,7 @@ const StudentProfile = () => {
     startDate: "",
     endDate: "",
     githubLink: "",
+    liveLink: "",
     associated: "",
   };
   const workDefault = {
@@ -161,34 +163,48 @@ const StudentProfile = () => {
 
   const fetchStudent = async () => {
     try {
-      const response = await axios.get("/student/details");
-      const student = response?.data;
+      let student;
+
+      if (externalData) {
+        student = externalData;
+      } else {
+        const response = await axios.get("/student/details");
+        student = response?.data;
+      }
+      console.log(student);
       if (!student?.academic || !student?.contact || !student?.personal)
         return navigate("/studentRegister");
-      console.log(student);
 
       setCurrentEducation({
         ...student?.academic?.currentEducation,
         academicId: student?.academic?._id,
         rollNo: student?.rollNo,
       });
+
       setPreviousEducation(student?.academic?.previousEducation);
       setContact(student?.contact);
+
       setPersonal({
         ...student?.personal,
         dateOfBirth: student?.personal?.dateOfBirth
           ? student.personal.dateOfBirth.split("T")[0]
           : "",
       });
+
       setCertifications(student?.certifications || []);
       setProjects(student?.projects || []);
       setWorks(student?.workExperiences || []);
       setUsername(student?.username);
       setResume(student?.resume);
-      if (student?.profile?.data?.length)
+      setSkills(student?.skills || []);
+      setInterests(student?.interests || []);
+
+      // profile image
+      if (student?.profile?.data?.length) {
         setProfile(
           `data:image/jpeg;base64,${bufferToBase64(student?.profile?.data)}`,
         );
+      }
     } catch (err) {
       notify("failed", err?.response?.data?.message);
     }
@@ -196,7 +212,7 @@ const StudentProfile = () => {
 
   useEffect(() => {
     fetchStudent();
-  }, []);
+  }, [externalData]);
 
   const handleSavePersonal = async (e) => {
     e.preventDefault();
@@ -310,7 +326,8 @@ const StudentProfile = () => {
       associated: newProj.associated?.toLowerCase(), // 🔥 CRITICAL FIX
       startDate: formatDate(newProj.startDate),
       endDate: newProj.endDate ? formatDate(newProj.endDate) : null,
-      githubLink: newProj.githubLink,
+      githubLink: newProj.githubLink || null,
+      liveLink: newProj.liveLink || null,
     };
 
     try {
@@ -345,6 +362,39 @@ const StudentProfile = () => {
     } catch (err) {
       notify("failed", err?.response?.data?.message);
     }
+  };
+  const addSkill = (e) => {
+    if (e.key === "Enter" && skillInput.trim()) {
+      e.preventDefault();
+      const value = skillInput.trim();
+
+      if (!skills.includes(value)) {
+        setSkills([...skills, value]);
+      }
+
+      setSkillInput("");
+    }
+  };
+
+  const removeSkill = (skill) => {
+    setSkills(skills.filter((s) => s !== skill));
+  };
+
+  const addInterest = (e) => {
+    if (e.key === "Enter" && interestInput.trim()) {
+      e.preventDefault();
+      const value = interestInput.trim();
+
+      if (!interests.includes(value)) {
+        setInterests([...interests, value]);
+      }
+
+      setInterestInput("");
+    }
+  };
+
+  const removeInterest = (interest) => {
+    setInterests(interests.filter((i) => i !== interest));
   };
 
   const handleAddWork = async (e) => {
@@ -439,7 +489,18 @@ const StudentProfile = () => {
       notify("failed", err?.response?.data?.message);
     }
   };
+  const handleSaveSkills = async () => {
+    try {
+      await axios.post("/student/skills", {
+        skills,
+        interests,
+      });
 
+      notify("success", "Skills & Interests updated");
+    } catch (err) {
+      notify("failed", err?.response?.data?.message);
+    }
+  };
   const getEmailOTP = async () => {
     try {
       await axios.post("/student/sendMail", { email: contact.email });
@@ -489,20 +550,25 @@ const StudentProfile = () => {
                     objectFit: "cover",
                   }}
                 />
-                <label
-                  htmlFor="profile-upload"
-                  className="position-absolute bottom-0 end-0 bg-white text-primary rounded-circle p-1 shadow-sm cursor-pointer"
-                  style={{ width: "32px", height: "32px" }}
-                >
-                  <i className="bi bi-camera-fill d-flex align-items-center justify-content-center h-100"></i>
-                  <input
-                    type="file"
-                    id="profile-upload"
-                    className="d-none"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, "profile")}
-                  />
-                </label>
+                {!isReadOnly && (
+                  <label
+                    htmlFor="profile-upload"
+                    className="position-absolute bottom-0 end-0 bg-white text-primary rounded-circle p-1 shadow-sm cursor-pointer"
+                    style={{ width: "32px", height: "32px" }}
+                  >
+                    <i className="bi bi-camera-fill d-flex align-items-center justify-content-center h-100"></i>
+                    <input
+                      type="file"
+                      id="profile-upload"
+                      className="d-none"
+                      accept="image/*"
+                      onChange={(e) =>
+                        !isReadOnly && handleFileUpload(e, "profile")
+                      }
+                      disabled={isReadOnly}
+                    />
+                  </label>
+                )}
               </div>
               <div>
                 <h3 className="fw-bold mb-1">{personal.fullName}</h3>
@@ -523,10 +589,11 @@ const StudentProfile = () => {
                 "personal",
                 "work",
                 "academic",
+                "skills",
                 "projects",
                 "resume",
                 "certifications",
-                "account",
+                ...(isReadOnly ? [] : ["account"]),
               ].map((tab) => (
                 <li className="nav-item" key={tab}>
                   <button
@@ -550,7 +617,14 @@ const StudentProfile = () => {
                   <h5 className="fw-bold mb-4 text-primary">
                     <i className="bi bi-person-fill me-2"></i>Personal Details
                   </h5>
-                  <form onSubmit={handleSavePersonal} className="row g-3">
+                  <form
+                    onSubmit={
+                      isReadOnly
+                        ? (e) => e.preventDefault()
+                        : handleSavePersonal
+                    }
+                    className="row g-3"
+                  >
                     <div className="col-md-6 form-floating">
                       <input
                         type="text"
@@ -560,6 +634,7 @@ const StudentProfile = () => {
                         onChange={(e) =>
                           setPersonal({ ...personal, fullName: e.target.value })
                         }
+                        disabled={isReadOnly}
                         required
                       />
                       <label className="ms-2">Full Name</label>
@@ -567,6 +642,7 @@ const StudentProfile = () => {
                     <div className="col-md-6 form-floating">
                       <input
                         type="date"
+                        disabled={isReadOnly}
                         className="form-control rounded-3"
                         value={personal.dateOfBirth}
                         onChange={(e) =>
@@ -584,6 +660,7 @@ const StudentProfile = () => {
                         type="text"
                         className="form-control rounded-3"
                         placeholder="Father's Name"
+                        disabled={isReadOnly}
                         value={personal.fatherName}
                         onChange={(e) =>
                           setPersonal({
@@ -607,6 +684,7 @@ const StudentProfile = () => {
                             motherName: e.target.value,
                           })
                         }
+                        disabled={isReadOnly}
                         required
                       />
                       <label className="ms-2">Mother's Name</label>
@@ -615,6 +693,7 @@ const StudentProfile = () => {
                       <select
                         className="form-select rounded-3"
                         value={personal.gender}
+                        disabled={isReadOnly}
                         onChange={(e) =>
                           setPersonal({ ...personal, gender: e.target.value })
                         }
@@ -642,12 +721,18 @@ const StudentProfile = () => {
                   <h5 className="fw-bold mb-4 text-primary">
                     <i className="bi bi-telephone-fill me-2"></i>Contact Info
                   </h5>
-                  <form onSubmit={handleSaveContact} className="row g-3">
+                  <form
+                    onSubmit={
+                      isReadOnly ? (e) => e.preventDefault() : handleSaveContact
+                    }
+                    className="row g-3"
+                  >
                     <div className="col-12 form-floating">
                       <input
                         type="email"
                         className="form-control rounded-3"
                         placeholder="Email"
+                        disabled={isReadOnly}
                         value={contact.email}
                         onChange={(e) =>
                           setContact({ ...contact, email: e.target.value })
@@ -655,15 +740,17 @@ const StudentProfile = () => {
                         required
                       />
                       <label className="ms-2">Email</label>
-                      {!disableEmailOTP && !contact.emailVerified && (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-link text-primary position-absolute top-50 end-0 translate-middle-y me-2"
-                          onClick={getEmailOTP}
-                        >
-                          Verify
-                        </button>
-                      )}
+                      {!isReadOnly &&
+                        !disableEmailOTP &&
+                        !contact.emailVerified && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link text-primary position-absolute top-50 end-0 translate-middle-y me-2"
+                            onClick={getEmailOTP}
+                          >
+                            Verify
+                          </button>
+                        )}
                     </div>
                     {emailOTPSent && !disableEmailOTP && (
                       <div className="col-12 d-flex gap-2">
@@ -671,6 +758,7 @@ const StudentProfile = () => {
                           type="text"
                           className="form-control rounded-3"
                           placeholder="OTP"
+                          disabled={isReadOnly}
                           value={emailOTP}
                           onChange={(e) => setEmailOTP(e.target.value)}
                         />
@@ -688,6 +776,7 @@ const StudentProfile = () => {
                         type="text"
                         className="form-control rounded-3"
                         placeholder="Mobile"
+                        disabled={isReadOnly}
                         value={contact.mobile}
                         onChange={(e) =>
                           setContact({ ...contact, mobile: e.target.value })
@@ -700,6 +789,7 @@ const StudentProfile = () => {
                       <textarea
                         className="form-control rounded-3"
                         style={{ height: "80px" }}
+                        disabled={isReadOnly}
                         value={contact.currentAddress}
                         onChange={(e) =>
                           setContact({
@@ -724,12 +814,115 @@ const StudentProfile = () => {
               </div>
             </div>
           )}
+          {activeTab === "skills" && (
+            <div className="row g-4">
+              <div className="col-12">
+                <div className="card shadow-sm border-0 rounded-4 p-4">
+                  <h5 className="fw-bold mb-4 text-warning d-flex align-items-center gap-2">
+                    <i className="bi bi-lightning-charge-fill"></i>
+                    Skills & Interests
+                  </h5>
 
+                  {/* SKILLS */}
+                  <div className="mb-4">
+                    <label className="form-label fw-bold text-muted small">
+                      Skills (Press Enter to add)
+                    </label>
+
+                    <div className="p-3 bg-white border rounded-4 shadow-sm">
+                      <div className="d-flex flex-wrap gap-2 mb-2">
+                        {skills.map((skill, i) => (
+                          <span
+                            key={i}
+                            className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2"
+                          >
+                            {skill}
+                            {!isReadOnly && (
+                              <i
+                                className="bi bi-x-circle ms-1 cursor-pointer"
+                                onClick={() => removeSkill(skill)}
+                              ></i>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+
+                      {!isReadOnly && (
+                        <input
+                          type="text"
+                          className="form-control border-0 p-0 shadow-none"
+                          placeholder="Type a skill..."
+                          value={skillInput}
+                          onChange={(e) => setSkillInput(e.target.value)}
+                          onKeyDown={addSkill}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* INTERESTS */}
+                  <div className="mb-4">
+                    <label className="form-label fw-bold text-muted small">
+                      Interests (Press Enter to add)
+                    </label>
+
+                    <div className="p-3 bg-white border rounded-4 shadow-sm">
+                      <div className="d-flex flex-wrap gap-2 mb-2">
+                        {interests.map((interest, i) => (
+                          <span
+                            key={i}
+                            className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2"
+                          >
+                            {interest}
+                            {!isReadOnly && (
+                              <i
+                                className="bi bi-x-circle ms-1 cursor-pointer"
+                                onClick={() => removeInterest(interest)}
+                              ></i>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+
+                      {!isReadOnly && (
+                        <input
+                          type="text"
+                          className="form-control border-0 p-0 shadow-none"
+                          placeholder="Type an interest..."
+                          value={interestInput}
+                          onChange={(e) => setInterestInput(e.target.value)}
+                          onKeyDown={addInterest}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* SAVE BUTTON */}
+                  {!isReadOnly && (
+                    <div className="text-end mt-4">
+                      <button
+                        className="btn btn-warning rounded-pill px-5 fw-bold"
+                        onClick={handleSaveSkills}
+                      >
+                        Save Skills & Interests
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {activeTab === "academic" && (
             <div className="row g-4">
               <div className="col-12">
                 <div className="card shadow-sm border-0 rounded-4 p-4">
-                  <form onSubmit={handleSaveAcademic}>
+                  <form
+                    onSubmit={
+                      isReadOnly
+                        ? (e) => e.preventDefault()
+                        : handleSaveAcademic
+                    }
+                  >
                     <h5 className="fw-bold mb-4 text-primary border-bottom pb-2">
                       Current Education
                     </h5>
@@ -738,6 +931,7 @@ const StudentProfile = () => {
                         <select
                           className="form-select rounded-3"
                           value={currentEducation.collegeId}
+                          disabled={isReadOnly}
                           onChange={(e) =>
                             setCurrentEducation({
                               ...currentEducation,
@@ -758,11 +952,12 @@ const StudentProfile = () => {
                       <div className="col-md-3 form-floating">
                         <select
                           className="form-select rounded-3"
-                          value={currentEducation.course}
+                          disabled={isReadOnly}
+                          value={currentEducation.courseId}
                           onChange={(e) =>
                             setCurrentEducation({
                               ...currentEducation,
-                              course: e.target.value,
+                              courseId: e.target.value,
                             })
                           }
                           required
@@ -783,6 +978,7 @@ const StudentProfile = () => {
                       <div className="col-md-3 form-floating">
                         <select
                           className="form-select rounded-3"
+                          disabled={isReadOnly}
                           value={currentEducation.major}
                           onChange={(e) =>
                             setCurrentEducation({
@@ -809,6 +1005,7 @@ const StudentProfile = () => {
                       <div className="col-md-3 form-floating">
                         <select
                           className="form-select rounded-3"
+                          disabled={isReadOnly}
                           value={currentEducation.studyYear}
                           onChange={(e) =>
                             setCurrentEducation({
@@ -838,6 +1035,7 @@ const StudentProfile = () => {
                         <input
                           type="text"
                           className="form-control rounded-3"
+                          disabled={isReadOnly}
                           value={currentEducation.cgpa}
                           onChange={(e) =>
                             setCurrentEducation({
@@ -853,6 +1051,7 @@ const StudentProfile = () => {
                         <input
                           type="text"
                           className="form-control rounded-3"
+                          disabled={isReadOnly}
                           value={currentEducation.rollNo}
                           onChange={(e) =>
                             setCurrentEducation({
@@ -874,6 +1073,7 @@ const StudentProfile = () => {
                         <input
                           type="text"
                           className="form-control rounded-3"
+                          disabled={isReadOnly}
                           value={previousEducation.college}
                           onChange={(e) =>
                             setPreviousEducation({
@@ -889,6 +1089,7 @@ const StudentProfile = () => {
                         <input
                           type="text"
                           className="form-control rounded-3"
+                          disabled={isReadOnly}
                           value={previousEducation.major}
                           onChange={(e) =>
                             setPreviousEducation({
@@ -904,6 +1105,7 @@ const StudentProfile = () => {
                         <input
                           type="text"
                           className="form-control rounded-3"
+                          disabled={isReadOnly}
                           value={previousEducation.percentage}
                           onChange={(e) =>
                             setPreviousEducation({
@@ -938,18 +1140,19 @@ const StudentProfile = () => {
                       <i className="bi bi-briefcase-fill me-2"></i>Work
                       Experience
                     </span>
-
-                    <button
-                      className="btn btn-sm btn-success rounded-pill px-3 fw-semibold"
-                      data-bs-toggle="modal"
-                      data-bs-target="#workModal"
-                      onClick={() => {
-                        setNewWork(workDefault);
-                        setEditingWorkId(null);
-                      }}
-                    >
-                      + Add Work
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        className="btn btn-sm btn-success rounded-pill px-3 fw-semibold"
+                        data-bs-toggle="modal"
+                        data-bs-target="#workModal"
+                        onClick={() => {
+                          setNewWork(workDefault);
+                          setEditingWorkId(null);
+                        }}
+                      >
+                        + Add Work
+                      </button>
+                    )}
                   </h5>
 
                   {works.length === 0 ? (
@@ -962,32 +1165,37 @@ const StudentProfile = () => {
                       {sortedWorks.map((work, idx) => (
                         <div key={work._id} className="col-12">
                           <div className="card border-0 shadow-sm rounded-4 p-3 position-relative work-card h-100">
-                            <button
-                              className="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
-                              onClick={() => {
-                                setNewWork({
-                                  ...work,
-                                  startDate: formatToInputDate(work.startDate),
-                                  endDate: formatToInputDate(work.endDate),
-                                });
+                            {!isReadOnly && (
+                              <button
+                                className="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
+                                onClick={() => {
+                                  setNewWork({
+                                    ...work,
+                                    startDate: formatToInputDate(
+                                      work.startDate,
+                                    ),
+                                    endDate: formatToInputDate(work.endDate),
+                                  });
 
-                                setEditingWorkId(work._id);
+                                  setEditingWorkId(work._id);
 
-                                const modal = new window.bootstrap.Modal(
-                                  document.getElementById("workModal"),
-                                );
-                                modal.show();
-                              }}
-                            >
-                              ✏️
-                            </button>
-
-                            <button
-                              className="btn btn-sm btn-light position-absolute top-0 end-0 me-5 mt-2 rounded-circle shadow-sm"
-                              onClick={() => handleDeleteWork(work._id)}
-                            >
-                              <i className="bi bi-trash text-danger"></i>
-                            </button>
+                                  const modal = new window.bootstrap.Modal(
+                                    document.getElementById("workModal"),
+                                  );
+                                  modal.show();
+                                }}
+                              >
+                                ✏️
+                              </button>
+                            )}
+                            {!isReadOnly && (
+                              <button
+                                className="btn btn-sm btn-light position-absolute top-0 end-0 me-5 mt-2 rounded-circle shadow-sm"
+                                onClick={() => handleDeleteWork(work._id)}
+                              >
+                                <i className="bi bi-trash text-danger"></i>
+                              </button>
+                            )}
 
                             <div className="mt-2">
                               <h6 className="fw-bold mb-1 d-flex align-items-center gap-2">
@@ -1044,18 +1252,19 @@ const StudentProfile = () => {
                     <span>
                       <i className="bi bi-kanban-fill me-2"></i>Projects
                     </span>
-
-                    <button
-                      className="btn btn-sm btn-primary rounded-pill px-3 fw-semibold"
-                      data-bs-toggle="modal"
-                      data-bs-target="#projectModal"
-                      onClick={() => {
-                        setNewProj(projectDefault);
-                        setEditingProjectId(null);
-                      }}
-                    >
-                      + Add Project
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        className="btn btn-sm btn-primary rounded-pill px-3 fw-semibold"
+                        data-bs-toggle="modal"
+                        data-bs-target="#projectModal"
+                        onClick={() => {
+                          setNewProj(projectDefault);
+                          setEditingProjectId(null);
+                        }}
+                      >
+                        + Add Project
+                      </button>
+                    )}
                   </h5>
 
                   {/* Projects List */}
@@ -1067,31 +1276,32 @@ const StudentProfile = () => {
                   ) : (
                     <div className="row g-3">
                       {projects.map((proj, idx) => (
-                        <div key={idx} className="col-6">
+                        <div key={proj._id} className="col-6">
                           <div className="card border-0 shadow-sm rounded-4 h-100 p-3 position-relative project-card">
-                            {/* Edit Button */}
-                            <button
-                              className="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
-                              onClick={() => {
-                                setNewProj(proj);
-                                setEditingProjectId(proj._id);
-                                const modal = new window.bootstrap.Modal(
-                                  document.getElementById("projectModal"),
-                                );
-                                modal.show();
-                              }}
-                            >
-                              ✏️
-                            </button>
+                            {!isReadOnly && (
+                              <button
+                                className="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
+                                onClick={() => {
+                                  setNewProj(proj);
+                                  setEditingProjectId(proj._id);
+                                  const modal = new window.bootstrap.Modal(
+                                    document.getElementById("projectModal"),
+                                  );
+                                  modal.show();
+                                }}
+                              >
+                                ✏️
+                              </button>
+                            )}
+                            {!isReadOnly && (
+                              <button
+                                className="btn btn-sm btn-light position-absolute top-0 end-0 me-5 mt-2 rounded-circle shadow-sm"
+                                onClick={() => handleDeleteProject(proj._id)}
+                              >
+                                <i className="bi bi-trash text-danger"></i>
+                              </button>
+                            )}
 
-                            <button
-                              className="btn btn-sm btn-light position-absolute top-0 end-0 me-5 mt-2 rounded-circle shadow-sm"
-                              onClick={() => handleDeleteProject(proj._id)}
-                            >
-                              <i className="bi bi-trash text-danger"></i>
-                            </button>
-
-                            {/* Content */}
                             <div className="mt-2">
                               <h6 className="fw-bold mb-2">{proj.name}</h6>
 
@@ -1105,14 +1315,17 @@ const StudentProfile = () => {
                                 </div>
                               )}
 
-                              {/* Dates */}
                               <div className="small text-secondary mb-3">
                                 <i className="bi bi-clock-history text-success me-1"></i>
-                                {proj.startDate || "N/A"} -{" "}
-                                {proj.endDate || "Present"}
+                                {proj.startDate
+                                  ? formatMonthYear(proj.startDate)
+                                  : "N/A"}{" "}
+                                -
+                                {proj.endDate
+                                  ? formatMonthYear(proj.endDate)
+                                  : "Present"}
                               </div>
 
-                              {/* Actions */}
                               <div className="d-flex gap-2 flex-wrap">
                                 {proj.githubLink && (
                                   <a
@@ -1123,6 +1336,21 @@ const StudentProfile = () => {
                                   >
                                     <i className="bi bi-github me-1"></i>
                                     View Code
+                                  </a>
+                                )}
+                                {proj.liveLink && (
+                                  <a
+                                    href={
+                                      proj.liveLink?.startsWith("http")
+                                        ? proj.liveLink
+                                        : `https://${proj.liveLink}`
+                                    }
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn btn-sm btn-primary rounded-pill px-3"
+                                  >
+                                    <i className="bi bi-globe me-1"></i>
+                                    View Live
                                   </a>
                                 )}
                               </div>
@@ -1158,21 +1386,21 @@ const StudentProfile = () => {
                       <i className="bi bi-patch-check-fill me-2"></i>
                       Certifications
                     </span>
-
-                    <button
-                      className="btn btn-sm btn-outline-info rounded-pill px-3 fw-semibold"
-                      data-bs-toggle="modal"
-                      data-bs-target="#certModal"
-                      onClick={() => {
-                        setNewCert({ name: "", organization: "" });
-                        setEditingCertId(null);
-                      }}
-                    >
-                      + Add Certification
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        className="btn btn-sm btn-outline-info rounded-pill px-3 fw-semibold"
+                        data-bs-toggle="modal"
+                        data-bs-target="#certModal"
+                        onClick={() => {
+                          setNewCert({ name: "", organization: "" });
+                          setEditingCertId(null);
+                        }}
+                      >
+                        + Add Certification
+                      </button>
+                    )}
                   </h5>
 
-                  {/* LIST */}
                   {certifications.length === 0 ? (
                     <div className="text-center text-muted py-5">
                       <i className="bi bi-patch-check fs-1 d-block mb-2"></i>
@@ -1182,11 +1410,8 @@ const StudentProfile = () => {
                     <div className="row g-3">
                       {certifications.map((cert) => (
                         <div key={cert._id} className="col-md-4">
-                          {/* 🔥 UPDATED CARD */}
                           <div className="card border-0 shadow-sm rounded-4 p-3 cert-card h-100">
-                            {/* TOP ROW */}
                             <div className="d-flex justify-content-between align-items-start">
-                              {/* LEFT CONTENT */}
                               <div className="me-2" style={{ flex: 1 }}>
                                 <h6
                                   className="fw-bold mb-1 d-flex align-items-center gap-2"
@@ -1207,32 +1432,34 @@ const StudentProfile = () => {
                                 </div>
                               </div>
 
-                              {/* RIGHT BUTTONS */}
                               <div className="d-flex gap-2">
-                                <button
-                                  className="btn btn-sm btn-light rounded-circle shadow-sm"
-                                  onClick={() => handleDeleteCert(cert._id)}
-                                >
-                                  <i className="bi bi-trash text-danger"></i>
-                                </button>
+                                {!isReadOnly && (
+                                  <button
+                                    className="btn btn-sm btn-light rounded-circle shadow-sm"
+                                    onClick={() => handleDeleteCert(cert._id)}
+                                  >
+                                    <i className="bi bi-trash text-danger"></i>
+                                  </button>
+                                )}
+                                {!isReadOnly && (
+                                  <button
+                                    className="btn btn-sm btn-light rounded-circle shadow-sm"
+                                    onClick={() => {
+                                      setNewCert({
+                                        name: cert.name,
+                                        organization: cert.organization,
+                                      });
+                                      setEditingCertId(cert._id);
 
-                                <button
-                                  className="btn btn-sm btn-light rounded-circle shadow-sm"
-                                  onClick={() => {
-                                    setNewCert({
-                                      name: cert.name,
-                                      organization: cert.organization,
-                                    });
-                                    setEditingCertId(cert._id);
-
-                                    const modal = new window.bootstrap.Modal(
-                                      document.getElementById("certModal"),
-                                    );
-                                    modal.show();
-                                  }}
-                                >
-                                  ✏️
-                                </button>
+                                      const modal = new window.bootstrap.Modal(
+                                        document.getElementById("certModal"),
+                                      );
+                                      modal.show();
+                                    }}
+                                  >
+                                    ✏️
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1243,7 +1470,6 @@ const StudentProfile = () => {
                 </div>
               </div>
 
-              {/* HOVER EFFECT */}
               <style>{`
       .cert-card {
         transition: all 0.25s ease;
@@ -1264,15 +1490,16 @@ const StudentProfile = () => {
                     <span>
                       <i className="bi bi-file-earmark-pdf-fill me-2"></i>Resume
                     </span>
-
-                    <button
-                      className="btn btn-sm btn-outline-danger rounded-pill"
-                      onClick={() =>
-                        document.getElementById("resume-upload").click()
-                      }
-                    >
-                      {resume ? "Replace" : "+ Upload"}
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        className="btn btn-sm btn-outline-danger rounded-pill"
+                        onClick={() =>
+                          document.getElementById("resume-upload").click()
+                        }
+                      >
+                        {resume ? "Replace" : "+ Upload"}
+                      </button>
+                    )}
                   </h5>
 
                   <div className="bg-light rounded-4 p-3 d-flex justify-content-between align-items-center">
@@ -1287,10 +1514,7 @@ const StudentProfile = () => {
                           <button
                             className="btn btn-dark btn-sm rounded-pill px-3"
                             onClick={() =>
-                              window.open(
-                                `${BASE_URL}/${resume}`,
-                                "_blank",
-                              )
+                              window.open(`${BASE_URL}/${resume}`, "_blank")
                             }
                           >
                             📄 View
@@ -1312,6 +1536,7 @@ const StudentProfile = () => {
                     <input
                       type="file"
                       id="resume-upload"
+                      disabled={isReadOnly}
                       className="d-none"
                       accept=".pdf"
                       onChange={(e) => handleFileUpload(e, "resume")}
@@ -1321,7 +1546,8 @@ const StudentProfile = () => {
               </div>
             </div>
           )}
-          {activeTab === "account" && (
+
+          {activeTab === "account" && !isReadOnly && (
             <div className="row g-4">
               <div className="col-md-6">
                 <div className="card shadow-sm border-0 rounded-4 p-4">
@@ -1332,6 +1558,7 @@ const StudentProfile = () => {
                     <div className="form-floating mb-3">
                       <input
                         type="text"
+                        disabled={isReadOnly}
                         className="form-control rounded-3"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -1358,6 +1585,7 @@ const StudentProfile = () => {
                     <div className="form-floating mb-3">
                       <input
                         type="password"
+                        disabled={isReadOnly}
                         className="form-control rounded-3"
                         value={prevPassword}
                         onChange={(e) => setPrevPassword(e.target.value)}
@@ -1403,7 +1631,11 @@ const StudentProfile = () => {
               ></button>
             </div>
 
-            <form onSubmit={handleAddProject}>
+            <form
+              onSubmit={
+                isReadOnly ? (e) => e.preventDefault() : handleAddProject
+              }
+            >
               <div className="modal-body p-4 pt-0">
                 <div className="form-floating mb-3">
                   <input
@@ -1435,6 +1667,7 @@ const StudentProfile = () => {
                 <div className="form-floating mb-3">
                   <select
                     className="form-select rounded-3"
+                    disabled={isReadOnly}
                     value={newProj.associated || ""}
                     onChange={(e) =>
                       setNewProj({ ...newProj, associated: e.target.value })
@@ -1504,19 +1737,19 @@ const StudentProfile = () => {
                 >
                   Cancel
                 </button>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary rounded-pill px-4 fw-bold"
-                >
-                  {editingProjectId ? "Update" : "Add Project"}
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="submit"
+                    className="btn btn-primary rounded-pill px-4 fw-bold"
+                  >
+                    {editingProjectId ? "Update" : "Add Project"}
+                  </button>
+                )}
               </div>
             </form>
           </div>
         </div>
       </div>
-      {/* Work Modal */}
       <div className="modal fade" id="workModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content border-0 rounded-4 shadow">
@@ -1530,7 +1763,9 @@ const StudentProfile = () => {
                 data-bs-dismiss="modal"
               ></button>
             </div>
-            <form onSubmit={handleAddWork}>
+            <form
+              onSubmit={isReadOnly ? (e) => e.preventDefault() : handleAddWork}
+            >
               <div className="modal-body p-4 pt-0">
                 <div className="form-floating mb-3">
                   <input
@@ -1594,28 +1829,28 @@ const StudentProfile = () => {
                   </div>
                 </div>
               </div>
-              <div className="modal-footer border-0 p-4 pt-0">
-                <button
-                  type="button"
-                  className="btn btn-light rounded-pill px-4"
-                  data-bs-dismiss="modal"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-success rounded-pill px-4 fw-bold"
-                >
-                  {editingWorkId ? "Update" : "Add Work"}
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div className="modal-footer border-0 p-4 pt-0">
+                  <button
+                    type="button"
+                    className="btn btn-light rounded-pill px-4"
+                    data-bs-dismiss="modal"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-success rounded-pill px-4 fw-bold"
+                  >
+                    {editingWorkId ? "Update" : "Add Work"}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
       </div>
 
-      {/* Cert Modal */}
-      {/* Cert Modal */}
       <div className="modal fade" id="certModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content border-0 rounded-4 shadow">
@@ -1630,7 +1865,9 @@ const StudentProfile = () => {
               ></button>
             </div>
 
-            <form onSubmit={handleAddCert}>
+            <form
+              onSubmit={isReadOnly ? (e) => e.preventDefault() : handleAddCert}
+            >
               <div className="modal-body p-4 pt-0">
                 <div className="form-floating mb-3">
                   <input
@@ -1658,27 +1895,28 @@ const StudentProfile = () => {
                   <label>Issuing Organization</label>
                 </div>
               </div>
+              {!isReadOnly && (
+                <div className="modal-footer border-0 p-4 pt-0">
+                  <button
+                    type="button"
+                    className="btn btn-light rounded-pill px-4"
+                    data-bs-dismiss="modal"
+                    onClick={() => {
+                      setNewCert({ name: "", organization: "" });
+                      setEditingCertId(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
 
-              <div className="modal-footer border-0 p-4 pt-0">
-                <button
-                  type="button"
-                  className="btn btn-light rounded-pill px-4"
-                  data-bs-dismiss="modal"
-                  onClick={() => {
-                    setNewCert({ name: "", organization: "" });
-                    setEditingCertId(null);
-                  }}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="btn btn-info text-white rounded-pill px-4 fw-bold"
-                >
-                  {editingCertId ? "Update" : "Add"}
-                </button>
-              </div>
+                  <button
+                    type="submit"
+                    className="btn btn-info text-white rounded-pill px-4 fw-bold"
+                  >
+                    {editingCertId ? "Update" : "Add"}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>

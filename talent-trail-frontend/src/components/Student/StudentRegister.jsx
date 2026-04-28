@@ -5,7 +5,7 @@ import { notify } from "../Toast";
 import { useNavigate } from "react-router-dom";
 
 const StudentRegister = () => {
-  const [step, setStep] = useState(1);
+  const [activeTab, setActiveTab] = useState("personal");
   const [colleges, setColleges] = useState([]);
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
@@ -14,7 +14,14 @@ const StudentRegister = () => {
   const [editingCertIndex, setEditingCertIndex] = useState(null);
 
   const [selectedCollegeCourses, setSelectedCollegeCourses] = useState([]);
+  const saveDraft = (data) => {
+    localStorage.setItem("studentDraft", JSON.stringify(data));
+  };
 
+  const loadDraft = () => {
+    const draft = localStorage.getItem("studentDraft");
+    return draft ? JSON.parse(draft) : null;
+  };
   useEffect(() => {
     const fetchColleges = async () => {
       try {
@@ -32,7 +39,14 @@ const StudentRegister = () => {
     ? JSON.parse(parsedOutputString)
     : null;
   const r = parsedOutput?.resume_data || {};
-
+  const draft = loadDraft();
+  console.log(r);
+  const [skills, setSkills] = useState(
+    draft?.skills || (Array.isArray(r?.skills) ? r.skills : []),
+  );
+  const [interests, setInterests] = useState(
+    draft?.interests || (Array.isArray(r?.interests) ? r.interests : []),
+  );
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     try {
@@ -61,12 +75,6 @@ const StudentRegister = () => {
     rollNo: r?.current_education?.roll_no || "",
     studyYear: r?.current_education?.study_year || "",
     major: r?.current_education?.major || "",
-    skills: Array.isArray(r?.current_education?.skills)
-      ? r.current_education.skills
-      : r?.current_education?.skills?.split(",") || [],
-    interests: Array.isArray(r?.current_education?.interests)
-      ? r.current_education.interests
-      : r?.current_education?.interests?.split(",") || [],
     cgpa: r?.current_education?.cgpa || "",
   };
 
@@ -94,13 +102,42 @@ const StudentRegister = () => {
     gender: r?.personal?.gender || "",
   };
 
-  const [currentEducation, setCurrentEducation] = useState(currentDefault);
-  const [previousEducation, setPreviousEducation] = useState(previousDefault);
-  const [contact, setContact] = useState(contactDefault);
-  const [personal, setPersonal] = useState(personalDefault);
-  const [projects, setProjects] = useState(r?.projects || []);
-  const [experiences, setExperiences] = useState(r?.experience || []);
-  const [certifications, setCertifications] = useState(r?.certifications || []);
+  const [currentEducation, setCurrentEducation] = useState(
+    draft?.currentEducation || currentDefault,
+  );
+  const [previousEducation, setPreviousEducation] = useState(
+    draft?.previousEducation || previousDefault,
+  );
+  const [contact, setContact] = useState(draft?.contact || contactDefault);
+  const [personal, setPersonal] = useState(draft?.personal || personalDefault);
+  const normalizeProjects = (projects = []) =>
+    projects.map((p) => ({
+      name: p.name || "",
+      description: p.description || "",
+      associated: p.associated || "self",
+
+      // ✅ FIXED FIELD MAPPING
+      githubLink: p.githubLink || p.github_link || "",
+      liveLink: p.liveLink || p.live_link || "",
+
+      startDate: p.startDate || p.start_date || "",
+      endDate: p.endDate || p.end_date || "",
+
+      currentlyWorking:
+        p.currentlyWorking ??
+        p.currently_working ??
+        (!p.end_date && !p.endDate),
+    }));
+
+  const [projects, setProjects] = useState(
+    draft?.projects || normalizeProjects(r?.projects),
+  );
+  const [experiences, setExperiences] = useState(
+    draft?.experiences || r?.experience || [],
+  );
+  const [certifications, setCertifications] = useState(
+    draft?.certifications || r?.certifications || [],
+  );
   const [profileFile, setProfileFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -113,6 +150,7 @@ const StudentRegister = () => {
     endDate: "",
     associated: "self",
     githubLink: "",
+    liveLink: "",
     currentlyWorking: false,
   });
   const [newExp, setNewExp] = useState({
@@ -229,18 +267,6 @@ const StudentRegister = () => {
     }
   }, [colleges, r?.current_education, currentEducation.collegeId]);
 
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
-
-  const handleStep1 = (e) => {
-    e.preventDefault();
-    nextStep();
-  };
-  const handleStep2 = (e) => {
-    e.preventDefault();
-    nextStep();
-  };
-
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     setLoading(true);
@@ -273,8 +299,6 @@ const StudentRegister = () => {
           graduatingYear: parseInt(currentEducation.graduatingYear),
           studyYear: parseInt(currentEducation.studyYear),
           cgpa: parseFloat(currentEducation.cgpa),
-          skills: currentEducation.skills,
-          interests: currentEducation.interests,
         },
         previousEducation: {
           ...previousEducation,
@@ -282,6 +306,10 @@ const StudentRegister = () => {
         },
         rollNo: currentEducation.rollNo,
         collegeId: currentEducation.collegeId,
+      });
+      await axios.post("/student/skills", {
+        skills: skills,
+        interests: interests,
       });
       for (let proj of projects) {
         if (proj.name) {
@@ -296,6 +324,7 @@ const StudentRegister = () => {
               : formatDate(proj.endDate || proj.end_date) || null,
             associated: proj.associated || "self",
             githubLink: proj.githubLink || null,
+            liveLink: proj.liveLink || null,
             currentlyWorking: !(proj.endDate || proj.end_date),
           });
         }
@@ -323,6 +352,7 @@ const StudentRegister = () => {
       }
 
       notify("success", "Registration completed successfully!");
+      localStorage.removeItem("studentDraft");
       navigate("/user/student");
     } catch (err) {
       console.error("Submission error:", err);
@@ -339,66 +369,70 @@ const StudentRegister = () => {
   const addSkill = (e) => {
     if (e.key === "Enter" && skillInput.trim()) {
       e.preventDefault();
-      if (!currentEducation.skills.includes(skillInput.trim())) {
-        setCurrentEducation({
-          ...currentEducation,
-          skills: [...currentEducation.skills, skillInput.trim()],
-        });
+      const value = skillInput.trim();
+
+      if (!skills.includes(value)) {
+        setSkills([...skills, value]);
       }
+
       setSkillInput("");
     }
   };
+  // ✅ AUTO SAVE DRAFT
+  useEffect(() => {
+    saveDraft({
+      personal,
+      contact,
+      currentEducation,
+      previousEducation,
+      projects,
+      experiences,
+      certifications,
+      skills,
+      interests,
+    });
+  }, [
+    personal,
+    contact,
+    currentEducation,
+    previousEducation,
+    projects,
+    experiences,
+    certifications,
+    skills,
+    interests,
+  ]);
 
   const removeSkill = (skill) => {
-    setCurrentEducation({
-      ...currentEducation,
-      skills: currentEducation.skills.filter((s) => s !== skill),
-    });
+    setSkills(skills.filter((s) => s !== skill));
   };
 
   const addInterest = (e) => {
     if (e.key === "Enter" && interestInput.trim()) {
       e.preventDefault();
-      if (!currentEducation.interests.includes(interestInput.trim())) {
-        setCurrentEducation({
-          ...currentEducation,
-          interests: [...currentEducation.interests, interestInput.trim()],
-        });
+      const value = interestInput.trim();
+
+      if (!interests.includes(value)) {
+        setInterests([...interests, value]);
       }
+
       setInterestInput("");
     }
   };
 
   const removeInterest = (interest) => {
-    setCurrentEducation({
-      ...currentEducation,
-      interests: currentEducation.interests.filter((i) => i !== interest),
-    });
+    setInterests(interests.filter((i) => i !== interest));
   };
 
-  const renderStepIndicator = () => (
-    <div className="d-flex justify-content-between mb-5 position-relative">
-      <div
-        className="position-absolute top-50 start-0 end-0 border-top translate-middle-y"
-        style={{ zIndex: 0 }}
-      ></div>
-      {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-        <div
-          key={num}
-          className={`rounded-circle d-flex align-items-center justify-content-center border shadow-sm ${step >= num ? "bg-primary text-white border-primary" : "bg-white text-muted border-secondary"}`}
-          style={{
-            width: "40px",
-            height: "40px",
-            zIndex: 1,
-            transition: "0.3s",
-          }}
-        >
-          {num}
-        </div>
-      ))}
-    </div>
-  );
-
+  const tabs = [
+    { key: "personal", label: "Personal", icon: "bi-person" },
+    { key: "contact", label: "Contact", icon: "bi-envelope" },
+    { key: "academic", label: "Academic", icon: "bi-mortarboard" },
+    { key: "skills", label: "Skills", icon: "bi-lightning" },
+    { key: "projects", label: "Projects", icon: "bi-kanban" },
+    { key: "certifications", label: "Certifications", icon: "bi-award" },
+    { key: "final", label: "Finish", icon: "bi-check-circle" },
+  ];
   return (
     <div className="container-fluid py-4 bg-light min-vh-100">
       <div
@@ -413,11 +447,27 @@ const StudentRegister = () => {
         </div>
 
         <div className="card-body p-4 p-md-5">
-          {renderStepIndicator()}
+          <div className="d-flex flex-wrap gap-2 mb-4 justify-content-center">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`btn rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-2 ${
+                  activeTab === tab.key
+                    ? "btn-primary text-white"
+                    : "btn-light border"
+                }`}
+              >
+                <i className={`bi ${tab.icon}`}></i>
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-          {step === 1 && (
+          {activeTab === "personal" && (
             <form
-              onSubmit={handleStep1}
+              onSubmit={(e) => e.preventDefault()}
               className="animate__animated animate__fadeIn"
             >
               <h4 className="mb-4 fw-semibold text-primary">
@@ -494,18 +544,24 @@ const StudentRegister = () => {
               </div>
               <div className="d-flex justify-content-end mt-4">
                 <button
-                  type="submit"
+                  type="button"
                   className="btn btn-primary px-5 py-2 rounded-3 fw-semibold"
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx < tabs.length - 1) {
+                      setActiveTab(tabs[idx + 1].key);
+                    }
+                  }}
                 >
-                  Next Step
+                  Next →
                 </button>
               </div>
             </form>
           )}
 
-          {step === 2 && (
+          {activeTab === "contact" && (
             <form
-              onSubmit={handleStep2}
+              onSubmit={(e) => e.preventDefault()}
               className="animate__animated animate__fadeIn"
             >
               <h4 className="mb-4 fw-semibold text-primary">Contact Details</h4>
@@ -583,23 +639,34 @@ const StudentRegister = () => {
                 <button
                   type="button"
                   className="btn btn-outline-secondary px-4 py-2 rounded-3"
-                  onClick={prevStep}
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx > 0) {
+                      setActiveTab(tabs[idx - 1].key);
+                    }
+                  }}
                 >
                   Back
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   className="btn btn-primary px-5 py-2 rounded-3 fw-semibold"
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx < tabs.length - 1) {
+                      setActiveTab(tabs[idx + 1].key);
+                    }
+                  }}
                 >
-                  Next Step
+                  Next →
                 </button>
               </div>
             </form>
           )}
 
-          {step === 3 && (
+          {activeTab === "academic" && (
             <form
-              onSubmit={nextStep}
+              onSubmit={(e) => e.preventDefault()}
               className="animate__animated animate__fadeIn"
             >
               <h4 className="mb-4 fw-semibold text-primary">
@@ -897,23 +964,34 @@ const StudentRegister = () => {
                 <button
                   type="button"
                   className="btn btn-outline-secondary px-4 py-2 rounded-3"
-                  onClick={prevStep}
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx > 0) {
+                      setActiveTab(tabs[idx - 1].key);
+                    }
+                  }}
                 >
                   Back
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   className="btn btn-primary px-5 py-2 rounded-3 fw-semibold"
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx < tabs.length - 1) {
+                      setActiveTab(tabs[idx + 1].key);
+                    }
+                  }}
                 >
-                  Next Step
+                  Next →
                 </button>
               </div>
             </form>
           )}
 
-          {step === 4 && (
+          {activeTab === "skills" && (
             <form
-              onSubmit={nextStep}
+              onSubmit={(e) => e.preventDefault()}
               className="animate__animated animate__fadeIn"
             >
               <h4 className="mb-4 fw-semibold text-primary">
@@ -926,7 +1004,7 @@ const StudentRegister = () => {
                 </label>
                 <div className="p-3 bg-white border rounded-4 shadow-sm mb-2">
                   <div className="d-flex flex-wrap gap-2 mb-2">
-                    {currentEducation.skills.map((skill, i) => (
+                    {skills.map((skill, i) => (
                       <span
                         key={i}
                         className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2"
@@ -956,7 +1034,7 @@ const StudentRegister = () => {
                 </label>
                 <div className="p-3 bg-white border rounded-4 shadow-sm mb-2">
                   <div className="d-flex flex-wrap gap-2 mb-2">
-                    {currentEducation.interests.map((interest, i) => (
+                    {interests.map((interest, i) => (
                       <span
                         key={i}
                         className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2"
@@ -984,23 +1062,34 @@ const StudentRegister = () => {
                 <button
                   type="button"
                   className="btn btn-outline-secondary px-4 py-2 rounded-3"
-                  onClick={prevStep}
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx > 0) {
+                      setActiveTab(tabs[idx - 1].key);
+                    }
+                  }}
                 >
                   Back
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   className="btn btn-primary px-5 py-2 rounded-3 fw-semibold"
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx < tabs.length - 1) {
+                      setActiveTab(tabs[idx + 1].key);
+                    }
+                  }}
                 >
-                  Next Step
+                  Next →
                 </button>
               </div>
             </form>
           )}
 
-          {step === 5 && (
+          {activeTab === "projects" && (
             <form
-              onSubmit={nextStep}
+              onSubmit={(e) => e.preventDefault()}
               className="animate__animated animate__fadeIn"
             >
               <h4 className="mb-4 fw-semibold text-primary d-flex align-items-center">
@@ -1008,234 +1097,269 @@ const StudentRegister = () => {
                 Experience
               </h4>
 
-             {/* ================= PROJECTS ================= */}
-<div className="mb-5">
-  <h5 className="section-title">🚀 Projects</h5>
+              {/* ================= PROJECTS ================= */}
+              <div className="mb-5">
+                <h5 className="section-title">🚀 Projects</h5>
 
-  {projects.map((proj, idx) => (
-    <div key={idx} className="project-card-pro">
+                {projects.map((proj, idx) => (
+                  <div key={idx} className="project-card-pro">
+                    {/* HEADER */}
+                    <div className="project-header">
+                      <div>
+                        <h6 className="project-title">
+                          {proj.name || "Untitled Project"}
+                        </h6>
 
-      {/* HEADER */}
-      <div className="project-header">
-        <div>
-          <h6 className="project-title">
-            {proj.name || "Untitled Project"}
-          </h6>
+                        <div className="project-tags">
+                          <span className="badge bg-primary-subtle text-primary fw-semibold">
+                            {proj.associated === "self"
+                              ? "Self"
+                              : proj.associated === "college"
+                                ? "College"
+                                : "Work"}
+                          </span>
 
-          <div className="project-tags">
-            <span className="project-badge">
-              {proj.associated === "self"
-                ? "Self"
-                : proj.associated === "college"
-                ? "College"
-                : "Work"}
-            </span>
+                          {(proj.startDate || proj.endDate) && (
+                            <span className="badge bg-light border text-muted">
+                              📅 {proj.startDate || ""}
+                              {proj.startDate &&
+                                (proj.endDate || proj.currentlyWorking) &&
+                                " — "}
+                              {proj.currentlyWorking
+                                ? "Present"
+                                : proj.endDate || ""}
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-            {(proj.startDate || proj.endDate) && (
-              <span className="project-date">
-                📅 {proj.startDate || ""}
-                {proj.startDate &&
-                  (proj.endDate || proj.currentlyWorking) &&
-                  " — "}
-                {proj.currentlyWorking
-                  ? "Present"
-                  : proj.endDate || ""}
-              </span>
-            )}
-          </div>
-        </div>
+                      <div className="card-actions">
+                        <button
+                          type="button"
+                          onClick={() => setEditingProjIndex(idx)}
+                          className="icon-btn"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(projects, setProjects, idx)}
+                          className="icon-btn delete"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
 
-        <div className="card-actions">
-          <button
-            type="button"
-            onClick={() => setEditingProjIndex(idx)}
-            className="icon-btn"
-          >
-            ✏️
-          </button>
-          <button
-            type="button"
-            onClick={() => removeItem(projects, setProjects, idx)}
-            className="icon-btn delete"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
+                    {/* EDIT MODE */}
+                    {editingProjIndex === idx ? (
+                      <>
+                        <label className="form-label">Project Name</label>
+                        <input
+                          className="clean-input"
+                          value={proj.name}
+                          onChange={(e) => {
+                            const updated = [...projects];
+                            updated[idx].name = e.target.value;
+                            setProjects(updated);
+                          }}
+                        />
 
-      {/* EDIT MODE */}
-      {editingProjIndex === idx ? (
-        <>
-          <label className="form-label">Project Name</label>
-          <input
-            className="clean-input"
-            value={proj.name}
-            onChange={(e) => {
-              const updated = [...projects];
-              updated[idx].name = e.target.value;
-              setProjects(updated);
-            }}
-          />
+                        <label className="form-label">Description</label>
+                        <textarea
+                          className="clean-input"
+                          value={proj.description}
+                          onChange={(e) => {
+                            const updated = [...projects];
+                            updated[idx].description = e.target.value;
+                            setProjects(updated);
+                          }}
+                        />
 
-          <label className="form-label">Description</label>
-          <textarea
-            className="clean-input"
-            value={proj.description}
-            onChange={(e) => {
-              const updated = [...projects];
-              updated[idx].description = e.target.value;
-              setProjects(updated);
-            }}
-          />
+                        <div className="row g-2 mt-2">
+                          <div className="col-md-6">
+                            <label className="form-label">Start Date</label>
+                            <input
+                              type="date"
+                              className="clean-input"
+                              value={proj.startDate || ""}
+                              onChange={(e) => {
+                                const updated = [...projects];
+                                updated[idx].startDate = e.target.value;
+                                setProjects(updated);
+                              }}
+                            />
+                          </div>
 
-          <div className="row g-2 mt-2">
-            <div className="col-md-6">
-              <label className="form-label">Start Date</label>
-              <input
-                type="date"
-                className="clean-input"
-                value={proj.startDate || ""}
-                onChange={(e) => {
-                  const updated = [...projects];
-                  updated[idx].startDate = e.target.value;
-                  setProjects(updated);
-                }}
-              />
-            </div>
+                          <div className="col-md-6">
+                            <label className="form-label">End Date</label>
+                            <input
+                              type="date"
+                              className="clean-input"
+                              disabled={proj.currentlyWorking}
+                              value={
+                                proj.currentlyWorking ? "" : proj.endDate || ""
+                              }
+                              onChange={(e) => {
+                                const updated = [...projects];
+                                updated[idx].endDate = e.target.value;
+                                setProjects(updated);
+                              }}
+                            />
+                          </div>
+                        </div>
 
-            <div className="col-md-6">
-              <label className="form-label">End Date</label>
-              <input
-                type="date"
-                className="clean-input"
-                disabled={proj.currentlyWorking}
-                value={proj.currentlyWorking ? "" : proj.endDate || ""}
-                onChange={(e) => {
-                  const updated = [...projects];
-                  updated[idx].endDate = e.target.value;
-                  setProjects(updated);
-                }}
-              />
-            </div>
-          </div>
+                        <div className="form-check mt-2">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            checked={proj.currentlyWorking || false}
+                            onChange={(e) => {
+                              const updated = [...projects];
+                              updated[idx].currentlyWorking = e.target.checked;
+                              if (e.target.checked) updated[idx].endDate = "";
+                              setProjects(updated);
+                            }}
+                          />
+                          <label className="form-check-label">
+                            Currently Working
+                          </label>
+                        </div>
 
-          <div className="form-check mt-2">
-            <input
-              type="checkbox"
-              className="form-check-input"
-              checked={proj.currentlyWorking || false}
-              onChange={(e) => {
-                const updated = [...projects];
-                updated[idx].currentlyWorking = e.target.checked;
-                if (e.target.checked) updated[idx].endDate = "";
-                setProjects(updated);
-              }}
-            />
-            <label className="form-check-label">
-              Currently Working
-            </label>
-          </div>
+                        <label className="form-label mt-2">
+                          Associated With
+                        </label>
+                        <select
+                          className="clean-input"
+                          value={proj.associated || "self"}
+                          onChange={(e) => {
+                            const updated = [...projects];
+                            updated[idx].associated = e.target.value;
+                            setProjects(updated);
+                          }}
+                        >
+                          <option value="self">Self</option>
+                          <option value="college">College</option>
+                          <option value="work">Work</option>
+                        </select>
 
-          <label className="form-label mt-2">Associated With</label>
-          <select
-            className="clean-input"
-            value={proj.associated || "self"}
-            onChange={(e) => {
-              const updated = [...projects];
-              updated[idx].associated = e.target.value;
-              setProjects(updated);
-            }}
-          >
-            <option value="self">Self</option>
-            <option value="college">College</option>
-            <option value="work">Work</option>
-          </select>
+                        <label className="form-label mt-2">GitHub Link</label>
+                        <input
+                          className="clean-input"
+                          value={proj.githubLink || ""}
+                          onChange={(e) => {
+                            const updated = [...projects];
+                            updated[idx].githubLink = e.target.value;
+                            setProjects(updated);
+                          }}
+                        />
+                        <label className="form-label mt-2">Live Link</label>
+                        <input
+                          className="clean-input"
+                          value={proj.liveLink || ""}
+                          onChange={(e) => {
+                            const updated = [...projects];
+                            updated[idx].liveLink = e.target.value;
+                            setProjects(updated);
+                          }}
+                        />
 
-          <label className="form-label mt-2">GitHub Link</label>
-          <input
-            className="clean-input"
-            value={proj.githubLink || ""}
-            onChange={(e) => {
-              const updated = [...projects];
-              updated[idx].githubLink = e.target.value;
-              setProjects(updated);
-            }}
-          />
+                        <div className="d-flex gap-2 mt-3">
+                          <button
+                            type="button"
+                            className="btn-save"
+                            onClick={() => setEditingProjIndex(null)}
+                          >
+                            Save
+                          </button>
 
-          <div className="d-flex gap-2 mt-3">
-            <button
-              type="button"
-              className="btn-save"
-              onClick={() => setEditingProjIndex(null)}
-            >
-              Save
-            </button>
+                          <button
+                            type="button"
+                            className="btn-cancel"
+                            onClick={() => {
+                              if (!proj.name && !proj.description) {
+                                removeItem(projects, setProjects, idx);
+                              }
+                              setEditingProjIndex(null);
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* DESCRIPTION */}
+                        <p className="project-description">
+                          {proj.description}
+                        </p>
 
-            <button
-              type="button"
-              className="btn-cancel"
-              onClick={() => {
-                if (!proj.name && !proj.description) {
-                  removeItem(projects, setProjects, idx);
-                }
-                setEditingProjIndex(null);
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* DESCRIPTION */}
-          <p className="project-description">
-            {proj.description}
-          </p>
+                        {/* ACTION */}
+                        {(proj.githubLink || proj.liveLink) && (
+                          <div className="project-footer d-flex gap-2 mt-2">
+                            {/* GitHub */}
+                            {proj.githubLink && (
+                              <a
+                                href={
+                                  proj.githubLink.startsWith("http")
+                                    ? proj.githubLink
+                                    : `https://${proj.githubLink}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-decoration-none"
+                              >
+                                <button className="btn btn-dark rounded-pill px-3 d-flex align-items-center gap-2">
+                                  <i className="bi bi-github"></i>
+                                  View Code
+                                </button>
+                              </a>
+                            )}
 
-          {/* ACTION */}
-          {proj.githubLink && (
-            <div className="project-footer">
-              <a
-                href={
-                  proj.githubLink.startsWith("http")
-                    ? proj.githubLink
-                    : `https://${proj.githubLink}`
-                }
-                target="_blank"
-                rel="noreferrer"
-              >
-                <button className="btn-view-code">
-                  🔗 View Code
+                            {proj.liveLink && (
+                              <a
+                                href={
+                                  proj.liveLink.startsWith("http")
+                                    ? proj.liveLink
+                                    : `https://${proj.liveLink}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-decoration-none"
+                              >
+                                <button className="btn btn-primary rounded-pill px-3 d-flex align-items-center gap-2">
+                                  <i className="bi bi-globe"></i>
+                                  Live Demo
+                                </button>
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className="btn-add"
+                  onClick={() => {
+                    const newItem = {
+                      name: "",
+                      description: "",
+                      startDate: "",
+                      endDate: "",
+                      associated: "self",
+                      githubLink: "",
+                      currentlyWorking: false,
+                    };
+                    setProjects([...projects, newItem]);
+                    setEditingProjIndex(projects.length);
+                  }}
+                >
+                  + Add Project
                 </button>
-              </a>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  ))}
-
-  <button
-    type="button"
-    className="btn-add"
-    onClick={() => {
-      const newItem = {
-        name: "",
-        description: "",
-        startDate: "",
-        endDate: "",
-        associated: "self",
-        githubLink: "",
-        currentlyWorking: false,
-      };
-      setProjects([...projects, newItem]);
-      setEditingProjIndex(projects.length);
-    }}
-  >
-    + Add Project
-  </button>
-</div>
-              {/* ================= EXPERIENCE ================= */}
+              </div>
               <div className="mb-4">
                 <h5 className="section-title">💼 Work Experience</h5>
 
@@ -1243,11 +1367,19 @@ const StudentRegister = () => {
                   <div key={idx} className="clean-card">
                     <div className="card-header-row">
                       <div>
-                        <h6 className="card-title">
-                          💼 {exp.role || "New Role"}{" "}
-                          {exp.company ? `@ ${exp.company}` : ""}
-                        </h6>
+                        <div>
+                          <h6 className="card-title d-flex align-items-center gap-2 mb-1">
+                            <i className="bi bi-briefcase-fill text-primary"></i>
+                            {exp.role || "New Role"}
+                          </h6>
 
+                          {exp.company && (
+                            <div className="d-flex align-items-center gap-2 text-muted small">
+                              <i className="bi bi-building"></i>
+                              <span>{exp.company}</span>
+                            </div>
+                          )}
+                        </div>
                         {/* ✅ ONLY SHOW WHEN EXISTS */}
                         {(exp.start_date || exp.end_date) && (
                           <small className="card-meta">
@@ -1411,22 +1543,33 @@ const StudentRegister = () => {
                 <button
                   type="button"
                   className="btn btn-outline-secondary px-4 py-2 rounded-3"
-                  onClick={prevStep}
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx > 0) {
+                      setActiveTab(tabs[idx - 1].key);
+                    }
+                  }}
                 >
                   Back
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   className="btn btn-primary px-5 py-2 rounded-3 fw-semibold"
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx < tabs.length - 1) {
+                      setActiveTab(tabs[idx + 1].key);
+                    }
+                  }}
                 >
-                  Next Step
+                  Next →
                 </button>
               </div>
             </form>
           )}
-          {step === 6 && (
+          {activeTab === "certifications" && (
             <form
-              onSubmit={nextStep}
+              onSubmit={(e) => e.preventDefault()}
               className="animate__animated animate__fadeIn"
             >
               <h4 className="mb-4 fw-semibold text-primary">Certifications</h4>
@@ -1531,20 +1674,31 @@ const StudentRegister = () => {
                 <button
                   type="button"
                   className="btn btn-outline-secondary px-4 py-2 rounded-3"
-                  onClick={prevStep}
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx > 0) {
+                      setActiveTab(tabs[idx - 1].key);
+                    }
+                  }}
                 >
                   Back
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   className="btn btn-primary px-5 py-2 rounded-3 fw-semibold"
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx < tabs.length - 1) {
+                      setActiveTab(tabs[idx + 1].key);
+                    }
+                  }}
                 >
-                  Next Step
+                  Next →
                 </button>
               </div>
             </form>
           )}
-          {step === 7 && (
+          {activeTab === "final" && (
             <form
               onSubmit={handleSubmit}
               className="animate__animated animate__fadeIn text-center"
@@ -1598,7 +1752,12 @@ const StudentRegister = () => {
                 <button
                   type="button"
                   className="btn btn-outline-secondary px-4 py-2 rounded-3"
-                  onClick={prevStep}
+                  onClick={() => {
+                    const idx = tabs.findIndex((t) => t.key === activeTab);
+                    if (idx > 0) {
+                      setActiveTab(tabs[idx - 1].key);
+                    }
+                  }}
                 >
                   Back
                 </button>
