@@ -32,7 +32,9 @@ const projectSchema = new Schema({
     },
     githubLink: {
         type: String,
-        required: true
+    },
+    liveLink: {
+        type: String,
     }
 });
 
