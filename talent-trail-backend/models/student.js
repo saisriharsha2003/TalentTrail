@@ -69,6 +69,12 @@ const studentSchema = new Schema({
         default: 'student',
         enum: ['student']
     },
+    skills: [{
+        type: String
+    }],
+    interests: [{
+        type: String
+    }],
     otp: String,
     otpExpiry: Date,
     notification: [String],
