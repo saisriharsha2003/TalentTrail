@@ -22,41 +22,19 @@ const StudentOpenings = () => {
     fetchOpenings();
   }, [axios]);
 
-  const filteredJobs = jobs.filter((job) =>
-    job?.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job?.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job?.jobDescription?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredJobs = jobs.filter(
+    (job) =>
+      job?.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job?.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job?.jobDescription?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const fetchStudent = async () => {
+  const computeCapability = async (jobId) => {
     try {
-      const res = await axios.get("/student/details");
-      const student = res?.data;
-
-      let profile = "skills:\n";
-      profile += student?.academic?.currentEducation?.skills.join(",") + "\n";
-
-      profile += "certifications:\n";
-      student?.certifications?.forEach((c) => {
-        profile += `${c.name} ${c.organization},`;
-      });
-
-      return profile;
-    } catch (err) {
-      notify("failed", err?.response?.data?.message);
-    }
-  };
-
-  const computeCapability = async (jobId, desc) => {
-    try {
-      const profile = await fetchStudent();
-
       const res = await axios.post("/student/capabilityCal", {
-        sent1: profile,
-        sent2: desc,
+        jobId: jobId,
       });
-
-      const score = res?.data?.score?.similarity_matrix;
+      const score = res?.data?.final_score ?? 0;
 
       setScores((prev) => ({ ...prev, [jobId]: score }));
       notify("success", "Capability calculated");
@@ -74,7 +52,6 @@ const StudentOpenings = () => {
 
   return (
     <div className="container my-5">
-
       <div className="mb-4">
         <h2 className="fw-bold">Job Openings</h2>
         <p className="text-muted">Find jobs that match your profile</p>
@@ -92,18 +69,14 @@ const StudentOpenings = () => {
       </div>
 
       <div className="row g-4">
-
         {filteredJobs.length ? (
           filteredJobs.map((job) => (
             <div key={job._id} className="col-md-6">
-
               <div className="card shadow-sm border-0 rounded-4 p-4 h-100">
-
                 <h5 className="fw-bold">{job.jobTitle}</h5>
                 <p className="text-muted mb-2">{job.companyName}</p>
 
                 <div className="d-flex flex-wrap gap-2 mb-3">
-
                   {job.location && (
                     <span className="badge bg-light text-dark">
                       📍 {job.location}
@@ -145,7 +118,6 @@ const StudentOpenings = () => {
                 </p>
 
                 <div className="mt-auto d-flex justify-content-between align-items-center">
-
                   <small className="text-muted">
                     {job.department || "General"}
                   </small>
@@ -161,7 +133,7 @@ const StudentOpenings = () => {
                     <button
                       className="btn btn-dark btn-sm"
                       onClick={() =>
-                        computeCapability(job._id, job.jobDescription)
+                        computeCapability(job._id)
                       }
                     >
                       Match ⚡
@@ -179,7 +151,6 @@ const StudentOpenings = () => {
                     </div>
                   </div>
                 )}
-
               </div>
             </div>
           ))
@@ -189,7 +160,6 @@ const StudentOpenings = () => {
             <p>Try a different search</p>
           </div>
         )}
-
       </div>
     </div>
   );
