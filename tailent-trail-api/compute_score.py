@@ -1,47 +1,107 @@
+import json
+import re
+from flask import Flask, request, jsonify
+from google import genai
+from dotenv import load_dotenv
+import os
+
+app = Flask(__name__)
+
+load_dotenv()
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+def calculate_score(resume, job):
+    prompt = f"""
+You are a senior technical recruiter.
+
+Evaluate how well the candidate matches the job.
+
+----------------------------------
+INPUT
+----------------------------------
+
+RESUME:
+{json.dumps(resume)}
+
+JOB DESCRIPTION:
+{json.dumps(job)}
+
+----------------------------------
+SCORING CRITERIA (STRICT)
+----------------------------------
+
+1. Skills Match (30%)
+- Required backend skills (Node.js, Python, APIs, DBs)
+- Depth of knowledge
+
+2. Projects Relevance (20%)
+- Backend-heavy projects
+- Real-world complexity
+
+3. Experience Relevance (15%)
+- Backend or related roles
+- Practical exposure
+
+4. Education (10%)
+- Relevant degree (CSE, IT)
+- CGPA quality
+
+5. Certifications (5%)
+- Relevant technical certifications
+
+6. Overall Fit (20%)
+- Problem-solving
+- System understanding
+- Alignment with job
+
+----------------------------------
+IMPORTANT RULES
+----------------------------------
+
+- Be realistic (not generous)
+- Do NOT give 90+ unless truly exceptional
+- Freshers should typically be 50–75 range
+- Penalize missing required skills
+- Reward real backend work
+
+----------------------------------
+OUTPUT FORMAT (STRICT JSON)
+----------------------------------
+
+{{
+  "final_score": number (0-100),
+  "breakdown": {{
+    "skills": number,
+    "projects": number,
+    "experience": number,
+    "education": number,
+    "certifications": number,
+    "overall_fit": number
+  }},
+  "strengths": [],
+  "weaknesses": [],
+  "missing_skills": [],
+  "summary": ""
+}}
+
+----------------------------------
+DO NOT RETURN ANYTHING ELSE
+----------------------------------
 """
-Semantic Similarity Score Computation Module
-Uses BGEM3FlagModel for computing similarity between two texts
-Returns similarity as percentage (0-100)
-"""
 
-from FlagEmbedding import BGEM3FlagModel
+    response = client.models.generate_content(
+        model="gemini-3-flash-preview",
+        contents=prompt
+    )
 
-# Initialize BGEM3FlagModel once at module load
-model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)
+    res = response.text
 
-
-def compute_similarity(text1, text2):
-    """
-    Compute semantic similarity between two text inputs using BGEM3 embeddings.
-    
-    Args:
-        text1 (str): First text input
-        text2 (str): Second text input
-    
-    Returns:
-        float: Similarity score as percentage (0-100)
-    
-    Raises:
-        ValueError: If either text is empty
-    """
-    if not text1 or not text2:
-        raise ValueError("Both text1 and text2 parameters are required and cannot be empty")
-    
     try:
-        # Encode texts to obtain dense vectors
-        embeddings_1 = model.encode(text1, batch_size=12, max_length=8192)['dense_vecs']
-        embeddings_2 = model.encode(text2, batch_size=12, max_length=8192)['dense_vecs']
-        
-        # Compute similarity matrix
-        similarity = embeddings_1 @ embeddings_2.T
-        similarity_score = round(float(similarity) * 100, 2)
-        
-        return similarity_score
-        
-    except Exception as e:
-        raise Exception(f"Error computing similarity: {str(e)}")
-
-
-def get_model():
-    """Return the initialized BGEM3 model"""
-    return model
+        return json.loads(res)
+    except:
+        match = re.search(r'\{[\s\S]*\}', res)  
+        return json.loads(match.group()) if match else {
+            "final_score": 0,
+            "error": "AI parsing failed"
+        }

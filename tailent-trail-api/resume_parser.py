@@ -10,17 +10,12 @@ import docx2txt
 import mammoth
 from Test import mock_data
 
-# -------------------------------
-# LOAD ENV
-# -------------------------------
+
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
 client = genai.Client(api_key=api_key)
 
-# -------------------------------
-# TEXT EXTRACTION
-# -------------------------------
 def extract_resume_text(file_path):
     if file_path.endswith(".pdf"):
         return extract_text(file_path)
@@ -32,9 +27,6 @@ def extract_resume_text(file_path):
     else:
         raise ValueError("Unsupported file format")
 
-# -------------------------------
-# BASIC EXTRACTION
-# -------------------------------
 def extract_basic_info(text):
     phones = re.findall(r'\+?\d[\d -]{8,12}', text)
     emails = re.findall(r'\S+@\S+', text)
@@ -48,9 +40,6 @@ def extract_basic_info(text):
     skills = [k for k in keywords if k in text.lower()]
     return phones, emails, skills
 
-# -------------------------------
-# SKILL NORMALIZATION
-# -------------------------------
 SKILL_MAP = {
     "html": "HTML",
     "css": "CSS",
@@ -95,9 +84,6 @@ def normalize_skills(skills):
 
     return sorted(cleaned)
 
-# -------------------------------
-# EXPERIENCE DURATION
-# -------------------------------
 def calc_months(start, end):
     if not start:
         return 0
@@ -112,9 +98,6 @@ def calc_months(start, end):
     except:
         return 0
 
-# -------------------------------
-# ENRICH EXPERIENCE SKILLS
-# -------------------------------
 def enrich_experience_skills(data):
     global_skills = set(data.get("skills", []))
 
@@ -127,9 +110,6 @@ def enrich_experience_skills(data):
 
     return data
 
-# -------------------------------
-# MAIN FUNCTION
-# -------------------------------
 def resume_ner_gpt(file_path):
     text = extract_resume_text(file_path)
 
@@ -414,9 +394,6 @@ RESUME TEXT:
     if not result:
         return {}
 
-    # -------------------------------
-    # JSON PARSE
-    # -------------------------------
     try:
         data = json.loads(result)
     except:
@@ -426,15 +403,10 @@ RESUME TEXT:
         else:
             return {}
 
-    # -------------------------------
-    # POST PROCESSING (IMPROVED)
-    # -------------------------------
 
-    # Merge + deduplicate skills
     all_skills = data.get("skills", []) + detected_skills
     data["skills"] = normalize_skills(list(set(all_skills)))
 
-    # Fix name (Gemini gives surname first sometimes)
     name = data.get("name")
     if name:
         parts = name.split()
@@ -442,7 +414,6 @@ RESUME TEXT:
             data["surname"] = parts[0]
             data["given_name"] = " ".join(parts[1:])
 
-    # Experience cleanup
     for exp in data.get("experience", []):
         if not exp.get("start_date"):
             exp["start_date"] = None
@@ -457,15 +428,10 @@ RESUME TEXT:
             exp.get("end_date")
         )
 
-    # Enrich missing skills
     data = enrich_experience_skills(data)
 
-    # Final cleanup
     data["skills"] = normalize_skills(data.get("skills", []))
 
-    # -------------------------------
-    # SUMMARY
-    # -------------------------------
     summary_prompt = f"""
         Write a professional 3-line resume summary:
 

@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from resume_parser import resume_ner_gpt
 from job_parser import parse_job_description
 from Test.mock_data import resume_data_mock
-# from compute_score import compute_similarity
+from compute_score import calculate_score
 from docx import Document
 
 app = Flask(__name__)
@@ -143,31 +143,23 @@ def parse_job():
             'error': f'Job parsing failed: {str(e)}'
         }), 500
 
+@app.route('/compute_score', methods=['POST'])
+def compute_score():
+    try:
+        data = request.get_json()
 
-# @app.route('/compute_score', methods=['POST'])
-# @cross_origin(supports_credentials=True)
-# def compute_score():
-#     try:
-#         sent1 = request.form.get('sent1')
-#         sent2 = request.form.get('sent2')
-        
-#         if not sent1 or not sent2:
-#             return jsonify({
-#                 'error': 'Both sent1 and sent2 parameters are required'
-#             }), 400
-        
-#         similarity_score = compute_similarity(sent1, sent2)
-        
-#         return jsonify({
-#             'success': True,
-#             'similarity_score': similarity_score,
-#             'sent1_preview': sent1[:100] + ('...' if len(sent1) > 100 else ''),
-#             'sent2_preview': sent2[:100] + ('...' if len(sent2) > 100 else '')
-#         }), 200
+        resume = data.get('resume')
+        job = data.get('job')
 
-#     except Exception as e:
-#         return jsonify({'error': f'Score computation failed: {str(e)}'}), 500
+        if not resume or not job:
+            return jsonify({'error': 'Both resume and job are required'}), 400
 
+        result = calculate_score(resume, job)
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/endpoints', methods=['GET'])
 @cross_origin(supports_credentials=True)
