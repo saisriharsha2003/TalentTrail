@@ -7,6 +7,7 @@ const StudentOpenings = () => {
   const [jobs, setJobs] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [scores, setScores] = useState({});
+  const [loadingScores, setLoadingScores] = useState({});
   const axios = useAxiosPrivate();
 
   useEffect(() => {
@@ -31,15 +32,20 @@ const StudentOpenings = () => {
 
   const computeCapability = async (jobId) => {
     try {
+      setLoadingScores((prev) => ({ ...prev, [jobId]: true }));
+
       const res = await axios.post("/student/capabilityCal", {
         jobId: jobId,
       });
-      const score = res?.data?.final_score ?? 0;
 
+      const score = res?.data?.final_score ?? 0;
       setScores((prev) => ({ ...prev, [jobId]: score }));
+
       notify("success", "Capability calculated");
     } catch (err) {
       notify("failed", err?.response?.data?.message);
+    } finally {
+      setLoadingScores((prev) => ({ ...prev, [jobId]: false }));
     }
   };
 
@@ -131,12 +137,16 @@ const StudentOpenings = () => {
                     </Link>
 
                     <button
-                      className="btn btn-dark btn-sm"
-                      onClick={() =>
-                        computeCapability(job._id)
-                      }
+                      className="btn btn-dark btn-sm d-flex align-items-center justify-content-center"
+                      style={{ minWidth: "90px" }}
+                      onClick={() => computeCapability(job._id)}
+                      disabled={loadingScores[job._id]}
                     >
-                      Match ⚡
+                      {loadingScores[job._id] ? (
+                        <span className="spinner-border spinner-border-sm"></span>
+                      ) : (
+                        <>Match ⚡</>
+                      )}
                     </button>
                   </div>
                 </div>

@@ -1209,7 +1209,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                               </div>
 
                               <div className="small text-secondary mb-2 d-flex align-items-center gap-2">
-                                <i className="fa-solid fa-calendar-days text-primary"></i>
+                                📆
                                 {formatMonthYear(work.startDate)} -{" "}
                                 {work.endDate
                                   ? formatMonthYear(work.endDate)
@@ -1316,7 +1316,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                               )}
 
                               <div className="small text-secondary mb-3">
-                                <i className="bi bi-clock-history text-success me-1"></i>
+                                📆
                                 {proj.startDate
                                   ? formatMonthYear(proj.startDate)
                                   : "N/A"}{" "}
