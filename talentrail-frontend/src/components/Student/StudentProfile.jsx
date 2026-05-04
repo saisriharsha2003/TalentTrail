@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import axiosBase from "../../api/axios";
-import { notify } from "../Toast";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate.jsx";
+import axiosBase from "../../api/axios.jsx";
+import { notify } from "../Toast.jsx";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../../assets/config.jsx";
 
