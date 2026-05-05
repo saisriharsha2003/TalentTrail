@@ -3,7 +3,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate.jsx";
 import axiosBase from "../../api/axios.jsx";
 import { notify } from "../Toast.jsx";
 import { useNavigate } from "react-router-dom";
-import { BASE_URL } from "../../assets/config.jsx";
+import { BASE_URL } from "../../api/config.js";
 
 const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
   const [activeTab, setActiveTab] = useState("personal");
@@ -705,6 +705,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                       </select>
                       <label className="ms-2">Gender</label>
                     </div>
+                    {!isReadOnly && (
                     <div className="col-12 mt-4 text-end">
                       <button
                         type="submit"
@@ -713,6 +714,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                         Save Changes
                       </button>
                     </div>
+                    )}
                   </form>
                 </div>
               </div>
@@ -801,6 +803,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                       ></textarea>
                       <label className="ms-2">Address</label>
                     </div>
+                    {!isReadOnly && (
                     <div className="col-12 mt-4">
                       <button
                         type="submit"
@@ -809,6 +812,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                         Update Contact
                       </button>
                     </div>
+                    )}
                   </form>
                 </div>
               </div>
@@ -1118,6 +1122,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                         <label className="ms-2">Percentage</label>
                       </div>
                     </div>
+                    {!isReadOnly && (
                     <div className="text-end mt-4">
                       <button
                         type="submit"
@@ -1126,6 +1131,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                         Save Academic Details
                       </button>
                     </div>
+                    )}
                   </form>
                 </div>
               </div>
@@ -1514,7 +1520,7 @@ const StudentProfile = ({ isReadOnly = false, externalData = null }) => {
                           <button
                             className="btn btn-dark btn-sm rounded-pill px-3"
                             onClick={() =>
-                              window.open(`${BASE_URL}/${resume}`, "_blank")
+                              window.open(`${BASE_URL}/uploads/${resume}`, "_blank")
                             }
                           >
                             📄 View
