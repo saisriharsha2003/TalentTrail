@@ -9,6 +9,7 @@ const StudentJobProfile = () => {
   const [company, setCompany] = useState({});
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     const fetchJobProfile = async () => {
@@ -25,19 +26,23 @@ const StudentJobProfile = () => {
 
   const handleJobApplication = async () => {
     try {
+      setApplying(true);
+
       const res = await axios.post("/student/application", { jobId: id });
+
       if (res?.data?.success) {
         notify("success", res.data.success);
-        navigate('/user/student/applied');
+        navigate("/user/student/applied");
       }
     } catch (err) {
       notify("failed", err?.response?.data?.message);
+    } finally {
+      setApplying(false);
     }
   };
 
   return (
     <div className="container my-5 style={{ maxWidth: '1200px' }}">
-
       <div className="card shadow-sm border-0 rounded-4 p-4 mb-4">
         <h2 className="fw-bold">{job.jobTitle || "Untitled Role"}</h2>
         <h5 className="text-muted">{job.companyName}</h5>
@@ -53,9 +58,7 @@ const StudentJobProfile = () => {
             🧠 {job.experienceRequired || "N/A"}
           </span>
           {job.salaryRange && (
-            <span className="badge bg-success">
-              💰 ₹{job.salaryRange}
-            </span>
+            <span className="badge bg-success">💰 ₹{job.salaryRange}</span>
           )}
           {job.numberOfOpenings && (
             <span className="badge bg-info text-dark">
@@ -67,18 +70,23 @@ const StudentJobProfile = () => {
         <div className="mt-4">
           <button
             onClick={handleJobApplication}
-            className="btn btn-primary px-4 py-2"
+            disabled={applying}
+            className="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
           >
-            Apply Now 🚀
+            {applying ? (
+              <>
+                <span className="spinner-border spinner-border-sm"></span>
+              </>
+            ) : (
+              <>Apply Now 🚀</>
+            )}
           </button>
         </div>
       </div>
 
       <div className="row g-4">
-
         <div className="col-md-7">
           <div className="card shadow-sm border-0 rounded-4 p-4">
-
             <h4 className="fw-semibold mb-3">📄 Job Details</h4>
 
             <Section title="Description" value={job.jobDescription} />
@@ -99,7 +107,7 @@ const StudentJobProfile = () => {
                         borderRadius: "20px",
                         backgroundColor: "#212529",
                         color: "#fff",
-                        fontSize: "0.85rem"
+                        fontSize: "0.85rem",
                       }}
                     >
                       {skill}
@@ -110,13 +118,11 @@ const StudentJobProfile = () => {
                 )}
               </div>
             </div>
-
           </div>
         </div>
 
         <div className="col-md-5">
           <div className="card shadow-sm border-0 rounded-4 p-4">
-
             <h4 className="fw-semibold mb-3">🏢 Company Profile</h4>
 
             <Field label="Name" value={company.name} />
@@ -141,10 +147,8 @@ const StudentJobProfile = () => {
             <Field label="Address" value={company.address} />
             <Field label="Mobile" value={company.mobile} />
             <Section title="Overview" value={company.overview} />
-
           </div>
         </div>
-
       </div>
     </div>
   );
@@ -159,8 +163,7 @@ const Field = ({ label, value }) => (
 const Section = ({ title, value }) => (
   <div className="mb-3">
     <strong>{title}:</strong>
-    <p className="text-muted mb-0">{value || "Not provided"}
-    </p>
+    <p className="text-muted mb-0">{value || "Not provided"}</p>
   </div>
 );
 
