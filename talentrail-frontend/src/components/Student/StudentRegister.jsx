@@ -164,7 +164,6 @@ const StudentRegister = () => {
   const [skillInput, setSkillInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
 
-  // Helpers to add items
   const addItem = (list, setter, newItem, resetItem) => {
     if (Object.values(newItem).some((v) => v !== "")) {
       setter([...list, newItem]);
@@ -176,7 +175,6 @@ const StudentRegister = () => {
     setter(list.filter((_, i) => i !== index));
   };
 
-  // Effect to update available courses when college changes
   useEffect(() => {
     if (currentEducation.collegeId) {
       const selected = colleges.find(
@@ -186,7 +184,6 @@ const StudentRegister = () => {
         const courses = selected.courses || [];
         setSelectedCollegeCourses(courses);
 
-        // Auto-select course if only one exists
         const uniqueCourseNames = [...new Set(courses.map((c) => c.name))];
         if (uniqueCourseNames.length === 1 && !currentEducation.course) {
           setCurrentEducation((prev) => ({
@@ -200,7 +197,6 @@ const StudentRegister = () => {
     }
   }, [currentEducation.collegeId, colleges, currentEducation.course]);
 
-  // Auto-select major if only one option exists for the selected course
   useEffect(() => {
     if (currentEducation.course && selectedCollegeCourses.length > 0) {
       const availableMajors = selectedCollegeCourses.filter(
@@ -215,7 +211,6 @@ const StudentRegister = () => {
     }
   }, [currentEducation.course, selectedCollegeCourses, currentEducation.major]);
 
-  // Sync resume data with fetched colleges/courses
   useEffect(() => {
     if (
       colleges.length > 0 &&
@@ -271,7 +266,6 @@ const StudentRegister = () => {
     if (e) e.preventDefault();
     setLoading(true);
     try {
-      // Profile Picture
       if (profileFile) {
         const fd = new FormData();
         fd.append("profile", profileFile);
@@ -280,19 +274,16 @@ const StudentRegister = () => {
         });
       }
 
-      // Personal
       await axios.post("/student/personal", {
         ...personal,
-        gender: personal.gender || "other", // Fallback
+        gender: personal.gender || "other", 
       });
 
-      // Contact
       await axios.post("/student/contact", {
         ...contact,
         mobile: parseInt(contact.mobile) || contact.mobile,
       });
 
-      // Academic
       await axios.post("/student/academic", {
         currentEducation: {
           ...currentEducation,
@@ -330,7 +321,6 @@ const StudentRegister = () => {
         }
       }
 
-      // Work
       for (let exp of experiences) {
         if (exp.company || exp.organization) {
           await axios.post("/student/work", {
